@@ -13,59 +13,50 @@ export default function App() {
   const [userPhoto, setUserPhoto] = useState(null);
   const [resultImage, setResultImage] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [wbInput, setWbInput] = useState('');
   
   const fileInputRef = useRef(null);
 
-  // Каталог нарядов
-  const ITEMS = [
-    { 
-      id: '1', 
-      name: 'Розовое худи Coquette', 
-      price: '2 490 ₽', 
-      url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=600&q=80', 
-      wb: '12345678' 
-    },
-    { 
-      id: '2', 
-      name: 'Топ корсетный бежевый', 
-      price: '1 290 ₽', 
-      url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80', 
-      wb: '87654321' 
-    },
-    { 
-      id: '3', 
-      name: 'Шёлковое вечернее платье', 
-      price: '4 890 ₽', 
-      url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80', 
-      wb: '99887766' 
-    },
-    { 
-      id: '4', 
-      name: 'Оверсайз пиджак Charcoal', 
-      price: '3 750 ₽', 
-      url: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=600&q=80', 
-      wb: '55443322' 
-    }
+  // Большой пул эстетичных и трендовых вещей
+  const ALL_ITEMS = [
+    { id: '1', name: 'Оверсайз тренч Sand', price: '4 890 ₽', url: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=600&q=80', wb: '12345678' },
+    { id: '2', name: 'Шёлковая комбинация Midi', price: '3 290 ₽', url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=600&q=80', wb: '23456789' },
+    { id: '3', name: 'Кардиган крупной вязки Coquette', price: '2 890 ₽', url: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=600&q=80', wb: '34567890' },
+    { id: '4', name: 'Кожаный блейзер Vintage', price: '5 400 ₽', url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80', wb: '45678901' },
+    { id: '5', name: 'Розовое худи Aesthetic', price: '2 490 ₽', url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=600&q=80', wb: '56789012' },
+    { id: '6', name: 'Корсетный топ Milk', price: '1 690 ₽', url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=600&q=80', wb: '67890123' },
+    { id: '7', name: 'Джинсы Wide Leg Comfort', price: '3 150 ₽', url: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=600&q=80', wb: '78901234' },
+    { id: '8', name: 'Платье-комбинация Black Velvet', price: '4 200 ₽', url: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=600&q=80', wb: '89012345' }
   ];
+
+  // Автоматическая смена подборки каждые 24 часа
+  const getDailyItems = () => {
+    const dayIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+    const startIndex = (dayIndex * 4) % ALL_ITEMS.length;
+    const rotated = [];
+    for (let i = 0; i < 4; i++) {
+      rotated.push(ALL_ITEMS[(startIndex + i) % ALL_ITEMS.length]);
+    }
+    return rotated;
+  };
+
+  const ITEMS = getDailyItems();
 
   const BACKEND_URL = "https://girls-founds.onrender.com";
   const BOT_USERNAME = "GFstyleroom_bot";
 
-  // Виброотклик Telegram
   const haptic = (type = 'light') => {
     try {
       window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(type);
     } catch (_) {}
   };
 
-  // Авторизация и интеграция с Telegram WebApp
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (tg) {
       tg.ready();
       tg.expand();
 
-      // Управление нативной кнопкой «Назад»
       if (tg.BackButton) {
         if (activeTab === 'catalog') {
           tg.BackButton.hide();
@@ -98,7 +89,35 @@ export default function App() {
     }
   }, [activeTab]);
 
-  // Обработка загрузки фото из галереи со сжатием
+  // Обработка ввода ссылки или артикула WB
+  const handleWbSubmit = (e) => {
+    e.preventDefault();
+    if (!wbInput.trim()) return;
+    haptic('medium');
+
+    const match = wbInput.match(/(\d{6,})/);
+    const articul = match ? match[1] : wbInput.trim();
+    if (!articul) return;
+
+    const vol = Math.floor(parseInt(articul) / 100000);
+    const part = Math.floor(parseInt(articul) / 1000);
+    const wbImageUrl = `https://basket-01.wbbasket.ru/vol${vol}/part${part}/${articul}/images/big/1.webp`;
+
+    const customItem = {
+      id: `custom_${articul}`,
+      name: `Товар WB #${articul}`,
+      price: 'По ссылке',
+      url: wbImageUrl,
+      wb: articul
+    };
+
+    setSelectedItem(customItem);
+    setUserPhoto(null);
+    setErrorMessage('');
+    setWbInput('');
+    setActiveTab('upload');
+  };
+
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -130,31 +149,30 @@ export default function App() {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        setUserPhoto(compressedDataUrl);
+        setUserPhoto(canvas.toDataURL('image/jpeg', 0.85));
       };
       img.src = event.target.result;
     };
     reader.readAsDataURL(file);
   };
 
-  // Запуск примерки
   const runTryOn = async () => {
-   if (!userPhoto || !selectedItem) return;
+    if (!userPhoto || !selectedItem) return;
     haptic('heavy');
     setErrorMessage('');
     setActiveTab('loading');
 
-    // Симулируем 3 секунды работы нейросети
-    setTimeout(() => {
-      // Списываем 1 попытку у пользователя
-      setUser((prev) => ({ ...prev, balance: Math.max(0, (prev.balance || 1) - 1) }));
-      
-      // Показываем красивый тестовый результат
-      setResultImage(selectedItem.url);
-      setActiveTab('result');
-    }, 3000);
-  };
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/tryon`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData: window.Telegram?.WebApp?.initData || '',
+          humanImg: userPhoto,
+          garmentUrl: selectedItem.url,
+          itemId: selectedItem.id
+        })
+      });
 
       const data = await res.json();
       if (data.success && data.resultUrl) {
@@ -170,7 +188,6 @@ export default function App() {
     }
   };
 
-  // Покупка попыток
   const handleBuy = async () => {
     haptic('light');
     const tg = window.Telegram?.WebApp;
@@ -189,7 +206,6 @@ export default function App() {
     } catch (_) {}
   };
 
-  // Приглашение подруги
   const handleShare = () => {
     haptic('light');
     const refLink = `https://t.me/${BOT_USERNAME}/app?startapp=ref_${user.tg_id}`;
@@ -201,7 +217,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#0f0f11] text-zinc-100 font-sans selection:bg-pink-500 selection:text-white pb-10">
-      {/* Верхняя плашка профиля */}
       <header className="sticky top-0 z-30 bg-[#0f0f11]/80 backdrop-blur-md border-b border-zinc-800/60 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           {activeTab !== 'catalog' ? (
@@ -241,15 +256,30 @@ export default function App() {
         </div>
       </header>
 
-      {/* Основной контент */}
       <main className="max-w-md mx-auto px-4 pt-4">
-        {/* Экран каталога */}
         {activeTab === 'catalog' && (
           <div>
             <div className="mb-4">
-              <h1 className="text-xl font-bold tracking-tight">Гардероб</h1>
-              <p className="text-xs text-zinc-400 mt-0.5">Выберите вещь, чтобы примерить её на своё фото</p>
+              <h1 className="text-xl font-bold tracking-tight">Образы дня ✨</h1>
+              <p className="text-xs text-zinc-400 mt-0.5">Обновление подборки каждые 24 часа</p>
             </div>
+
+            {/* Блок ввода ссылки или артикула WB */}
+            <form onSubmit={handleWbSubmit} className="mb-4 bg-zinc-900/80 p-2.5 rounded-2xl border border-zinc-800 flex gap-2">
+              <input
+                type="text"
+                value={wbInput}
+                onChange={(e) => setWbInput(e.target.value)}
+                placeholder="Ссылка или артикул с Wildberries..."
+                className="flex-1 bg-transparent px-3 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="px-3.5 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-semibold transition active:scale-95"
+              >
+                Найти 🔍
+              </button>
+            </form>
 
             <div className="grid grid-cols-2 gap-3">
               {ITEMS.map((item) => (
@@ -288,7 +318,6 @@ export default function App() {
               ))}
             </div>
 
-            {/* Реферальный блок */}
             <div className="mt-5 p-3.5 rounded-2xl bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-pink-500/20 flex items-center justify-between">
               <div>
                 <div className="text-xs font-semibold text-zinc-200">Нужно больше попыток?</div>
@@ -304,7 +333,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Экран загрузки фото пользователя */}
         {activeTab === 'upload' && (
           <div className="py-2">
             <h2 className="text-lg font-bold">Ваше фото</h2>
@@ -372,7 +400,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Экран ожидания примерки */}
         {activeTab === 'loading' && (
           <div className="py-24 text-center flex flex-col items-center">
             <div className="relative w-16 h-16 mb-4">
@@ -386,7 +413,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Экран готового результата */}
         {activeTab === 'result' && (
           <div className="py-2">
             <div className="flex items-center justify-between mb-3">
@@ -427,7 +453,5 @@ export default function App() {
     </div>
   );
 }
-
-    
 
  
