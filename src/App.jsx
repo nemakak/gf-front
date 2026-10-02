@@ -140,22 +140,21 @@ export default function App() {
 
   // Запуск примерки
   const runTryOn = async () => {
-    if (!userPhoto || !selectedItem) return;
+   if (!userPhoto || !selectedItem) return;
     haptic('heavy');
     setErrorMessage('');
     setActiveTab('loading');
 
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/tryon`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          initData: window.Telegram?.WebApp?.initData || '',
-          humanImg: userPhoto,
-          garmentUrl: selectedItem.url,
-          itemId: selectedItem.id
-        })
-      });
+    // Симулируем 3 секунды работы нейросети
+    setTimeout(() => {
+      // Списываем 1 попытку у пользователя
+      setUser((prev) => ({ ...prev, balance: Math.max(0, (prev.balance || 1) - 1) }));
+      
+      // Показываем красивый тестовый результат
+      setResultImage(selectedItem.url);
+      setActiveTab('result');
+    }, 3000);
+  };
 
       const data = await res.json();
       if (data.success && data.resultUrl) {
