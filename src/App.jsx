@@ -155,11 +155,22 @@ export default function App() {
     reader.readAsDataURL(file);
   };
 
+  // Тестовый режим примерки (без обращения к платному fal.ai)
   const runTryOn = async () => {
     if (!userPhoto || !selectedItem) return;
     haptic('heavy');
     setErrorMessage('');
     setActiveTab('loading');
+
+    // Имитируем работу нейросети (3 секунды)
+    setTimeout(() => {
+      // Списываем 1 попытку для проверки баланса
+      setUser((prev) => ({ ...prev, balance: Math.max(0, (prev.balance || 1) - 1) }));
+      // Показываем красивый результат
+      setResultImage(selectedItem.url);
+      setActiveTab('result');
+    }, 3000);
+  };
 
     try {
       const res = await fetch(`${BACKEND_URL}/api/tryon`, {
