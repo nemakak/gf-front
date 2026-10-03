@@ -2,13 +2,76 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>GF Styleroom</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0C0A08" />
+    <title>Style Room</title>
+
+    <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              // ФОНЫ
+              bg:         '#0C0A08',
+              bgSoft:     '#141010',
+              card:       '#1A1412',
+              cardHover:  '#221A17',
+
+              // ГРАНИЦЫ
+              border1:    '#231C18',
+              border2:    '#332822',
+              borderGlow: '#4A3A30',
+
+              // АКЦЕНТЫ
+              accent:     '#D4B595',
+              accentH:    '#E6CFB3',
+              accentSoft: '#B89876',
+              accentDeep: '#8A6E52',
+
+              // ТЕКСТ
+              title:      '#F5EDE3',
+              body:       '#D8CFC5',
+              muted:      '#8A807A',
+              muted2:     '#A89F98',
+
+              // СЕМАНТИКА
+              success:    '#7A8B5C',
+              warning:    '#C9A96E',
+              error:      '#A85F4B',
+              gold:       '#C9A96E',
+            },
+            fontFamily: {
+              serif: ['"Playfair Display"', 'Georgia', 'serif'],
+              sans:  ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            },
+            boxShadow: {
+              soft: '0 4px 20px rgba(0,0,0,0.4)',
+              card: '0 2px 12px rgba(0,0,0,0.3)',
+              glow: '0 0 24px rgba(212,181,149,0.15)',
+            },
+            letterSpacing: {
+              wider2: '0.12em',
+              wider3: '0.18em',
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
   </head>
-  <body class="bg-[#0f0f11] text-zinc-100 select-none antialiased">
+  <body class="bg-bg">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
