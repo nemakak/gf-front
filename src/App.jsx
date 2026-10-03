@@ -36,7 +36,7 @@ function compressImage(file, maxSide = 1000) {
   });
 }
 
-// ========== PRODUCT IMAGE с многоуровневым fallback ==========
+// ========== PRODUCT IMAGE с многоуровневым fallback + прокси ==========
 function ProductImage({ src, fallback, alt, className = '' }) {
   const [attempt, setAttempt] = useState(0);
 
@@ -51,13 +51,12 @@ function ProductImage({ src, fallback, alt, className = '' }) {
 
     const base = src && src.replace(/\/images\/big\/\d+\.(webp|jpg|png).*$/, '');
     if (base) {
-      for (let n = 2; n <= 3; n++) {
+      for (let n = 1; n <= 3; n++) {
         const uWebp = `${base}/images/big/${n}.webp`;
         add(uWebp);
         add(`${BACKEND}/api/img?url=${encodeURIComponent(uWebp)}`);
         const uJpg = `${base}/images/big/${n}.jpg`;
         add(uJpg);
-        add(`${BACKEND}/api/img?url=${encodeURIComponent(uJpg)}`);
       }
       const uSm = `${base}/images/small/1.webp`;
       add(uSm);
