@@ -36,26 +36,40 @@ function compressImage(file, maxSide = 1000) {
   });
 }
 
-// ========== PRODUCT IMAGE с многоуровневым fallback ==========
+// ========== PRODUCT IMAGE с многоуровневым fallback + прокси ==========
 function ProductImage({ src, fallback, alt, className = '' }) {
   const [attempt, setAttempt] = useState(0);
 
-  // Строим цепочку: original → …/big/1.webp → …/big/2.webp → …/big/3.webp → fallback → заглушка
   const candidates = (() => {
     const list = [];
-    if (src) list.push(src);
+    const add = (u) => { if (u && !list.includes(u)) list.push(u); };
+
+    if (src) {
+      add(src);
+      add(`${BACKEND}/api/img?url=${encodeURIComponent(src)}`);
+    }
 
     const base = src && src.replace(/\/images\/big\/\d+\.(webp|jpg|png).*$/, '');
     if (base) {
-      for (let n = 1; n <= 3; n++) {
-        const u = `${base}/images/big/${n}.webp`;
-        if (!list.includes(u)) list.push(u);
+      for (let n = 2; n <= 3; n++) {
+        const uWebp = `${base}/images/big/${n}.webp`;
+        add(uWebp);
+        add(`${BACKEND}/api/img?url=${encodeURIComponent(uWebp)}`);
+        const uJpg = `${base}/images/big/${n}.jpg`;
+        add(uJpg);
+        add(`${BACKEND}/api/img?url=${encodeURIComponent(uJpg)}`);
       }
+      const uSm = `${base}/images/small/1.webp`;
+      add(uSm);
+      add(`${BACKEND}/api/img?url=${encodeURIComponent(uSm)}`);
     }
 
-    if (fallback && !list.includes(fallback)) list.push(fallback);
+    if (fallback) {
+      add(fallback);
+      add(`${BACKEND}/api/img?url=${encodeURIComponent(fallback)}`);
+    }
 
-    list.push('https://via.placeholder.com/400x500/1A1412/D4B595?text=Style+Room');
+    add('https://via.placeholder.com/400x500/1A1412/D4B595?text=Style+Room');
     return list;
   })();
 
@@ -391,84 +405,4 @@ export default function App() {
                 alt={selected.name} className="w-full h-full" />
             </div>
             <div className="p-4">
-              <div className="text-sm font-medium">{selected.name}</div>
-              <div className="text-xs text-muted mt-1">{selected.price}</div>
-            </div>
-          </div>
-
-          <div className="text-[10px] uppercase tracking-wider2 text-muted mb-3">Ваше фото</div>
-
-          <button onClick={() => fileRef.current?.click()}
-            className="w-full bg-card border border-dashed border-border2 hover:border-accentSoft rounded-2xl py-8 text-sm text-muted2 mb-3 flex flex-col items-center gap-2">
-            <span className="text-2xl">{humanImg ? '✓' : '📷'}</span>
-            <span>{humanImg ? 'Фото загружено' : 'Загрузить фото в полный рост'}</span>
-          </button>
-          <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
-
-          {humanImg && (
-            <img src={humanImg} alt="preview"
-              className="w-full max-h-72 object-contain rounded-2xl mb-4 border border-border1" />
-          )}
-
-          <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px bg-border1" />
-            <span className="text-[10px] text-muted uppercase tracking-wider2">или</span>
-            <div className="flex-1 h-px bg-border1" />
-          </div>
-
-          <input value={wbLink} onChange={(e) => setWbLink(e.target.value)}
-            placeholder="Ссылка на фото"
-            className="w-full bg-card border border-border1 rounded-2xl px-4 py-3 text-sm mb-5 outline-none focus:border-accentSoft placeholder:text-muted" />
-
-          <button onClick={runTryOn} disabled={!humanImg && !wbLink}
-            className="w-full bg-accent hover:bg-accentH disabled:opacity-30 disabled:cursor-not-allowed text-bg py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2">
-            Запустить примерку
-          </button>
-        </main>
-      )}
-
-      {tab === 'loading' && (
-        <div className="min-h-[75vh] flex flex-col items-center justify-center px-8 text-center">
-          <div className="spinner mb-8" />
-          <div className="font-serif text-xl mb-2">Подбираем образ</div>
-          <div className="text-xs text-muted">Обычно занимает 10–20 секунд</div>
-        </div>
-      )}
-
-      {tab === 'result' && resultImage && (
-        <main className="px-5 pt-5 animate-fade-in">
-          <div className="text-[10px] uppercase tracking-wider2 text-muted mb-3">Результат</div>
-          <img src={resultImage} alt="result"
-            className="w-full rounded-2xl border border-border1 shadow-soft mb-5" />
-          <a href={`https://www.wildberries.ru/catalog/${selected?.wb_id}/detail.aspx`}
-            target="_blank" rel="noreferrer"
-            className="block w-full bg-accent hover:bg-accentH text-bg text-center py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2 mb-3">
-            Купить на Wildberries
-          </a>
-          <button onClick={resetTryOn}
-            className="w-full border border-border2 text-muted2 py-4 rounded-2xl text-sm">
-            Вернуться в каталог
-          </button>
-        </main>
-      )}
-
-      {viral && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-5 animate-fade-in">
-          <div className="bg-card border border-border2 rounded-3xl p-7 max-w-sm w-full text-center shadow-soft">
-            <div className="text-3xl mb-4">✨</div>
-            <h3 className="font-serif text-2xl mb-3">Понравилось?</h3>
-            <p className="text-xs text-muted2 leading-relaxed mb-6">
-              Поделись с подругой — как только она сделает первую примерку, вы обе получите <span className="text-accent">+3 попытки</span>
-            </p>
-            <button onClick={() => { setViral(false); share(); }}
-              className="w-full bg-accent text-bg py-3.5 rounded-2xl text-xs font-medium uppercase tracking-wider2 mb-3">
-              Поделиться
-            </button>
-            <button onClick={() => setViral(false)}
-              className="text-xs text-muted tracking-wide">Закрыть</button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+              <div className="
