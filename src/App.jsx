@@ -4,12 +4,9 @@ const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://gf-backend-uc51.onr
 const CATEGORIES = ['Все', 'Платья', 'Верхняя одежда', 'Жакеты', 'Трикотаж', 'Брюки', 'Топы'];
 
 const FALLBACK_CATALOG = [
-  { id: 1, wb_id: 12345678, name: 'Платье миди бежевое', price: '3 490 ₽', category: 'Платья',
-    image_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600',
-    fallback_url: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600' },
-  { id: 2, wb_id: 87654321, name: 'Топ корсетный', price: '1 290 ₽', category: 'Топы',
-    image_url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=600',
-    fallback_url: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=600' },
+  { id: 1, wb_id: 183581368, name: 'Платье миди трикотажное', price: '3 990 ₽', category: 'Платья',
+    image_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/1.webp',
+    fallback_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/2.webp' },
 ];
 
 function haptic(type = 'light') {
@@ -39,18 +36,97 @@ function compressImage(file, maxSide = 1000) {
   });
 }
 
-function ProductImage({ src, fallback, alt }) {
-  const [url, setUrl] = useState(src);
-  useEffect(() => { setUrl(src); }, [src]);
+// ========== PRODUCT IMAGE с многоуровневым fallback ==========
+function ProductImage({ src, fallback, alt, className = '' }) {
+  const [attempt, setAttempt] = useState(0);
+
+  // Строим цепочку: original → …/big/1.webp → …/big/2.webp → …/big/3.webp → fallback → заглушка
+  const candidates = (() => {
+    const list = [];
+    if (src) list.push(src);
+
+    const base = src && src.replace(/\/images\/big\/\d+\.(webp|jpg|png).*$/, '');
+    if (base) {
+      for (let n = 1; n <= 3; n++) {
+        const u = `${base}/images/big/${n}.webp`;
+        if (!list.includes(u)) list.push(u);
+      }
+    }
+
+    if (fallback && !list.includes(fallback)) list.push(fallback);
+
+    list.push('https://via.placeholder.com/400x500/1A1412/D4B595?text=Style+Room');
+    return list;
+  })();
+
+  const url = candidates[attempt] || candidates[candidates.length - 1];
+
   return (
-    <img src={url} alt={alt}
-      onError={() => { if (url !== fallback && fallback) setUrl(fallback); }}
-      className="w-full h-44 object-cover rounded-xl bg-card" loading="lazy" />
+    <img
+      src={url}
+      alt={alt}
+      onError={() => {
+        if (attempt < candidates.length - 1) setAttempt(attempt + 1);
+      }}
+      className={`object-cover bg-card ${className}`}
+      loading="lazy"
+    />
+  );
+}
+
+const ONBOARDING_SLIDES = [
+  { emoji: '✨', title: 'Примерь любой образ',
+    text: 'Загрузите фото в полный рост, выберите вещь — ИИ покажет, как она сидит именно на вас' },
+  { emoji: '🛍️', title: 'Актуальные тренды WB',
+    text: 'Каталог обновляется автоматически — свежие находки Wildberries всегда под рукой' },
+  { emoji: '👥', title: 'Приглашай подруг',
+    text: 'За каждую подругу, которая сделает первую примерку, вы обе получите +3 попытки' },
+];
+
+function Onboarding({ onDone }) {
+  const [slide, setSlide] = useState(0);
+  const isLast = slide === ONBOARDING_SLIDES.length - 1;
+  const s = ONBOARDING_SLIDES[slide];
+
+  const next = () => {
+    haptic('medium');
+    if (isLast) onDone();
+    else setSlide(i => i + 1);
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col px-8 pt-16 pb-10 bg-bg">
+      <div className="flex justify-center gap-2 mb-12">
+        {ONBOARDING_SLIDES.map((_, i) => (
+          <div key={i}
+            className={`h-[3px] rounded-full transition-all ${i === slide ? 'w-8 bg-accent' : 'w-2 bg-border2'}`}
+          />
+        ))}
+      </div>
+
+      <div key={slide} className="flex-1 flex flex-col items-center justify-center text-center animate-slide-up">
+        <div className="text-7xl mb-8">{s.emoji}</div>
+        <h2 className="font-serif text-3xl mb-4 leading-tight">{s.title}</h2>
+        <p className="text-sm text-muted2 leading-relaxed max-w-xs">{s.text}</p>
+      </div>
+
+      <button onClick={next}
+        className="w-full bg-accent hover:bg-accentH text-bg py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2">
+        {isLast ? 'Начать' : 'Продолжить'}
+      </button>
+
+      {!isLast && (
+        <button onClick={onDone} className="mt-4 text-xs text-muted tracking-wide">
+          Пропустить
+        </button>
+      )}
+    </div>
   );
 }
 
 export default function App() {
   const [user, setUser] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [tab, setTab] = useState('catalog');
   const [catalog, setCatalog] = useState([]);
   const [category, setCategory] = useState('Все');
@@ -69,8 +145,9 @@ export default function App() {
     const tg = window.Telegram?.WebApp;
     if (tg) {
       tg.ready(); tg.expand();
-      tg.setHeaderColor?.('#14100e');
-      tg.setBackgroundColor?.('#14100e');
+      tg.setHeaderColor?.('#0C0A08');
+      tg.setBackgroundColor?.('#0C0A08');
+      tg.disableVerticalSwipes?.();
     }
     const initData = tg?.initData || '';
     const startParam = tg?.initDataUnsafe?.start_param;
@@ -81,13 +158,31 @@ export default function App() {
       body: JSON.stringify({ initData, refCode: startParam }),
     })
       .then(r => r.json())
-      .then(d => d.success ? setUser(d.user) : setUser({
-        tg_id: 0, first_name: 'Гость', username: 'guest', photo_url: '', balance: 3,
-      }))
-      .catch(() => setUser({
-        tg_id: 0, first_name: 'Гость', username: 'guest', photo_url: '', balance: 3,
-      }));
+      .then(d => {
+        if (d.success) {
+          setUser(d.user);
+          const localDone = localStorage.getItem('gf_onboarded') === '1';
+          if (!d.user.onboarded && !localDone) setShowOnboarding(true);
+        } else setUserGuest();
+      })
+      .catch(() => setUserGuest());
   }, []);
+
+  const setUserGuest = () => setUser({
+    tg_id: 0, first_name: 'Гость', username: 'guest', photo_url: '', balance: 3, onboarded: true,
+  });
+
+  const finishOnboarding = async () => {
+    localStorage.setItem('gf_onboarded', '1');
+    setShowOnboarding(false);
+    try {
+      await fetch(`${BACKEND}/api/onboarded`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
+      });
+    } catch {}
+  };
 
   const loadCatalog = useCallback(async (cat) => {
     try {
@@ -101,7 +196,7 @@ export default function App() {
   useEffect(() => { loadCatalog(category); }, [category, loadCatalog]);
 
   const visible = catalog.filter(p =>
-    (!search || p.name.toLowerCase().includes(search.toLowerCase()))
+    !search || p.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const share = () => {
@@ -109,16 +204,13 @@ export default function App() {
     const refLink = `https://t.me/GFstyleroom_bot/app?startapp=ref_${user?.tg_id || 0}`;
     const text = 'Смотри, какое крутое мини-приложение с примеркой одежды ✨';
     const url = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(text)}`;
-    if (window.Telegram?.WebApp?.openTelegramLink) {
-      window.Telegram.WebApp.openTelegramLink(url);
-    } else {
-      window.open(url, '_blank');
-    }
+    if (window.Telegram?.WebApp?.openTelegramLink) window.Telegram.WebApp.openTelegramLink(url);
+    else window.open(url, '_blank');
   };
 
   const onPickFile = async (e) => {
     const f = e.target.files?.[0]; if (!f) return;
-    try { setHumanImg(await compressImage(f, 1000)); showToast('Фото загружено ✓'); }
+    try { setHumanImg(await compressImage(f, 1000)); showToast('Фото загружено'); }
     catch { showToast('Не удалось обработать фото'); }
   };
 
@@ -135,16 +227,14 @@ export default function App() {
       window.Telegram.WebApp.openInvoice(d.invoiceLink, (status) => {
         if (status === 'paid') window.location.reload();
       });
-    } catch (e) { showToast('Ошибка оплаты: ' + e.message); }
+    } catch (e) { showToast('Ошибка оплаты'); }
   };
 
   const runTryOn = async () => {
     if (!selected) return showToast('Выберите товар');
     if (!humanImg && !wbLink) return showToast('Загрузите фото или ссылку');
-
     haptic('medium');
     setTab('loading');
-
     try {
       const r = await fetch(`${BACKEND}/api/tryon`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -166,222 +256,164 @@ export default function App() {
         setTab('upload');
       }
     } catch {
-      showToast('Ошибка соединения с сервером');
+      showToast('Ошибка соединения');
       setTab('upload');
     }
   };
 
-  if (!user) return (
-    <div className="min-h-screen flex items-center justify-center text-muted">
-      Загрузка…
-    </div>
-  );
+  const resetTryOn = () => {
+    setTab('catalog'); setSelected(null); setResultImage(null);
+    setHumanImg(''); setWbLink('');
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-bg">
+        <div className="spinner mb-6" />
+        <div className="text-xs text-muted tracking-wider2 uppercase">Загрузка</div>
+      </div>
+    );
+  }
+
+  if (showOnboarding) return <Onboarding onDone={finishOnboarding} />;
 
   return (
     <div className="min-h-screen bg-bg text-title pb-24">
-      {/* HEADER */}
-      <header className="sticky top-0 z-40 bg-bg/95 backdrop-blur border-b border-border1 px-4 py-3">
+      <header className="sticky top-0 z-40 bg-bg/85 backdrop-blur-md border-b border-border1 px-5 py-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img
-              src={user.photo_url || 'https://via.placeholder.com/80'}
-              alt="avatar"
-              className="w-10 h-10 rounded-full object-cover border border-border2"
-            />
+            <div className="relative">
+              <img src={user.photo_url || 'https://via.placeholder.com/80'} alt=""
+                className="w-10 h-10 rounded-full object-cover border border-border2" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-accent border-2 border-bg" />
+            </div>
             <div>
-              <div className="text-sm font-medium">{user.first_name || 'Гость'}</div>
-              <div className="text-xs text-muted">@{user.username || 'user'}</div>
+              <div className="text-sm font-medium leading-tight">{user.first_name || 'Гость'}</div>
+              <div className="text-[11px] text-muted">@{user.username || 'user'}</div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-xs px-3 py-1 rounded-full bg-accent text-bg font-semibold">
-              ✨ {user.balance ?? 0}
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1.5 rounded-full border border-border2">
+              <span className="text-[11px] text-muted mr-1.5">✨</span>
+              <span className="text-xs font-medium">{user.balance ?? 0}</span>
             </div>
-            <button
-              onClick={() => buy('pack10')}
-              className="text-xs mt-1 px-3 py-1 rounded-full border border-border2 text-accent"
-            >
-              ⭐ Купить
+            <button onClick={() => buy('pack10')}
+              className="px-3 py-1.5 rounded-full bg-accent text-bg text-xs font-medium">
+              Купить
             </button>
           </div>
         </div>
       </header>
 
-      {/* TOAST */}
       {toast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-card border border-border2 text-title text-xs px-4 py-2 rounded-full shadow-lg">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-card border border-border2 text-title text-xs px-4 py-2.5 rounded-full shadow-soft animate-fade-in">
           {toast}
         </div>
       )}
 
-      {/* CATALOG */}
       {tab === 'catalog' && (
-        <main className="px-4 pt-4">
-          <h1 className="text-xl font-semibold mb-1">Гардероб</h1>
-          <p className="text-xs text-muted mb-4">Выберите образ и примерьте за секунды</p>
-
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск по каталогу…"
-            className="w-full bg-card border border-border1 rounded-xl px-4 py-2.5 text-sm mb-3 outline-none focus:border-accent placeholder:text-muted"
-          />
-
-          <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 -mx-4 px-4">
-            {CATEGORIES.map(c => (
-              <button
-                key={c}
-                onClick={() => { haptic('light'); setCategory(c); }}
-                className={`whitespace-nowrap text-xs px-3.5 py-1.5 rounded-full border transition ${
-                  category === c
-                    ? 'bg-accent text-bg border-accent font-semibold'
-                    : 'border-border2 text-muted'
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+        <main className="px-5 pt-6">
+          <div className="mb-6">
+            <div className="text-[10px] uppercase tracking-wider2 text-muted mb-1">Коллекция</div>
+            <h1 className="font-serif text-3xl leading-tight">Гардероб</h1>
+            <p className="text-xs text-muted2 mt-1.5">Примерьте образ за несколько секунд</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {visible.map(item => (
-              <div key={item.id} className="bg-card border border-border1 rounded-2xl p-2.5">
-                <div className="relative">
-                  <ProductImage src={item.image_url} fallback={item.fallback_url} alt={item.name} />
-                  <a
-                    href={`https://www.wildberries.ru/catalog/${item.wb_id}/detail.aspx`}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-bg/80 backdrop-blur flex items-center justify-center border border-border2"
-                  >
-                    🛍️
-                  </a>
+          <div className="relative mb-4">
+            <input value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder="Поиск по каталогу"
+              className="w-full bg-card border border-border1 rounded-2xl pl-11 pr-4 py-3 text-sm outline-none focus:border-accentSoft placeholder:text-muted" />
+            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 -mx-5 px-5">
+            {CATEGORIES.map(c => {
+              const active = category === c;
+              return (
+                <button key={c} onClick={() => { haptic('light'); setCategory(c); }}
+                  className={`whitespace-nowrap text-xs px-3.5 py-2 rounded-full border flex items-center gap-1.5 ${
+                    active ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted2 hover:border-accentSoft'
+                  }`}>
+                  {active && <span className="w-1 h-1 rounded-full bg-bg" />}
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+
+          {visible.length === 0 ? (
+            <div className="text-center py-16 text-muted text-sm">Ничего не найдено</div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {visible.map(item => (
+                <div key={item.id}
+                  className="bg-card border border-border1 rounded-2xl overflow-hidden shadow-card hover:border-border2 transition">
+                  <div className="relative aspect-[3/4]">
+                    <ProductImage src={item.image_url} fallback={item.fallback_url} alt={item.name}
+                      className="w-full h-full" />
+                    <a href={`https://www.wildberries.ru/catalog/${item.wb_id}/detail.aspx`}
+                      target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}
+                      className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-bg/70 backdrop-blur flex items-center justify-center border border-border2 text-xs">
+                      🛍️
+                    </a>
+                  </div>
+                  <div className="p-3">
+                    <div className="text-xs font-medium leading-snug line-clamp-2 h-[34px]">{item.name}</div>
+                    <div className="text-[11px] text-muted mt-1.5">{item.price || '—'}</div>
+                    <button onClick={() => { haptic('light'); setSelected(item); setTab('upload'); }}
+                      className="w-full mt-3 bg-transparent border border-accentSoft text-accent hover:bg-accent hover:text-bg text-[11px] font-medium uppercase tracking-wider2 py-2.5 rounded-xl">
+                      Примерить
+                    </button>
+                  </div>
                 </div>
-                <div className="mt-2">
-                  <div className="text-xs font-medium line-clamp-2 h-8">{item.name}</div>
-                  <div className="text-xs text-muted mt-1">{item.price || '—'}</div>
-                  <button
-                    onClick={() => { haptic('light'); setSelected(item); setTab('upload'); }}
-                    className="w-full mt-2 bg-accent hover:bg-accentH text-bg text-xs font-semibold py-2 rounded-xl transition"
-                  >
-                    Примерить ✨
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={share}
-            className="w-full mt-6 border border-accent text-accent py-3 rounded-2xl text-sm font-semibold"
-          >
-            👥 Поделиться с подругой (+3)
-          </button>
-        </main>
-      )}
-
-      {/* UPLOAD */}
-      {tab === 'upload' && selected && (
-        <main className="px-4 pt-4">
-          <button onClick={() => setTab('catalog')} className="text-xs text-muted mb-3">← Назад</button>
-
-          <div className="bg-card border border-border1 rounded-2xl p-3 mb-4">
-            <ProductImage src={selected.image_url} fallback={selected.fallback_url} alt={selected.name} />
-            <div className="text-sm mt-2">{selected.name}</div>
-            <div className="text-xs text-muted">{selected.price}</div>
-          </div>
-
-          <h2 className="text-sm font-semibold mb-2">Ваше фото в полный рост</h2>
-
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="w-full bg-card border border-dashed border-border2 rounded-2xl py-6 text-sm text-muted mb-3"
-          >
-            {humanImg ? '✓ Фото загружено — заменить' : '📷 Загрузить фото'}
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            onChange={onPickFile}
-            className="hidden"
-          />
-
-          {humanImg && (
-            <img src={humanImg} alt="preview" className="w-full max-h-64 object-contain rounded-xl mb-3 border border-border1" />
+              ))}
+            </div>
           )}
 
-          <div className="text-xs text-muted text-center my-3">— или —</div>
-
-          <input
-            value={wbLink}
-            onChange={(e) => setWbLink(e.target.value)}
-            placeholder="Ссылка на фото или артикул WB"
-            className="w-full bg-card border border-border1 rounded-xl px-4 py-2.5 text-sm mb-4 outline-none focus:border-accent placeholder:text-muted"
-          />
-
-          <button
-            onClick={runTryOn}
-            disabled={!humanImg && !wbLink}
-            className="w-full bg-accent hover:bg-accentH disabled:opacity-40 disabled:cursor-not-allowed text-bg py-3.5 rounded-2xl font-semibold"
-          >
-            Запустить примерку 🪄
+          <button onClick={share}
+            className="w-full mt-8 bg-bgSoft border border-border2 text-accent py-4 rounded-2xl text-xs font-medium uppercase tracking-wider2 flex items-center justify-center gap-2">
+            <span>👥</span> Поделиться с подругой · +3
           </button>
         </main>
       )}
 
-      {/* LOADING */}
-      {tab === 'loading' && (
-        <div className="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
-          <div className="w-16 h-16 rounded-full border-2 border-border2 border-t-accent animate-spin mb-6"></div>
-          <div className="text-title font-medium">Нейросеть примеряет наряд</div>
-          <div className="text-xs text-muted mt-2">Обычно занимает 10–20 секунд</div>
-        </div>
-      )}
+      {tab === 'upload' && selected && (
+        <main className="px-5 pt-5 animate-fade-in">
+          <button onClick={() => setTab('catalog')}
+            className="text-xs text-muted mb-5 flex items-center gap-1">← Назад в каталог</button>
 
-      {/* RESULT */}
-      {tab === 'result' && resultImage && (
-        <main className="px-4 pt-4">
-          <img src={resultImage} alt="result" className="w-full rounded-2xl border border-border1 mb-4" />
-          <a
-            href={`https://www.wildberries.ru/catalog/${selected?.wb_id}/detail.aspx`}
-            target="_blank"
-            rel="noreferrer"
-            className="block w-full bg-accent hover:bg-accentH text-bg text-center py-3.5 rounded-2xl font-semibold mb-2"
-          >
-            🛒 Купить на Wildberries
-          </a>
-          <button
-            onClick={() => { setTab('catalog'); setSelected(null); setResultImage(null); setHumanImg(''); setWbLink(''); }}
-            className="w-full border border-border2 text-muted py-3 rounded-2xl text-sm"
-          >
-            Вернуться в каталог
-          </button>
-        </main>
-      )}
-
-      {/* VIRAL MODAL */}
-      {viral && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-6">
-          <div className="bg-card border border-border2 rounded-3xl p-6 max-w-xs w-full text-center">
-            <div className="text-2xl mb-2">✨</div>
-            <h3 className="font-semibold mb-2">Понравилось?</h3>
-            <p className="text-xs text-muted mb-5">
-              Поделись с подругой — как только она сделает первую примерку, вы обе получите +3 попытки
-            </p>
-            <button
-              onClick={() => { setViral(false); share(); }}
-              className="w-full bg-accent text-bg py-3 rounded-2xl text-sm font-semibold mb-2"
-            >
-              Поделиться
-            </button>
-            <button onClick={() => setViral(false)} className="text-xs text-muted">
-              Закрыть
-            </button>
+          <div className="bg-card border border-border1 rounded-2xl overflow-hidden mb-6">
+            <div className="aspect-[4/3]">
+              <ProductImage src={selected.image_url} fallback={selected.fallback_url}
+                alt={selected.name} className="w-full h-full" />
+            </div>
+            <div className="p-4">
+              <div className="text-sm font-medium">{selected.name}</div>
+              <div className="text-xs text-muted mt-1">{selected.price}</div>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
+
+          <div className="text-[10px] uppercase tracking-wider2 text-muted mb-3">Ваше фото</div>
+
+          <button onClick={() => fileRef.current?.click()}
+            className="w-full bg-card border border-dashed border-border2 hover:border-accentSoft rounded-2xl py-8 text-sm text-muted2 mb-3 flex flex-col items-center gap-2">
+            <span className="text-2xl">{humanImg ? '✓' : '📷'}</span>
+            <span>{humanImg ? 'Фото загружено' : 'Загрузить фото в полный рост'}</span>
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
+
+          {humanImg && (
+            <img src={humanImg} alt="preview"
+              className="w-full max-h-72 object-contain rounded-2xl mb-4 border border-border1" />
+          )}
+
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-border1" />
+            <span className="text-[10px] text-muted uppercase tracking-wider2">или</span>
+            <div className="flex-1 h-px bg-border1" />
+          </div>
+
+          <input value={wbLink} onChange={(e) => setWb
