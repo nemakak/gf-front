@@ -1,10 +1,21 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://gf-backend-uc51.onrender.com';
-const CATEGORIES = ['Все', 'Платья', 'Верхняя одежда', 'Жакеты', 'Трикотаж', 'Брюки', 'Топы'];
+
+// ===== НОВЫЕ КАТЕГОРИИ =====
+const CATEGORIES = [
+  { key: 'all',       label: 'Все' },
+  { key: 'top',       label: 'Верх' },
+  { key: 'bottom',    label: 'Низ' },
+  { key: 'outerwear', label: 'Верхняя одежда' },
+  { key: 'suit',      label: 'Костюмы' },
+  { key: 'dress',     label: 'Платья' },
+  { key: 'shoes',     label: 'Обувь' },
+  { key: 'accessory', label: 'Аксессуары' },
+];
 
 const FALLBACK_CATALOG = [
-  { id: 1, wb_id: 183581368, name: 'Платье миди трикотажное', price: '≈ 3 990 ₽', category: 'Платья',
+  { id: 1, wb_id: 183581368, name: 'Платье миди трикотажное', price: '3 990 ₽', category: 'dress',
     image_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/1.webp',
     fallback_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/2.webp' },
 ];
@@ -36,7 +47,13 @@ function compressImage(file, maxSide = 1000) {
   });
 }
 
-// ========== PRODUCT IMAGE с многоуровневым fallback + прокси ==========
+// ========== PRODUCT IMAGE с обходом блокировки WB ==========
+// Цепочка: wsrv.nl → прямая ссылка → backend прокси → 2.webp → 3.webp → заглушка
+function proxyViaWsrv(url) {
+  if (!url) return null;
+  return `https://wsrv.nl/?url=${encodeURIComponent(url)}`;
+}
+
 function ProductImage({ src, fallback, alt, className = '' }) {
   const [attempt, setAttempt] = useState(0);
 
@@ -44,31 +61,34 @@ function ProductImage({ src, fallback, alt, className = '' }) {
     const list = [];
     const add = (u) => { if (u && !list.includes(u)) list.push(u); };
 
-    if (src) {
-      add(src);
-      add(`${BACKEND}/api/img?url=${encodeURIComponent(src)}`);
-    }
+    // 1. wsrv.nl (самый надёжный — обходит geo-блок)
+    if (src) add(proxyViaWsrv(src));
+    // 2. Прямая ссылка
+    if (src) add(src);
+    // 3. Через наш backend
+    if (src) add(`${BACKEND}/api/img?url=${encodeURIComponent(src)}`);
 
+    // 4. Альтернативные номера картинок
     const base = src && src.replace(/\/images\/big\/\d+\.(webp|jpg|png).*$/, '');
     if (base) {
-      for (let n = 1; n <= 3; n++) {
-        const uWebp = `${base}/images/big/${n}.webp`;
-        add(uWebp);
-        add(`${BACKEND}/api/img?url=${encodeURIComponent(uWebp)}`);
-        const uJpg = `${base}/images/big/${n}.jpg`;
-        add(uJpg);
+      for (let n = 2; n <= 3; n++) {
+        const u = `${base}/images/big/${n}.webp`;
+        add(proxyViaWsrv(u));
+        add(u);
       }
       const uSm = `${base}/images/small/1.webp`;
+      add(proxyViaWsrv(uSm));
       add(uSm);
-      add(`${BACKEND}/api/img?url=${encodeURIComponent(uSm)}`);
     }
 
+    // 5. Fallback из БД
     if (fallback) {
+      add(proxyViaWsrv(fallback));
       add(fallback);
-      add(`${BACKEND}/api/img?url=${encodeURIComponent(fallback)}`);
     }
 
-    add('https://via.placeholder.com/400x500/1A1412/D4B595?text=Style+Room');
+    // 6. Заглушка
+    add('https://placehold.co/400x500/1A1412/D4B595?text=Style+Room');
     return list;
   })();
 
@@ -142,7 +162,7 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [tab, setTab] = useState('catalog');
   const [catalog, setCatalog] = useState([]);
-  const [category, setCategory] = useState('Все');
+  const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
   const [humanImg, setHumanImg] = useState('');
@@ -199,7 +219,7 @@ export default function App() {
 
   const loadCatalog = useCallback(async (cat) => {
     try {
-      const q = cat && cat !== 'Все' ? `?category=${encodeURIComponent(cat)}` : '';
+      const q = cat && cat !== 'all' ? `?category=${encodeURIComponent(cat)}` : '';
       const r = await fetch(`${BACKEND}/api/catalog${q}`);
       const d = await r.json();
       setCatalog(d.success && d.items.length ? d.items : FALLBACK_CATALOG);
@@ -211,6 +231,9 @@ export default function App() {
   const visible = catalog.filter(p =>
     !search || p.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Проверяем, аксессуар ли выбран
+  const isAccessory = selected?.category === 'accessory';
 
   const share = () => {
     haptic('medium');
@@ -245,7 +268,7 @@ export default function App() {
 
   const runTryOn = async () => {
     if (!selected) return showToast('Выберите товар');
-    if (!humanImg && !wbLink) return showToast('Загрузите фото или ссылку');
+    if (!humanImg && !wbLink) return showToast('Загрузите фото');
     haptic('medium');
     setTab('loading');
     try {
@@ -256,6 +279,7 @@ export default function App() {
           humanImg: humanImg || wbLink,
           garmentUrl: selected.image_url,
           itemId: selected.id,
+          isAccessory,
         }),
       });
       const d = await r.json();
@@ -296,7 +320,7 @@ export default function App() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <img src={user.photo_url || 'https://via.placeholder.com/80'} alt=""
+              <img src={user.photo_url || 'https://placehold.co/80x80/1A1412/D4B595?text=U'} alt=""
                 className="w-10 h-10 rounded-full object-cover border border-border2" />
               <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-accent border-2 border-bg" />
             </div>
@@ -344,14 +368,14 @@ export default function App() {
 
           <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 -mx-5 px-5">
             {CATEGORIES.map(c => {
-              const active = category === c;
+              const active = category === c.key;
               return (
-                <button key={c} onClick={() => { haptic('light'); setCategory(c); }}
+                <button key={c.key} onClick={() => { haptic('light'); setCategory(c.key); }}
                   className={`whitespace-nowrap text-xs px-3.5 py-2 rounded-full border flex items-center gap-1.5 ${
                     active ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted2 hover:border-accentSoft'
                   }`}>
                   {active && <span className="w-1 h-1 rounded-full bg-bg" />}
-                  {c}
+                  {c.label}
                 </button>
               );
             })}
@@ -375,7 +399,7 @@ export default function App() {
                   </div>
                   <div className="p-3">
                     <div className="text-[9px] uppercase tracking-wider2 text-accentSoft mb-1">
-                      {item.category || 'Одежда'}
+                      {CATEGORIES.find(x => x.key === item.category)?.label || 'Одежда'}
                     </div>
                     <div className="font-serif text-[13px] leading-tight line-clamp-2 h-[34px] text-title">
                       {item.name}
@@ -413,7 +437,7 @@ export default function App() {
             </div>
             <div className="p-4">
               <div className="text-[10px] uppercase tracking-wider2 text-accentSoft mb-1">
-                {selected.category || 'Одежда'}
+                {CATEGORIES.find(x => x.key === selected.category)?.label || 'Одежда'}
               </div>
               <div className="font-serif text-base leading-tight text-title">{selected.name}</div>
               <div className="text-xs text-muted mt-1.5 flex items-center gap-1">
@@ -424,12 +448,31 @@ export default function App() {
             </div>
           </div>
 
-          <div className="text-[10px] uppercase tracking-wider2 text-muted mb-3">Ваше фото</div>
+          {/* Если аксессуар — показываем подсказку про фото лица */}
+          {isAccessory ? (
+            <div className="bg-card border border-border2 rounded-2xl p-4 mb-4">
+              <div className="text-[10px] uppercase tracking-wider2 text-accent mb-2">📸 Для аксессуаров</div>
+              <div className="text-xs text-title leading-relaxed">
+                Загрузите <span className="text-accent">фото лица</span> — очки, повязки и ободки будут примерены прямо на него.
+              </div>
+            </div>
+          ) : (
+            <div className="bg-card border border-border2 rounded-2xl p-4 mb-4">
+              <div className="text-[10px] uppercase tracking-wider2 text-accent mb-2">📸 Для одежды</div>
+              <div className="text-xs text-title leading-relaxed">
+                Загрузите <span className="text-accent">фото в полный рост</span> — вещь будет примерена на вас.
+              </div>
+            </div>
+          )}
+
+          <div className="text-[10px] uppercase tracking-wider2 text-muted mb-3">
+            {isAccessory ? 'Ваше фото лица' : 'Ваше фото в полный рост'}
+          </div>
 
           <button onClick={() => fileRef.current?.click()}
             className="w-full bg-card border border-dashed border-border2 hover:border-accentSoft rounded-2xl py-8 text-sm text-muted2 mb-3 flex flex-col items-center gap-2">
             <span className="text-2xl">{humanImg ? '✓' : '📷'}</span>
-            <span>{humanImg ? 'Фото загружено' : 'Загрузить фото в полный рост'}</span>
+            <span>{humanImg ? 'Фото загружено' : (isAccessory ? 'Загрузить фото лица' : 'Загрузить фото в полный рост')}</span>
           </button>
           <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
 
@@ -438,19 +481,9 @@ export default function App() {
               className="w-full max-h-72 object-contain rounded-2xl mb-4 border border-border1" />
           )}
 
-          <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px bg-border1" />
-            <span className="text-[10px] text-muted uppercase tracking-wider2">или</span>
-            <div className="flex-1 h-px bg-border1" />
-          </div>
-
-          <input value={wbLink} onChange={(e) => setWbLink(e.target.value)}
-            placeholder="Ссылка на фото"
-            className="w-full bg-card border border-border1 rounded-2xl px-4 py-3 text-sm mb-5 outline-none focus:border-accentSoft placeholder:text-muted" />
-
           <button onClick={runTryOn} disabled={!humanImg && !wbLink}
-            className="w-full bg-accent hover:bg-accentH disabled:opacity-30 disabled:cursor-not-allowed text-bg py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2">
-            Запустить примерку
+            className="w-full bg-accent hover:bg-accentH disabled:opacity-30 disabled:cursor-not-allowed text-bg py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2 mt-4">
+            {isAccessory ? 'Примерить аксессуар' : 'Запустить примерку'}
           </button>
         </main>
       )}
