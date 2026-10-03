@@ -4,7 +4,7 @@ const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://gf-backend-uc51.onr
 const CATEGORIES = ['Все', 'Платья', 'Верхняя одежда', 'Жакеты', 'Трикотаж', 'Брюки', 'Топы'];
 
 const FALLBACK_CATALOG = [
-  { id: 1, wb_id: 183581368, name: 'Платье миди трикотажное', price: '3 990 ₽', category: 'Платья',
+  { id: 1, wb_id: 183581368, name: 'Платье миди трикотажное', price: '≈ 3 990 ₽', category: 'Платья',
     image_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/1.webp',
     fallback_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/2.webp' },
 ];
@@ -36,7 +36,7 @@ function compressImage(file, maxSide = 1000) {
   });
 }
 
-// ========== PRODUCT IMAGE с многоуровневым fallback + прокси ==========
+// ========== PRODUCT IMAGE с многоуровневым fallback ==========
 function ProductImage({ src, fallback, alt, className = '' }) {
   const [attempt, setAttempt] = useState(0);
 
@@ -375,8 +375,16 @@ export default function App() {
                     </a>
                   </div>
                   <div className="p-3">
-                    <div className="text-xs font-medium leading-snug line-clamp-2 h-[34px]">{item.name}</div>
-                    <div className="text-[11px] text-muted mt-1.5">{item.price || '—'}</div>
+                    <div className="text-[9px] uppercase tracking-wider2 text-accentSoft mb-1">
+                      {item.category || 'Одежда'}
+                    </div>
+                    <div className="font-serif text-[13px] leading-tight line-clamp-2 h-[34px] text-title">
+                      {item.name}
+                    </div>
+                    <div className="text-[11px] text-muted mt-1.5 flex items-center gap-1">
+                      <span className="text-accent">≈</span>
+                      <span>{item.price ? item.price.replace(/^≈\s*/, '') : 'цена на WB'}</span>
+                    </div>
                     <button onClick={() => { haptic('light'); setSelected(item); setTab('upload'); }}
                       className="w-full mt-3 bg-transparent border border-accentSoft text-accent hover:bg-accent hover:text-bg text-[11px] font-medium uppercase tracking-wider2 py-2.5 rounded-xl">
                       Примерить
@@ -405,8 +413,15 @@ export default function App() {
                 alt={selected.name} className="w-full h-full" />
             </div>
             <div className="p-4">
-              <div className="text-sm font-medium">{selected.name}</div>
-              <div className="text-xs text-muted mt-1">{selected.price}</div>
+              <div className="text-[10px] uppercase tracking-wider2 text-accentSoft mb-1">
+                {selected.category || 'Одежда'}
+              </div>
+              <div className="font-serif text-base leading-tight text-title">{selected.name}</div>
+              <div className="text-xs text-muted mt-1.5 flex items-center gap-1">
+                <span className="text-accent">≈</span>
+                <span>{selected.price ? selected.price.replace(/^≈\s*/, '') : 'цена на WB'}</span>
+                <span className="text-[10px] ml-1">(может меняться)</span>
+              </div>
             </div>
           </div>
 
@@ -441,48 +456,4 @@ export default function App() {
         </main>
       )}
 
-      {tab === 'loading' && (
-        <div className="min-h-[75vh] flex flex-col items-center justify-center px-8 text-center">
-          <div className="spinner mb-8" />
-          <div className="font-serif text-xl mb-2">Подбираем образ</div>
-          <div className="text-xs text-muted">Обычно занимает 10–20 секунд</div>
-        </div>
-      )}
-
-      {tab === 'result' && resultImage && (
-        <main className="px-5 pt-5 animate-fade-in">
-          <div className="text-[10px] uppercase tracking-wider2 text-muted mb-3">Результат</div>
-          <img src={resultImage} alt="result"
-            className="w-full rounded-2xl border border-border1 shadow-soft mb-5" />
-          <a href={`https://www.wildberries.ru/catalog/${selected?.wb_id}/detail.aspx`}
-            target="_blank" rel="noreferrer"
-            className="block w-full bg-accent hover:bg-accentH text-bg text-center py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2 mb-3">
-            Купить на Wildberries
-          </a>
-          <button onClick={resetTryOn}
-            className="w-full border border-border2 text-muted2 py-4 rounded-2xl text-sm">
-            Вернуться в каталог
-          </button>
-        </main>
-      )}
-
-      {viral && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-5 animate-fade-in">
-          <div className="bg-card border border-border2 rounded-3xl p-7 max-w-sm w-full text-center shadow-soft">
-            <div className="text-3xl mb-4">✨</div>
-            <h3 className="font-serif text-2xl mb-3">Понравилось?</h3>
-            <p className="text-xs text-muted2 leading-relaxed mb-6">
-              Поделись с подругой — как только она сделает первую примерку, вы обе получите <span className="text-accent">+3 попытки</span>
-            </p>
-            <button onClick={() => { setViral(false); share(); }}
-              className="w-full bg-accent text-bg py-3.5 rounded-2xl text-xs font-medium uppercase tracking-wider2 mb-3">
-              Поделиться
-            </button>
-            <button onClick={() => setViral(false)}
-              className="text-xs text-muted tracking-wide">Закрыть</button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+     
