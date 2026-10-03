@@ -95,7 +95,6 @@ function ProductImage({ src, fallback, alt, className = '' }) {
   );
 }
 
-// ===================== КАРТОЧКА ТОВАРА =====================
 function ProductCard({ item, onPick }) {
   return (
     <button
@@ -128,7 +127,6 @@ function ProductCard({ item, onPick }) {
   );
 }
 
-// ===================== ЭКРАН ПОДПИСОК =====================
 function SubscriptionsScreen({ onBack, onBuy }) {
   const [expanded, setExpanded] = useState('pro');
   return (
@@ -191,7 +189,6 @@ function SubscriptionsScreen({ onBack, onBuy }) {
   );
 }
 
-// ===================== ЭКРАН ПОКУПКИ ПОПЫТОК =====================
 function BuyTriesScreen({ onBack, onBuy, user }) {
   const [count, setCount] = useState(5);
   const total = count * 5;
@@ -204,7 +201,6 @@ function BuyTriesScreen({ onBack, onBuy, user }) {
           <div className="font-serif text-2xl leading-tight">Попытки</div>
         </div>
       </div>
-
       <div className="bg-card border border-border1 rounded-3xl p-6 mb-5 text-center">
         <div className="text-[10px] uppercase tracking-wider2 text-muted mb-2">Сколько примерок?</div>
         <div className="flex items-center justify-center gap-4 mb-4">
@@ -226,7 +222,6 @@ function BuyTriesScreen({ onBack, onBuy, user }) {
         <div className="text-3xl font-serif text-title mt-1">{total}⭐️</div>
         <div className="text-[10px] text-muted mt-2">1 примерка = 5⭐️</div>
       </div>
-
       <div className="bg-card border border-border1 rounded-2xl p-4 mb-5">
         <div className="text-[10px] uppercase tracking-wider2 text-accentSoft mb-2">У вас сейчас</div>
         <div className="flex items-center justify-between">
@@ -234,7 +229,6 @@ function BuyTriesScreen({ onBack, onBuy, user }) {
           <span className="text-lg font-serif text-accent">{user?.balance ?? 0}</span>
         </div>
       </div>
-
       <button onClick={() => { haptic('medium'); onBuy(count); }}
         className="w-full bg-accent hover:bg-accentH text-bg py-4 rounded-2xl text-sm font-bold uppercase tracking-wider2 active:scale-[0.98] transition">
         Купить {count} за {total}⭐️
@@ -243,11 +237,9 @@ function BuyTriesScreen({ onBack, onBuy, user }) {
   );
 }
 
-// ===================== ИСТОРИЯ ПРИМЕРОК =====================
 function HistoryScreen({ onBack }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const initData = window.Telegram?.WebApp?.initData || '';
     fetch(`${BACKEND}/api/history`, {
@@ -279,9 +271,7 @@ function HistoryScreen({ onBack }) {
           <div className="font-serif text-2xl leading-tight">Мои примерки</div>
         </div>
       </div>
-
       {loading && <div className="text-center py-16 text-muted text-sm">Загрузка…</div>}
-
       {!loading && items.length === 0 && (
         <div className="text-center py-16">
           <div className="text-5xl mb-4">👗</div>
@@ -289,7 +279,6 @@ function HistoryScreen({ onBack }) {
           <div className="text-xs text-muted">Сделайте первую примерку</div>
         </div>
       )}
-
       <div className="grid grid-cols-2 gap-3">
         {items.map(it => (
           <div key={it.id} className="bg-card border border-border1 rounded-2xl overflow-hidden">
@@ -315,7 +304,6 @@ function HistoryScreen({ onBack }) {
   );
 }
 
-// ===================== ПРОФИЛЬ =====================
 function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
   const balance = user?.balance || 0;
   const ownTries = user?.own_tries || 0;
@@ -327,7 +315,6 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
         <div className="text-[10px] uppercase tracking-wider2 text-muted mb-1">Аккаунт</div>
         <h1 className="font-serif text-3xl leading-tight">Профиль</h1>
       </div>
-
       <div className="bg-card border border-border1 rounded-3xl p-5 mb-4">
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -353,7 +340,6 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
           </div>
         </div>
       </div>
-
       <div className="grid grid-cols-2 gap-3 mb-4">
         <button onClick={onOpenBuyTries} className="bg-card border border-border1 hover:border-accentSoft active:scale-[0.98] rounded-2xl p-4 text-left transition relative">
           <div className="text-2xl mb-1">👗</div>
@@ -367,7 +353,6 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
           <div className="text-[10px] uppercase tracking-wider2 text-muted mt-2">Своих товаров</div>
         </div>
       </div>
-
       <div className="space-y-2">
         <button onClick={onOpenHistory}
           className="w-full bg-card border border-border1 hover:border-accentSoft active:scale-[0.99] rounded-2xl px-4 py-4 flex items-center justify-between transition">
@@ -380,7 +365,6 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
           </div>
           <span className="text-muted">→</span>
         </button>
-
         <button onClick={onOpenSubs}
           className="w-full bg-card border border-border1 hover:border-accentSoft active:scale-[0.99] rounded-2xl px-4 py-4 flex items-center justify-between transition">
           <div className="flex items-center gap-3">
@@ -392,7 +376,6 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
           </div>
           <span className="text-muted">→</span>
         </button>
-
         <button onClick={onOpenBuyTries}
           className="w-full bg-card border border-border1 hover:border-accentSoft active:scale-[0.99] rounded-2xl px-4 py-4 flex items-center justify-between transition">
           <div className="flex items-center gap-3">
@@ -405,19 +388,16 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
           <span className="text-muted">→</span>
         </button>
       </div>
-
       <div className="text-center text-[10px] text-muted pt-6">Style Room · v1.0</div>
     </main>
   );
 }
 
-// ===================== ПОИСК =====================
 function SearchScreen({ catalog, onPick }) {
   const [q, setQ] = useState('');
   const inputRef = useRef(null);
   useEffect(() => { inputRef.current?.focus(); }, []);
   const results = q.trim() ? catalog.filter(p => p.name.toLowerCase().includes(q.toLowerCase().trim())) : [];
-
   return (
     <main className="px-5 pt-6 animate-fade-in pb-24">
       <div className="mb-6">
@@ -452,7 +432,6 @@ function SearchScreen({ catalog, onPick }) {
   );
 }
 
-// ===================== ОНБОРДИНГ =====================
 const SLIDES = [
   { emoji: '✨', title: 'Примерь любой образ', text: 'Загрузите фото в полный рост, выберите вещь — ИИ покажет, как она сидит именно на вас' },
   { emoji: '🛍️', title: 'Актуальные тренды WB', text: 'Каталог обновляется автоматически — свежие находки Wildberries всегда под рукой' },
@@ -482,7 +461,6 @@ function Onboarding({ onDone }) {
   );
 }
 
-// ===================== НИЖНЕЕ МЕНЮ =====================
 function BottomNav({ active, onChange }) {
   const items = [
     { key: 'catalog', label: 'Разделы',  emoji: '🗂' },
@@ -510,12 +488,11 @@ function BottomNav({ active, onChange }) {
   );
 }
 
-// ===================== ГЛАВНЫЙ КОМПОНЕНТ =====================
 export default function App() {
   const [user, setUser] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [tab, setTab] = useState('catalog');
-  const [screen, setScreen] = useState(null); // null | 'subs' | 'buyTries' | 'history'
+  const [screen, setScreen] = useState(null);
   const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState('all');
@@ -692,12 +669,18 @@ export default function App() {
                 <div className="text-[11px] text-muted">@{user.username || 'user'}</div>
               </div>
             </button>
-            <button onClick={() => { haptic('light'); setScreen('buyTries'); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border2 active:scale-95 transition">
-              <span className="text-[11px] text-muted">✨</span>
-              <span className="text-xs font-medium">{user.balance ?? 0}</span>
-              <span className="text-accent text-sm font-bold leading-none">+</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => { haptic('light'); setScreen('buyTries'); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border2 active:scale-95 transition">
+                <span className="text-[11px] text-muted">✨</span>
+                <span className="text-xs font-medium">{user.balance ?? 0}</span>
+                <span className="text-accent text-sm font-bold leading-none">+</span>
+              </button>
+              <button onClick={() => { haptic('medium'); setScreen('subs'); }}
+                className="px-3 py-1.5 rounded-full bg-accent text-bg text-xs font-bold active:scale-95 transition">
+                💎
+              </button>
+            </div>
           </div>
         </header>
       )}
