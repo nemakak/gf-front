@@ -18,14 +18,9 @@ const FALLBACK_CATALOG = [
     fallback_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/2.webp' },
 ];
 
-// ====== ПОДПИСКИ ======
 const SUBSCRIPTIONS = [
   {
-    id: 'pro',
-    emoji: '💎',
-    name: 'ПОДПИСКА PRО',
-    priceOld: 999,
-    priceNew: 599,
+    id: 'pro', emoji: '💎', name: 'ПОДПИСКА PRО', priceOld: 999, priceNew: 599,
     features: [
       '50 обычных примерок',
       '20 примерок своих товаров',
@@ -34,27 +29,12 @@ const SUBSCRIPTIONS = [
     ],
   },
   {
-    id: 'medium',
-    emoji: '💥',
-    name: 'ПОДПИСКА MEDIUM',
-    priceOld: 499,
-    priceNew: 299,
-    features: [
-      '30 обычных примерок',
-      '10 примерок своих товаров',
-      '1 консультация стилиста',
-    ],
+    id: 'medium', emoji: '💥', name: 'ПОДПИСКА MEDIUM', priceOld: 499, priceNew: 299,
+    features: ['30 обычных примерок', '10 примерок своих товаров', '1 консультация стилиста'],
   },
   {
-    id: 'start',
-    emoji: '👌',
-    name: 'ПОДПИСКА START',
-    priceOld: 119,
-    priceNew: 65,
-    features: [
-      '10 обычных примерок',
-      '1 консультация со стилистом',
-    ],
+    id: 'start', emoji: '👌', name: 'ПОДПИСКА START', priceOld: 119, priceNew: 65,
+    features: ['10 обычных примерок', '1 консультация со стилистом'],
   },
 ];
 
@@ -85,27 +65,54 @@ function compressImage(file, maxSide = 1000) {
   });
 }
 
+// ===== Google Drive URL fixer =====
+function fixDriveUrl(url) {
+  if (!url) return url;
+  const match = url.match(/drive\.google\.com\/(?:uc\?.*id=|file\/d\/)([a-zA-Z0-9_-]+)/);
+  if (match && match[1]) {
+    return `https://lh3.googleusercontent.com/d/${match[1]}=w1000`;
+  }
+  return url;
+}
+
 function ProductImage({ src, fallback, alt, className = '' }) {
   const [attempt, setAttempt] = useState(0);
+
   const candidates = (() => {
     const list = [];
     const add = (u) => { if (u && !list.includes(u)) list.push(u); };
-    if (src) {
-      add(src);
-      add(`${BACKEND}/api/img?url=${encodeURIComponent(src)}`);
+
+    const fixedSrc = fixDriveUrl(src);
+    const fixedFallback = fixDriveUrl(fallback);
+
+    if (fixedSrc) {
+      add(fixedSrc);
+      add(`${BACKEND}/api/img?url=${encodeURIComponent(fixedSrc)}`);
     }
+
+    const driveMatch = (src || '').match(/drive\.google\.com\/.*id=([a-zA-Z0-9_-]+)/);
+    if (driveMatch && driveMatch[1]) {
+      const fileId = driveMatch[1];
+      add(`https://lh3.googleusercontent.com/d/${fileId}=s800`);
+      add(`https://lh3.googleusercontent.com/d/${fileId}`);
+      add(`https://drive.usercontent.google.com/download?id=${fileId}&export=view`);
+    }
+
     const base = src && src.replace(/\/images\/big\/\d+\.(webp|jpg|png).*$/, '');
-    if (base) {
+    if (base && base.startsWith('http')) {
       for (let n = 1; n <= 3; n++) {
         add(`${base}/images/big/${n}.webp`);
       }
-      add(`${base}/images/small/1.webp`);
     }
-    if (fallback) add(fallback);
+
+    if (fixedFallback) add(fixedFallback);
+
     add('https://placehold.co/400x500/1A1412/D4B595?text=Style+Room');
     return list;
   })();
+
   const url = candidates[attempt] || candidates[candidates.length - 1];
+
   return (
     <img
       src={url}
@@ -117,55 +124,34 @@ function ProductImage({ src, fallback, alt, className = '' }) {
   );
 }
 
-// ====== МОДАЛКА ПОДПИСОК ======
+// ===== МОДАЛКА ПОДПИСОК =====
 function SubscriptionsModal({ onClose, onBuy }) {
   const [expanded, setExpanded] = useState(null);
-
-  const toggle = (id) => {
-    haptic('light');
-    setExpanded(prev => prev === id ? null : id);
-  };
-
+  const toggle = (id) => { haptic('light'); setExpanded(prev => prev === id ? null : id); };
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center animate-fade-in"
       style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}>
       <div className="w-full max-w-md bg-bg rounded-t-3xl border-t border-x border-border2 shadow-soft pb-6 animate-slide-up">
-
-        {/* Ручка сверху */}
         <div className="flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 rounded-full bg-border2" />
         </div>
-
-        {/* Заголовок */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-border1">
           <div>
             <div className="text-[10px] uppercase tracking-wider2 text-muted mb-0.5">Style Room</div>
             <div className="font-serif text-xl text-title">Подписки</div>
           </div>
-          <button
-            onClick={() => { haptic('light'); onClose(); }}
-            className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted"
-          >
+          <button onClick={() => { haptic('light'); onClose(); }}
+            className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted">
             ✕
           </button>
         </div>
-
-        {/* Список подписок */}
         <div className="px-5 pt-4 space-y-3 max-h-[70vh] overflow-y-auto no-scrollbar">
-
           {SUBSCRIPTIONS.map(sub => {
             const isOpen = expanded === sub.id;
             return (
               <div key={sub.id}
-                className={`bg-card border rounded-2xl overflow-hidden transition-all ${
-                  isOpen ? 'border-accent' : 'border-border1 hover:border-border2'
-                }`}>
-
-                {/* Верхняя часть — заголовок подписки */}
-                <button
-                  onClick={() => toggle(sub.id)}
-                  className="w-full flex items-center justify-between px-4 py-4 text-left"
-                >
+                className={`bg-card border rounded-2xl overflow-hidden transition-all ${isOpen ? 'border-accent' : 'border-border1 hover:border-border2'}`}>
+                <button onClick={() => toggle(sub.id)} className="w-full flex items-center justify-between px-4 py-4 text-left">
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{sub.emoji}</span>
                     <div>
@@ -178,13 +164,9 @@ function SubscriptionsModal({ onClose, onBuy }) {
                   </div>
                   <span className={`text-accent text-lg transition-transform ${isOpen ? 'rotate-180' : ''}`}>⌄</span>
                 </button>
-
-                {/* Раскрывающаяся часть — что входит */}
                 {isOpen && (
                   <div className="border-t border-border1 px-4 py-4 bg-bgSoft/40 animate-slide-up">
-                    <div className="text-[10px] uppercase tracking-wider2 text-accentSoft mb-3">
-                      📝 В неё входит:
-                    </div>
+                    <div className="text-[10px] uppercase tracking-wider2 text-accentSoft mb-3">📝 В неё входит:</div>
                     <ul className="space-y-2 mb-5">
                       {sub.features.map((f, i) => (
                         <li key={i} className="flex items-start gap-2 text-xs text-title leading-relaxed">
@@ -193,11 +175,8 @@ function SubscriptionsModal({ onClose, onBuy }) {
                         </li>
                       ))}
                     </ul>
-
-                    <button
-                      onClick={() => { haptic('medium'); onBuy(sub.id); }}
-                      className="w-full bg-accent hover:bg-accentH text-bg py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider2"
-                    >
+                    <button onClick={() => { haptic('medium'); onBuy(sub.id); }}
+                      className="w-full bg-accent hover:bg-accentH text-bg py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider2">
                       Оформить за {sub.priceNew}⭐️
                     </button>
                   </div>
@@ -205,10 +184,8 @@ function SubscriptionsModal({ onClose, onBuy }) {
               </div>
             );
           })}
-
           <div className="text-center text-[10px] text-muted pt-3 pb-2 leading-relaxed">
-            Оплата проходит через Telegram Stars.<br />
-            После покупки попытки зачисляются автоматически.
+            Оплата проходит через Telegram Stars.<br />После покупки попытки зачисляются автоматически.
           </div>
         </div>
       </div>
@@ -216,14 +193,11 @@ function SubscriptionsModal({ onClose, onBuy }) {
   );
 }
 
-// ====== ОНБОРДИНГ ======
+// ===== ОНБОРДИНГ =====
 const ONBOARDING_SLIDES = [
-  { emoji: '✨', title: 'Примерь любой образ',
-    text: 'Загрузите фото в полный рост, выберите вещь — ИИ покажет, как она сидит именно на вас' },
-  { emoji: '🛍️', title: 'Актуальные тренды WB',
-    text: 'Каталог обновляется автоматически — свежие находки Wildberries всегда под рукой' },
-  { emoji: '👥', title: 'Приглашай подруг',
-    text: 'За каждую подругу, которая сделает первую примерку, вы обе получите +3 попытки' },
+  { emoji: '✨', title: 'Примерь любой образ', text: 'Загрузите фото в полный рост, выберите вещь — ИИ покажет, как она сидит именно на вас' },
+  { emoji: '🛍️', title: 'Актуальные тренды WB', text: 'Каталог обновляется автоматически — свежие находки Wildberries всегда под рукой' },
+  { emoji: '👥', title: 'Приглашай подруг', text: 'За каждую подругу, которая сделает первую примерку, вы обе получите +3 попытки' },
 ];
 
 function Onboarding({ onDone }) {
@@ -251,7 +225,6 @@ function Onboarding({ onDone }) {
   );
 }
 
-// ====== ГЛАВНЫЙ КОМПОНЕНТ ======
 export default function App() {
   const [user, setUser] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -344,7 +317,6 @@ export default function App() {
     catch { showToast('Не удалось обработать фото'); }
   };
 
-  // ===== ОПЛАТА ПОДПИСКИ =====
   const buySubscription = async (subId) => {
     haptic('medium');
     if (!user?.tg_id) return showToast('Откройте приложение в Telegram');
@@ -362,24 +334,6 @@ export default function App() {
           showToast('Подписка активирована ✨');
           setTimeout(() => window.location.reload(), 1500);
         }
-      });
-    } catch (e) {
-      showToast('Ошибка оплаты');
-    }
-  };
-
-  const buyPack = async () => {
-    haptic('medium');
-    if (!user?.tg_id) return showToast('Откройте приложение в Telegram');
-    try {
-      const r = await fetch(`${BACKEND}/api/create-invoice`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tgId: user.tg_id, productType: 'pack10' }),
-      });
-      const d = await r.json();
-      if (!d.invoiceLink) throw new Error(d.error || 'no invoice');
-      window.Telegram.WebApp.openInvoice(d.invoiceLink, (status) => {
-        if (status === 'paid') window.location.reload();
       });
     } catch (e) { showToast('Ошибка оплаты'); }
   };
@@ -434,7 +388,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-bg text-title pb-24">
-      {/* HEADER */}
       <header className="sticky top-0 z-40 bg-bg/85 backdrop-blur-md border-b border-border1 px-5 py-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -453,11 +406,8 @@ export default function App() {
               <span className="text-[11px] text-muted mr-1.5">✨</span>
               <span className="text-xs font-medium">{user.balance ?? 0}</span>
             </div>
-            {/* ===== КНОПКА КУПИТЬ ПОДПИСКУ ===== */}
-            <button
-              onClick={() => { haptic('medium'); setShowSubs(true); }}
-              className="px-3 py-1.5 rounded-full bg-accent text-bg text-xs font-bold uppercase tracking-wider2"
-            >
+            <button onClick={() => { haptic('medium'); setShowSubs(true); }}
+              className="px-3 py-1.5 rounded-full bg-accent text-bg text-xs font-bold uppercase tracking-wider2">
               💎 Подписка
             </button>
           </div>
@@ -470,7 +420,6 @@ export default function App() {
         </div>
       )}
 
-      {/* CATALOG */}
       {tab === 'catalog' && (
         <main className="px-5 pt-6">
           <div className="mb-6">
@@ -547,7 +496,6 @@ export default function App() {
         </main>
       )}
 
-      {/* UPLOAD */}
       {tab === 'upload' && selected && (
         <main className="px-5 pt-5 animate-fade-in">
           <button onClick={() => setTab('catalog')}
@@ -609,7 +557,6 @@ export default function App() {
         </main>
       )}
 
-      {/* LOADING */}
       {tab === 'loading' && (
         <div className="min-h-[75vh] flex flex-col items-center justify-center px-8 text-center">
           <div className="spinner mb-8" />
@@ -618,7 +565,6 @@ export default function App() {
         </div>
       )}
 
-      {/* RESULT */}
       {tab === 'result' && resultImage && (
         <main className="px-5 pt-5 animate-fade-in">
           <div className="text-[10px] uppercase tracking-wider2 text-muted mb-3">Результат</div>
@@ -636,7 +582,6 @@ export default function App() {
         </main>
       )}
 
-      {/* VIRAL MODAL */}
       {viral && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-5 animate-fade-in">
           <div className="bg-card border border-border2 rounded-3xl p-7 max-w-sm w-full text-center shadow-soft">
@@ -655,7 +600,6 @@ export default function App() {
         </div>
       )}
 
-      {/* ===== МОДАЛКА ПОДПИСОК ===== */}
       {showSubs && (
         <SubscriptionsModal
           onClose={() => setShowSubs(false)}
