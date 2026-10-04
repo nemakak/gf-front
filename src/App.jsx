@@ -139,7 +139,7 @@ function ProductCard({ item, onPick }) {
         </div>
       </div>
       <div className="p-3">
-        <div className="font-serif text-[13px] leading-tight line-clamp-2 h-[34px] text-title">{item.name}</div>
+        <div className="font-serif text-[13px] leading-tight line-clamp-2 h-[34px] text-title">{item.description || item.name}</div>
         <div className="mt-3 flex items-center justify-between">
           <span className="text-[10px] uppercase tracking-wider2 text-muted">Примерить</span>
           <span className="w-7 h-7 rounded-full border border-accentSoft text-accent flex items-center justify-center text-xs group-hover:bg-accent group-hover:text-bg transition">✨</span>
@@ -636,7 +636,7 @@ export default function App() {
 
   const showToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2500); };
 
-  // ============ AUTH с логами ============
+  // ============ AUTH ============
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (tg) {
@@ -897,7 +897,7 @@ export default function App() {
             </div>
             <div className="p-4">
               <div className="text-[10px] uppercase tracking-wider2 text-accentSoft mb-1">{CATEGORIES.find(x => x.key === selected.category)?.label || 'Одежда'}</div>
-              <div className="font-serif text-base leading-tight text-title">{selected.name}</div>
+              <div className="font-serif text-base leading-tight text-title">{selected.description || selected.name}</div>
               <div className="text-xs text-muted mt-1.5 flex items-center gap-1"><span className="text-accent">≈</span><span>{selected.price ? selected.price.replace(/^≈\s*/, '') : '—'}</span></div>
             </div>
           </div>
