@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://gf-backend-uc51.onrender.com';
+const PROXY_URL = 'https://gf-images.maxgamingbrawlstars.workers.dev';
 
 const CATEGORIES = [
   { key: 'all',       label: 'Все',            emoji: '✨' },
@@ -36,8 +37,8 @@ const SUBS = [
 
 const FALLBACK = [
   { id: 1, wb_id: 183581368, name: 'Платье миди трикотажное', price: '3 990 ₽', category: 'dress',
-    image_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/1.webp',
-    fallback_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/2.webp' },
+    image_url: 'https://spb-basket-cdn-03.geobasket.ru/vol1835/part183581/183581368/images/hq/1.webp',
+    fallback_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/1.webp' },
 ];
 
 function haptic(t = 'light') {
@@ -69,29 +70,48 @@ function compressImage(file, maxSide = 1000) {
 function fixDrive(u) {
   if (!u) return u;
   const m = u.match(/drive\.google\.com\/(?:uc\?.*id=|file\/d\/)([a-zA-Z0-9_-]+)/);
-  return m && m[1] ? `https://lh3.googleusercontent.com/d/${m[1]}=w1000` : u;
+  return m && m[1] ? `https://lh3.googleusercontent.com/d/${m[1]}` : u;
 }
 
+// ✅ Картинки через Cloudflare Worker-прокси
 function ProductImage({ src, fallback, alt, className = '' }) {
   const [i, setI] = useState(0);
   const list = (() => {
     const L = [];
-    const add = (u) => u && !L.includes(u) && L.push(u);
+    const add = (u) => { if (u && !L.includes(u)) L.push(u); };
     const s = fixDrive(src), f = fixDrive(fallback);
-    if (s) { add(s); add(`${BACKEND}/api/img?url=${encodeURIComponent(s)}`); }
-    const dm = (src || '').match(/drive\.google\.com\/.*id=([a-zA-Z0-9_-]+)/);
-    if (dm) { add(`https://lh3.googleusercontent.com/d/${dm[1]}=s800`); add(`https://lh3.googleusercontent.com/d/${dm[1]}`); }
-    const base = src && src.replace(/\/images\/big\/\d+\.(webp|jpg|png).*$/, '');
-    if (base && base.startsWith('http')) for (let n = 1; n <= 3; n++) add(`${base}/images/big/${n}.webp`);
-    if (f) add(f);
+
+    if (s) {
+      add(`${PROXY_URL}/?url=${encodeURIComponent(s)}`);
+      add(s);
+    }
+
+    const base = src && src.replace(/\/images\/(hq|big|small|c516x688)\/\d+\.(webp|jpg|png).*$/, '');
+    if (base) {
+      for (let n = 1; n <= 3; n++) {
+        add(`${PROXY_URL}/?url=${encodeURIComponent(`${base}/images/hq/${n}.webp`)}`);
+      }
+      add(`${PROXY_URL}/?url=${encodeURIComponent(`${base}/images/big/1.webp`)}`);
+    }
+
+    if (f) {
+      add(`${PROXY_URL}/?url=${encodeURIComponent(f)}`);
+      add(f);
+    }
+
     add('https://placehold.co/400x500/1A1412/D4B595?text=Style+Room');
     return L;
   })();
   const url = list[i] || list[list.length - 1];
+
   return (
-    <img src={url} alt={alt}
+    <img
+      src={url}
+      alt={alt}
       onError={() => i < list.length - 1 && setI(i + 1)}
-      className={`object-cover bg-card ${className}`} loading="lazy" />
+      className={`object-cover bg-card ${className}`}
+      loading="lazy"
+    />
   );
 }
 
@@ -147,8 +167,8 @@ function SubscriptionsScreen({ onBack, onBuy }) {
               <button onClick={() => { haptic('light'); setExpanded(isOpen ? null : sub.id); }}
                 className="w-full flex items-center justify-between px-5 py-5 text-left">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-transform duration-300"
-                    style={{ background: `${sub.accent}20`, border: `1px solid ${sub.accent}40`, transform: isOpen ? 'scale(1.05)' : 'scale(1)' }}>
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
+                    style={{ background: `${sub.accent}20`, border: `1px solid ${sub.accent}40` }}>
                     {sub.emoji}
                   </div>
                   <div>
@@ -304,10 +324,35 @@ function HistoryScreen({ onBack }) {
   );
 }
 
-function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
+function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onToast }) {
   const balance = user?.balance || 0;
   const ownTries = user?.own_tries || 0;
   const hasSub = user?.sub_active === true && (user?.balance || 0) > 0;
+  const [promoOpen, setPromoOpen] = React.useState(false);
+  const [promoCode, setPromoCode] = React.useState('');
+  const [promoLoading, setPromoLoading] = React.useState(false);
+
+  const redeemPromo = async () => {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    try {
+      const r = await fetch(`${BACKEND}/api/redeem-promo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', code: promoCode.trim() }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        onToast(d.unlimited ? '🎁 Безлимит на 24 часа!' : `🎁 +${d.tries} попыток!`);
+        setPromoOpen(false);
+        setPromoCode('');
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        onToast(d.error || 'Ошибка');
+      }
+    } catch { onToast('Ошибка соединения'); }
+    finally { setPromoLoading(false); }
+  };
 
   return (
     <main className="px-5 pt-6 animate-fade-in pb-24">
@@ -315,6 +360,7 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
         <div className="text-[10px] uppercase tracking-wider2 text-muted mb-1">Аккаунт</div>
         <h1 className="font-serif text-3xl leading-tight">Профиль</h1>
       </div>
+
       <div className="bg-card border border-border1 rounded-3xl p-5 mb-4">
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -326,7 +372,8 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
             <div className="text-base font-medium leading-tight truncate">{user?.first_name || 'Гость'}</div>
             <div className="text-xs text-muted truncate">@{user?.username || 'user'}</div>
             {hasSub ? (
-              <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full" style={{ background: 'rgba(212,181,149,0.15)', border: '1px solid rgba(212,181,149,0.4)' }}>
+              <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full"
+                style={{ background: 'rgba(212,181,149,0.15)', border: '1px solid rgba(212,181,149,0.4)' }}>
                 <span className="text-[10px]">💎</span>
                 <span className="text-[10px] font-bold text-accent uppercase tracking-wider2">Подписка активна</span>
               </div>
@@ -340,6 +387,7 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
           </div>
         </div>
       </div>
+
       <div className="grid grid-cols-2 gap-3 mb-4">
         <button onClick={onOpenBuyTries} className="bg-card border border-border1 hover:border-accentSoft active:scale-[0.98] rounded-2xl p-4 text-left transition relative">
           <div className="text-2xl mb-1">👗</div>
@@ -353,7 +401,8 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
           <div className="text-[10px] uppercase tracking-wider2 text-muted mt-2">Своих товаров</div>
         </div>
       </div>
-      <div className="space-y-2">
+
+      <div className="space-y-2 mb-4">
         <button onClick={onOpenHistory}
           className="w-full bg-card border border-border1 hover:border-accentSoft active:scale-[0.99] rounded-2xl px-4 py-4 flex items-center justify-between transition">
           <div className="flex items-center gap-3">
@@ -365,6 +414,7 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
           </div>
           <span className="text-muted">→</span>
         </button>
+
         <button onClick={onOpenSubs}
           className="w-full bg-card border border-border1 hover:border-accentSoft active:scale-[0.99] rounded-2xl px-4 py-4 flex items-center justify-between transition">
           <div className="flex items-center gap-3">
@@ -376,6 +426,7 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
           </div>
           <span className="text-muted">→</span>
         </button>
+
         <button onClick={onOpenBuyTries}
           className="w-full bg-card border border-border1 hover:border-accentSoft active:scale-[0.99] rounded-2xl px-4 py-4 flex items-center justify-between transition">
           <div className="flex items-center gap-3">
@@ -388,6 +439,35 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory }) {
           <span className="text-muted">→</span>
         </button>
       </div>
+
+      {/* Промокод */}
+      {!promoOpen ? (
+        <button onClick={() => setPromoOpen(true)}
+          className="w-full bg-bgSoft border border-accentSoft text-accent rounded-2xl px-4 py-4 flex items-center justify-center gap-2 active:scale-[0.99] transition">
+          <span>🎁</span>
+          <span className="text-sm font-medium">Ввести промокод</span>
+        </button>
+      ) : (
+        <div className="bg-card border border-accentSoft rounded-2xl p-4 animate-fade-in">
+          <div className="text-[10px] uppercase tracking-wider2 text-accent mb-2">🎁 Промокод</div>
+          <div className="flex gap-2">
+            <input
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              placeholder="ВВЕДИ КОД"
+              disabled={promoLoading}
+              className="flex-1 bg-bg border border-border1 rounded-xl px-3 py-3 text-sm outline-none focus:border-accentSoft placeholder:text-muted uppercase"
+            />
+            <button onClick={redeemPromo} disabled={promoLoading || !promoCode.trim()}
+              className="px-4 py-3 rounded-xl bg-accent text-bg text-xs font-bold uppercase tracking-wider2 disabled:opacity-40">
+              {promoLoading ? '…' : 'Применить'}
+            </button>
+          </div>
+          <button onClick={() => { setPromoOpen(false); setPromoCode(''); }}
+            className="text-[10px] text-muted mt-3">Отмена</button>
+        </div>
+      )}
+
       <div className="text-center text-[10px] text-muted pt-6">Style Room · v1.0</div>
     </main>
   );
@@ -738,7 +818,8 @@ export default function App() {
         <ProfileScreen user={user}
           onOpenSubs={() => setScreen('subs')}
           onOpenBuyTries={() => setScreen('buyTries')}
-          onOpenHistory={() => setScreen('history')} />
+          onOpenHistory={() => setScreen('history')}
+          onToast={showToast} />
       )}
 
       {tab === 'upload' && selected && (
