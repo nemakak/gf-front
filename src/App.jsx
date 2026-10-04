@@ -10,7 +10,6 @@ const CATEGORIES = [
   { key: 'outerwear', label: 'Верхняя одежда', emoji: '🧥' },
   { key: 'suit',      label: 'Костюмы',        emoji: '🥼' },
   { key: 'dress',     label: 'Платья',         emoji: '👗' },
-  { key: 'accessory', label: 'Аксессуары',     emoji: '🕶' },
 ];
 
 const SUBS = [
