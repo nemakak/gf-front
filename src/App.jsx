@@ -16,14 +16,7 @@ const CATEGORIES = [
 const SUBS = [
   { id: 'pro', emoji: '💎', name: 'PRО', subtitle: 'Максимум', priceOld: 999, priceNew: 599, accent: '#D4B595',
     features: [
-      { icon: '👗', text: '50 обычных примерок' },
-      { icon: '📦', text: '20 примерок своих товаров' },
-      { icon: '🎨', text: '5 раз — примерка 2–3 вещей' },
-      { icon: '💬', text: '3 консультации стилиста' },
-    ]},
-  { id: 'medium', emoji: '💥', name: 'MEDIUM', subtitle: 'Оптимальный', priceOld: 499, priceNew: 299, accent: '#B89876',
-    features: [
-      { icon: '👗', text: '30 обычных примерок' },
+            { icon: '👗', text: '30 обычных примерок' },
       { icon: '📦', text: '10 примерок своих товаров' },
       { icon: '💬', text: '1 консультация стилиста' },
     ]},
@@ -985,6 +978,7 @@ export default function App() {
   const [likedIds, setLikedIds] = useState(new Set());
   const [toast, setToast] = useState('');
   const [welcomeBonus, setWelcomeBonus] = useState(null);
+  const [showStreak, setShowStreak] = useState(false);
   const fileRef = useRef(null);
 
   const showToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2500); };
@@ -1169,10 +1163,10 @@ export default function App() {
           </button>
           <div className="flex items-center gap-2">
             {user.streak_days > 0 && (
-              <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-orange-500/15 border border-orange-400/40">
+              <button onClick={() => setShowStreak(true)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-orange-500/15 border border-orange-400/40 active:scale-95 transition">
                 <span className="text-[11px]">🔥</span>
                 <span className="text-xs font-bold text-orange-300">{user.streak_days}</span>
-              </div>
+              </button>
             )}
             <button onClick={() => setScreen('buyTries')} className="px-3 py-1.5 rounded-full border border-border2 text-xs">✨ {user.balance ?? 0} <span className="text-accent font-bold">+</span></button>
             <button onClick={() => setScreen('subs')} className="px-3 py-1.5 rounded-full bg-accent text-bg text-xs font-bold">💎</button>
@@ -1182,6 +1176,68 @@ export default function App() {
 
       {toast && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-card border border-border2 text-xs px-4 py-2.5 rounded-full shadow-soft animate-slide-up">{toast}</div>}
       {welcomeBonus && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-accent text-bg text-xs px-4 py-2.5 rounded-full font-bold shadow-soft animate-slide-up">{welcomeBonus}</div>}
+
+      {showStreak && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center" onClick={() => setShowStreak(false)}>
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" />
+          <div
+            className="relative w-full max-w-md bg-card rounded-t-3xl border-t border-border2 p-6 pb-8 shadow-soft"
+            style={{ animation: 'slideUpStreak 0.35s cubic-bezier(0.32, 0.72, 0, 1)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-1 bg-border2 rounded-full mx-auto mb-5" />
+            <div className="text-center mb-5">
+              <div className="text-5xl mb-2">🔥</div>
+              <div className="font-serif text-2xl mb-1">Стрик {user.streak_days} {user.streak_days === 1 ? 'день' : user.streak_days < 5 ? 'дня' : 'дней'}</div>
+              <div className="text-xs text-muted">Заходи каждый день и получай награды</div>
+            </div>
+
+            <div className="space-y-2 mb-5">
+              {[1,2,3,4,5].map(day => {
+                const current = ((user.streak_days - 1) % 5) + 1;
+                const isPast = day < current;
+                const isCurrent = day === current;
+                const isBonus = day === 5;
+                return (
+                  <div key={day} className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                    isCurrent ? 'bg-accent/15 border-accent shadow-soft' :
+                    isPast ? 'bg-bgSoft border-border1 opacity-60' :
+                    'bg-bgSoft border-border1'
+                  }`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                      isCurrent ? 'bg-accent text-bg' :
+                      isPast ? 'bg-bg border border-border2 text-muted' :
+                      'bg-bg border border-border2 text-title'
+                    }`}>
+                      {isPast ? '✓' : `Д${day}`}
+                    </div>
+                    <div className="flex-1">
+                      <div className={`text-sm font-medium ${isCurrent ? 'text-accent' : 'text-title'}`}>
+                        {isBonus ? '🎁 Большой бонус' : `День ${day}`}
+                      </div>
+                      <div className="text-[10px] text-muted">
+                        {isBonus ? '+3 примерки своих товаров' : '+1 обычная примерка'}
+                      </div>
+                    </div>
+                    {isBonus && <span className="text-2xl">✨</span>}
+                    {isCurrent && <span className="text-[9px] uppercase tracking-wider2 text-accent font-bold">Сегодня</span>}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="bg-bgSoft border border-border1 rounded-2xl p-4 text-center">
+              <div className="text-[10px] uppercase text-muted mb-1">Правила</div>
+              <div className="text-xs text-title leading-relaxed">
+                Заходи каждый день → +1 попытка<br />
+                Каждый 5-й день → <span className="text-accent font-bold">+3 примерки своих</span>
+              </div>
+            </div>
+
+            <button onClick={() => setShowStreak(false)} className="w-full mt-5 bg-accent text-bg py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider2">Понятно</button>
+          </div>
+        </div>
+      )}
 
       {tab === 'catalog' && (
         <main className="px-5 pt-6">
