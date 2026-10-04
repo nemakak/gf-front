@@ -72,24 +72,19 @@ function fixDrive(u) {
   return m && m[1] ? `https://lh3.googleusercontent.com/d/${m[1]}` : u;
 }
 
-// ============ PRODUCT IMAGE — 6 попыток загрузить ============
 function ProductImage({ src, fallback, alt, className = '' }) {
   const [i, setI] = useState(0);
-
   const list = (() => {
     const L = [];
     const add = (u) => { if (u && !L.includes(u)) L.push(u); };
     const s = fixDrive(src);
     const f = fixDrive(fallback);
-
     if (s) add(`${PROXY_URL}/?url=${encodeURIComponent(s)}`);
     if (s) add(s);
-
     if (f && f !== s) {
       add(`${PROXY_URL}/?url=${encodeURIComponent(f)}`);
       add(f);
     }
-
     const m = (src || '').match(/^(https:\/\/[^/]+)\/vol(\d+)\/part(\d+)\/(\d+)\//);
     if (m) {
       const host = m[1], id = m[4];
@@ -98,25 +93,18 @@ function ProductImage({ src, fallback, alt, className = '' }) {
         add(`${PROXY_URL}/?url=${encodeURIComponent(`${host}/vol${m[2]}/part${m[3]}/${id}/images/${size}/1.webp`)}`);
       }
     }
-
     add('https://placehold.co/400x500/1A1412/D4B595?text=Style+Room');
     return L;
   })();
-
   const url = list[i] || list[list.length - 1];
-
   return (
-    <img
-      src={url}
-      alt={alt}
+    <img src={url} alt={alt}
       onError={() => i < list.length - 1 && setI(i + 1)}
       className={`object-cover bg-card ${className}`}
-      loading="lazy"
-    />
+      loading="lazy" />
   );
 }
 
-// ============ PRODUCT CARD ============
 function ProductCard({ item, onPick }) {
   return (
     <button
@@ -149,7 +137,6 @@ function ProductCard({ item, onPick }) {
   );
 }
 
-// ============ SUBSCRIPTIONS ============
 function SubscriptionsScreen({ onBack, onBuy }) {
   const [expanded, setExpanded] = useState('pro');
   return (
@@ -212,7 +199,6 @@ function SubscriptionsScreen({ onBack, onBuy }) {
   );
 }
 
-// ============ BUY TRIES ============
 function BuyTriesScreen({ onBack, onBuy, user }) {
   const [count, setCount] = useState(5);
   const total = count * 5;
@@ -261,7 +247,6 @@ function BuyTriesScreen({ onBack, onBuy, user }) {
   );
 }
 
-// ============ HISTORY ============
 function HistoryScreen({ onBack }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -329,7 +314,6 @@ function HistoryScreen({ onBack }) {
   );
 }
 
-// ============ PROFILE ============
 function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onToast }) {
   const balance = user?.balance || 0;
   const ownTries = user?.own_tries || 0;
@@ -479,7 +463,6 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onToas
   );
 }
 
-// ============ SEARCH с "Готово" ============
 function SearchScreen({ catalog, onPick }) {
   const [q, setQ] = useState('');
   const inputRef = useRef(null);
@@ -560,7 +543,6 @@ function SearchScreen({ catalog, onPick }) {
   );
 }
 
-// ============ ONBOARDING ============
 const SLIDES = [
   { emoji: '✨', title: 'Примерь любой образ', text: 'Загрузите фото в полный рост, выберите вещь — ИИ покажет, как она сидит именно на вас' },
   { emoji: '🛍️', title: 'Актуальные тренды WB', text: 'Каталог обновляется автоматически — свежие находки Wildberries всегда под рукой' },
@@ -590,7 +572,6 @@ function Onboarding({ onDone }) {
   );
 }
 
-// ============ BOTTOM NAV ============
 function BottomNav({ active, onChange }) {
   const items = [
     { key: 'catalog', label: 'Разделы',  emoji: '🗂' },
@@ -618,7 +599,6 @@ function BottomNav({ active, onChange }) {
   );
 }
 
-// ============ APP ============
 export default function App() {
   const [user, setUser] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -636,7 +616,6 @@ export default function App() {
 
   const showToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2500); };
 
-  // ============ AUTH ============
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (tg) {
@@ -656,17 +635,13 @@ export default function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ initData, refCode: startParam }),
     })
-      .then(r => {
-        console.log('[auth] HTTP', r.status);
-        return r.json();
-      })
+      .then(r => r.json())
       .then(d => {
         console.log('[auth] ответ:', d);
         if (d.success) {
           setUser(d.user);
           if (!d.user.onboarded && localStorage.getItem('gf_onboarded') !== '1') setShowOnboarding(true);
         } else {
-          console.error('[auth] failed:', d.error);
           setUserGuest();
         }
       })
@@ -677,8 +652,8 @@ export default function App() {
   }, []);
 
   const setUserGuest = () => setUser({
-    tg_id: 0, first_name: 'Гость', username: 'guest', photo_url: '',
-    balance: 3, own_tries: 0, sub_active: false, onboarded: true,
+    tg_id: 0, first_name: 'Ошибка авторизации', username: '—', photo_url: '',
+    balance: 0, own_tries: 0, sub_active: false, onboarded: true,
   });
 
   const finishOnboarding = async () => {
@@ -770,7 +745,7 @@ export default function App() {
         }),
       });
       const d = await r.json();
-      if (d.success) {
+      if (d.success && d.resultUrl) {
         setResultImage(d.resultUrl);
         setUser(u => u ? { ...u, balance: Math.max(0, (u.balance || 0) - 1) } : u);
         setTab('result');
@@ -931,14 +906,26 @@ export default function App() {
         </div>
       )}
 
-      {tab === 'result' && resultImage && (
+      {tab === 'result' && (
         <main className="px-5 pt-5 animate-fade-in">
           <div className="text-[10px] uppercase tracking-wider2 text-muted mb-3">Результат</div>
-          <img src={resultImage} alt="result" className="w-full rounded-2xl border border-border1 shadow-soft mb-5" />
-          <a href={`https://www.wildberries.ru/catalog/${selected?.wb_id}/detail.aspx`} target="_blank" rel="noreferrer"
-            className="block w-full bg-accent hover:bg-accentH text-bg text-center py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2 mb-3 active:scale-[0.98] transition">
-            Купить на Wildberries
-          </a>
+          {resultImage && resultImage.startsWith('http') ? (
+            <>
+              <img src={resultImage} alt="result"
+                className="w-full rounded-2xl border border-border1 shadow-soft mb-5"
+                onError={(e) => { e.target.src = 'https://placehold.co/600x800/1A1412/D4B595?text=Ошибка+загрузки'; }} />
+              <a href={`https://www.wildberries.ru/catalog/${selected?.wb_id}/detail.aspx`} target="_blank" rel="noreferrer"
+                className="block w-full bg-accent hover:bg-accentH text-bg text-center py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2 mb-3 active:scale-[0.98] transition">
+                Купить на Wildberries
+              </a>
+            </>
+          ) : (
+            <div className="text-center py-16">
+              <div className="text-4xl mb-3">😕</div>
+              <div className="text-sm text-title mb-2">Не удалось сгенерировать фото</div>
+              <div className="text-xs text-muted mb-6">Попробуй другой товар или загрузи фото в полный рост</div>
+            </div>
+          )}
           <button onClick={resetTryOn} className="w-full border border-border2 text-muted2 py-4 rounded-2xl text-sm active:scale-[0.98] transition">Вернуться в каталог</button>
         </main>
       )}
