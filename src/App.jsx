@@ -40,11 +40,18 @@ const FALLBACK = [
     fallback_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/1.webp' },
 ];
 
+const HINTS = [
+  'Обычно занимает 10–20 секунд',
+  'ИИ подбирает образ…',
+  'Почти готово ✨',
+  'Это займёт ещё чуть-чуть',
+];
+
 function haptic(t = 'light') {
   try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(t); } catch {}
 }
 
-function compressImage(file, maxSide = 1000) {
+function compressImage(file, maxSide = 768, quality = 0.75) {
   return new Promise((res, rej) => {
     const r = new FileReader();
     r.onload = (e) => {
@@ -56,7 +63,7 @@ function compressImage(file, maxSide = 1000) {
         const c = document.createElement('canvas');
         c.width = width; c.height = height;
         c.getContext('2d').drawImage(img, 0, 0, width, height);
-        res(c.toDataURL('image/jpeg', 0.85));
+        res(c.toDataURL('image/jpeg', quality));
       };
       img.onerror = rej;
       img.src = e.target.result;
@@ -404,7 +411,6 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onToas
           </div>
           <span className="text-muted">→</span>
         </button>
-
         <button onClick={onOpenSubs}
           className="w-full bg-card border border-border1 hover:border-accentSoft active:scale-[0.99] rounded-2xl px-4 py-4 flex items-center justify-between transition">
           <div className="flex items-center gap-3">
@@ -416,7 +422,6 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onToas
           </div>
           <span className="text-muted">→</span>
         </button>
-
         <button onClick={onOpenBuyTries}
           className="w-full bg-card border border-border1 hover:border-accentSoft active:scale-[0.99] rounded-2xl px-4 py-4 flex items-center justify-between transition">
           <div className="flex items-center gap-3">
@@ -612,9 +617,18 @@ export default function App() {
   const [resultImage, setResultImage] = useState(null);
   const [viral, setViral] = useState(false);
   const [toast, setToast] = useState('');
+  const [hintIdx, setHintIdx] = useState(0);
   const fileRef = useRef(null);
 
   const showToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2500); };
+
+  // Подсказки во время загрузки примерки
+  useEffect(() => {
+    if (tab !== 'loading') return;
+    setHintIdx(0);
+    const t = setInterval(() => setHintIdx(i => (i + 1) % HINTS.length), 4000);
+    return () => clearInterval(t);
+  }, [tab]);
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -627,9 +641,6 @@ export default function App() {
     const initData = tg?.initData || '';
     const startParam = tg?.initDataUnsafe?.start_param;
 
-    console.log('[auth] initData:', initData ? initData.slice(0, 80) + '...' : 'ПУСТО');
-    console.log('[auth] startParam:', startParam || '(нет)');
-
     fetch(`${BACKEND}/api/auth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -637,18 +648,12 @@ export default function App() {
     })
       .then(r => r.json())
       .then(d => {
-        console.log('[auth] ответ:', d);
         if (d.success) {
           setUser(d.user);
           if (!d.user.onboarded && localStorage.getItem('gf_onboarded') !== '1') setShowOnboarding(true);
-        } else {
-          setUserGuest();
-        }
+        } else setUserGuest();
       })
-      .catch((e) => {
-        console.error('[auth] network error:', e);
-        setUserGuest();
-      });
+      .catch(() => setUserGuest());
   }, []);
 
   const setUserGuest = () => setUser({
@@ -691,8 +696,10 @@ export default function App() {
 
   const onPickFile = async (e) => {
     const f = e.target.files?.[0]; if (!f) return;
-    try { setHumanImg(await compressImage(f, 1000)); showToast('Фото загружено'); }
-    catch { showToast('Не удалось обработать фото'); }
+    try {
+      setHumanImg(await compressImage(f, 768, 0.75));
+      showToast('Фото загружено');
+    } catch { showToast('Не удалось обработать фото'); }
   };
 
   const buySubscription = async (subId) => {
@@ -732,6 +739,7 @@ export default function App() {
     if (!humanImg) return showToast('Загрузите фото');
     haptic('medium');
     setTab('loading');
+    const t0 = Date.now();
     try {
       const r = await fetch(`${BACKEND}/api/tryon`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -745,6 +753,7 @@ export default function App() {
         }),
       });
       const d = await r.json();
+      console.log(`[tryon] ответ за ${Date.now() - t0}ms:`, d);
       if (d.success && d.resultUrl) {
         setResultImage(d.resultUrl);
         setUser(u => u ? { ...u, balance: Math.max(0, (u.balance || 0) - 1) } : u);
@@ -902,7 +911,7 @@ export default function App() {
         <div className="min-h-[75vh] flex flex-col items-center justify-center px-8 text-center">
           <div className="spinner mb-8" />
           <div className="font-serif text-xl mb-2">Подбираем образ</div>
-          <div className="text-xs text-muted">Обычно занимает 10–20 секунд</div>
+          <div className="text-xs text-muted transition-opacity duration-300">{HINTS[hintIdx]}</div>
         </div>
       )}
 
