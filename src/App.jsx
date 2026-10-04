@@ -10,6 +10,7 @@ const CATEGORIES = [
   { key: 'outerwear', label: 'Верхняя одежда', emoji: '🧥' },
   { key: 'suit',      label: 'Костюмы',        emoji: '🥼' },
   { key: 'dress',     label: 'Платья',         emoji: '👗' },
+  { key: 'autumn',    label: 'Осень',          emoji: '🍂' },
 ];
 
 const SUBS = [
@@ -39,12 +40,7 @@ const FALLBACK = [
     fallback_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/1.webp' },
 ];
 
-const HINTS = [
-  'Обычно занимает 10–20 секунд',
-  'ИИ подбирает образ…',
-  'Почти готово ✨',
-  'Это займёт ещё чуть-чуть',
-];
+const HINTS = ['Обычно занимает 10–20 секунд', 'ИИ подбирает образ…', 'Почти готово ✨', 'Это займёт ещё чуть-чуть'];
 
 function haptic(t = 'light') { try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(t); } catch {} }
 
@@ -74,7 +70,6 @@ function fixDrive(u) {
   const m = u.match(/drive\.google\.com\/(?:uc\?.*id=|file\/d\/)([a-zA-Z0-9_-]+)/);
   return m && m[1] ? `https://lh3.googleusercontent.com/d/${m[1]}` : u;
 }
-
 function ProductImage({ src, fallback, alt, className = '' }) {
   const [i, setI] = useState(0);
   const list = (() => {
@@ -104,25 +99,38 @@ function ProductCard({ item, onPick, selected, onToggle }) {
       className={`group relative bg-card border rounded-2xl overflow-hidden active:scale-[0.98] transition-all text-left w-full ${selected ? 'border-accent' : 'border-border1'}`}>
       <div className="relative aspect-[3/4] overflow-hidden">
         <ProductImage src={item.image_url} fallback={item.fallback_url} alt={item.name} className="w-full h-full" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
         <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-bg/80 backdrop-blur border border-border2 text-[9px] uppercase tracking-wider2 text-accentSoft">
           {CATEGORIES.find(c => c.key === item.category)?.label || 'Одежда'}
         </div>
-        {onToggle && (
+        {onToggle ? (
           <div className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center border ${selected ? 'bg-accent text-bg border-accent' : 'bg-bg/80 border-border2 text-title'}`}>
             {selected ? '✓' : '+'}
+          </div>
+        ) : (
+          <a href={`https://www.wildberries.ru/catalog/${item.wb_id}/detail.aspx`}
+            target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}
+            className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-bg/80 backdrop-blur flex items-center justify-center border border-border2 text-sm">
+            🛍
+          </a>
+        )}
+        {item.price && (
+          <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1">
+            <span className="text-xs font-bold text-white">≈ {item.price.replace(/^≈\s*/, '')}</span>
           </div>
         )}
       </div>
       <div className="p-3">
         <div className="font-serif text-[13px] leading-tight line-clamp-2 h-[34px] text-title">{item.description || item.name}</div>
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-wider2 text-muted">{onToggle ? (selected ? 'Выбрано' : 'Выбрать') : 'Примерить'}</span>
+          <span className="w-7 h-7 rounded-full border border-accentSoft text-accent flex items-center justify-center text-xs">✨</span>
+        </div>
       </div>
     </button>
   );
 }
 
-// ============================================================
-// Подписки
-// ============================================================
 function SubscriptionsScreen({ onBack, onBuy }) {
   const [expanded, setExpanded] = useState('pro');
   return (
@@ -176,40 +184,52 @@ function BuyTriesScreen({ onBack, onBuy, onBuyOwn, user }) {
     <main className="px-5 pt-6 pb-24">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
       <h1 className="font-serif text-2xl mb-5">Попытки</h1>
+
       <div className="grid grid-cols-2 gap-2 mb-5">
         <button onClick={() => setMode('regular')} className={`py-3 rounded-2xl border text-xs font-medium ${mode === 'regular' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>✨ Обычные · 5⭐️</button>
         <button onClick={() => setMode('own')} className={`py-3 rounded-2xl border text-xs font-medium ${mode === 'own' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>📦 Свои · 10⭐️</button>
       </div>
+
       <div className="bg-card border border-border1 rounded-3xl p-6 mb-5 text-center">
-        <div className="text-[10px] uppercase text-muted mb-2">Сколько?</div>
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <button onClick={() => setCount(c => Math.max(1, c - 1))} className="w-12 h-12 rounded-full border border-border2 text-2xl text-accent">−</button>
-          <div className="text-5xl font-serif min-w-[100px]">{count}</div>
-          <button onClick={() => setCount(c => Math.min(500, c + 1))} className="w-12 h-12 rounded-full border border-accentSoft text-2xl text-accent">+</button>
+        <div className="text-[10px] uppercase tracking-wider2 text-muted mb-4">Сколько?</div>
+        <div className="flex items-center justify-center gap-5 mb-5">
+          <button onClick={() => { haptic('light'); setCount(c => Math.max(1, c - 1)); }}
+            className="w-12 h-12 rounded-full border border-border2 text-2xl text-accent active:scale-90 transition font-sans font-light">−</button>
+          <div className="text-6xl font-sans font-bold tracking-tight text-title min-w-[120px]">{count}</div>
+          <button onClick={() => { haptic('light'); setCount(c => Math.min(500, c + 1)); }}
+            className="w-12 h-12 rounded-full border border-accentSoft text-2xl text-accent active:scale-90 transition font-sans font-light">+</button>
         </div>
-        <div className="text-[10px] uppercase text-muted">Итого</div>
-        <div className="text-3xl font-serif">{total}⭐️</div>
+        <div className="flex gap-2 justify-center mb-6">
+          {[5, 10, 25, 50].map(n => (
+            <button key={n} onClick={() => { haptic('light'); setCount(n); }}
+              className={`px-3 py-1.5 rounded-full border text-xs font-sans font-semibold ${count === n ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>
+              {n}
+            </button>
+          ))}
+        </div>
+        <div className="text-[10px] uppercase tracking-wider2 text-muted mb-2">Итого</div>
+        <div className="text-4xl font-sans font-bold tracking-tight text-title">{total}<span className="text-accent text-2xl ml-1">⭐️</span></div>
       </div>
+
       <div className="grid grid-cols-2 gap-3 mb-5">
         <div className="bg-card border border-border1 rounded-2xl p-4">
           <div className="text-[10px] uppercase text-muted">Обычных</div>
-          <div className="text-2xl font-serif text-accent">{user?.balance ?? 0}</div>
+          <div className="text-3xl font-sans font-bold text-accent mt-1">{user?.balance ?? 0}</div>
         </div>
         <div className="bg-card border border-border1 rounded-2xl p-4">
           <div className="text-[10px] uppercase text-muted">Своих</div>
-          <div className="text-2xl font-serif text-accent">{user?.own_tries ?? 0}</div>
+          <div className="text-3xl font-sans font-bold text-accent mt-1">{user?.own_tries ?? 0}</div>
         </div>
       </div>
-      <button onClick={() => mode === 'regular' ? onBuy(count) : onBuyOwn(count)} className="w-full bg-accent text-bg py-4 rounded-2xl text-sm font-bold uppercase">
+
+      <button onClick={() => { haptic('medium'); mode === 'regular' ? onBuy(count) : onBuyOwn(count); }}
+        className="w-full bg-accent text-bg py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2">
         Купить {count} за {total}⭐️
       </button>
     </main>
   );
 }
 
-// ============================================================
-// СВОИ ТОВАРЫ
-// ============================================================
 function OwnTriesScreen({ user, onBack, onToast }) {
   const [humanImg, setHumanImg] = useState('');
   const [wbLink, setWbLink] = useState('');
@@ -222,7 +242,6 @@ function OwnTriesScreen({ user, onBack, onToast }) {
     try { setHumanImg(await compressImage(f, 1024, 0.85)); }
     catch { onToast('Ошибка фото'); }
   };
-
   const run = async () => {
     if (!humanImg) return onToast('Загрузите фото');
     if (!wbLink.trim()) return onToast('Вставьте ссылку WB');
@@ -234,7 +253,7 @@ function OwnTriesScreen({ user, onBack, onToast }) {
       });
       const d = await r.json();
       if (d.success && d.resultUrl) setResultImage(d.resultUrl);
-      else onToast(d.error || 'Ошибка. Попытки не списаны.');
+      else onToast(d.error || 'Ошибка');
     } catch { onToast('Ошибка соединения'); }
     finally { setLoading(false); }
   };
@@ -273,7 +292,7 @@ function OwnTriesScreen({ user, onBack, onToast }) {
         <span className="text-2xl">{humanImg ? '✓' : '📷'}</span>
         <span>{humanImg ? 'Фото загружено' : 'Загрузить фото'}</span>
       </button>
-      <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={onPickFile} className="hidden" />
+      <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
       {humanImg && <img src={humanImg} alt="" className="w-full max-h-72 object-contain rounded-2xl mb-4 border border-border1" />}
       <button onClick={run} disabled={(user?.own_tries || 0) <= 0} className="w-full bg-accent disabled:opacity-30 text-bg py-4 rounded-2xl text-sm font-medium uppercase mt-4">
         {(user?.own_tries || 0) <= 0 ? 'Купите примерки в профиле' : 'Запустить · 1 попытка'}
@@ -282,9 +301,6 @@ function OwnTriesScreen({ user, onBack, onToast }) {
   );
 }
 
-// ============================================================
-// МУЛЬТИ — 2–3 вещи разных категорий
-// ============================================================
 function MultiTryonScreen({ catalog, user, onBack, onToast }) {
   const [picked, setPicked] = useState([]);
   const [humanImg, setHumanImg] = useState('');
@@ -297,15 +313,13 @@ function MultiTryonScreen({ catalog, user, onBack, onToast }) {
     if (found) { setPicked(picked.filter(x => x.id !== item.id)); return; }
     if (picked.length >= 3) return onToast('Максимум 3 вещи');
     const sameCat = picked.find(x => x.category === item.category);
-    if (sameCat) return onToast('Нельзя 2 вещи одной категории. Выберите разные.');
+    if (sameCat) return onToast('Нельзя 2 вещи одной категории');
     setPicked([...picked, item]);
   };
-
   const onPickFile = async (e) => {
     const f = e.target.files?.[0]; if (!f) return;
     try { setHumanImg(await compressImage(f, 1024, 0.85)); } catch { onToast('Ошибка фото'); }
   };
-
   const run = async () => {
     if (picked.length < 2) return onToast('Выберите 2–3 вещи');
     if (!humanImg) return onToast('Загрузите фото');
@@ -315,8 +329,7 @@ function MultiTryonScreen({ catalog, user, onBack, onToast }) {
       const r = await fetch(`${BACKEND}/api/tryon-multi`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          initData: window.Telegram?.WebApp?.initData || '',
-          humanImg,
+          initData: window.Telegram?.WebApp?.initData || '', humanImg,
           items: picked.map(p => ({ id: p.id, name: p.name, image_url: p.image_url, category: p.category })),
         }),
       });
@@ -335,11 +348,8 @@ function MultiTryonScreen({ catalog, user, onBack, onToast }) {
       <div className="space-y-4">
         {results.map((r, i) => (
           <div key={i} className="bg-card border border-border1 rounded-2xl overflow-hidden">
-            {r.url ? (
-              <img src={r.url} alt={r.name} className="w-full" onError={(e) => { e.target.style.display = 'none'; }} />
-            ) : (
-              <div className="aspect-[3/4] flex items-center justify-center text-xs text-muted">Не удалось</div>
-            )}
+            {r.url ? <img src={r.url} alt={r.name} className="w-full" onError={(e) => { e.target.style.display = 'none'; }} />
+              : <div className="aspect-[3/4] flex items-center justify-center text-xs text-muted">Не удалось</div>}
             <div className="p-3 text-xs text-muted">{r.name}</div>
           </div>
         ))}
@@ -354,14 +364,12 @@ function MultiTryonScreen({ catalog, user, onBack, onToast }) {
       <button onClick={onBack} className="text-xs text-muted mb-5">← Назад</button>
       <h1 className="font-serif text-3xl mb-2">2–3 вещи сразу</h1>
       <p className="text-xs text-muted mb-5">Только разные категории. Каждая вещь = 1 попытка.</p>
-
       <div className="bg-card border border-border2 rounded-2xl p-4 mb-4">
         <div className="flex justify-between text-xs">
           <span className="text-muted">Выбрано: <b className="text-title">{picked.length}</b> / 3</span>
           <span className="text-muted">Спишется: <b className="text-accent">{picked.length}</b></span>
         </div>
       </div>
-
       {!humanImg ? (
         <button onClick={() => fileRef.current?.click()} className="w-full bg-card border border-dashed border-border2 rounded-2xl py-8 text-sm text-muted2 mb-4 flex flex-col items-center gap-2">
           <span className="text-2xl">📷</span><span>Загрузить фото</span>
@@ -372,15 +380,12 @@ function MultiTryonScreen({ catalog, user, onBack, onToast }) {
           <button onClick={() => fileRef.current?.click()} className="text-xs text-muted mt-2">Заменить</button>
         </div>
       )}
-      <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={onPickFile} className="hidden" />
-
+      <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
       <div className="grid grid-cols-2 gap-3 mb-5">
         {catalog.slice(0, 30).map(item => (
-          <ProductCard key={item.id} item={item}
-            selected={!!picked.find(x => x.id === item.id)} onToggle={toggle} />
+          <ProductCard key={item.id} item={item} selected={!!picked.find(x => x.id === item.id)} onToggle={toggle} />
         ))}
       </div>
-
       <button onClick={run} disabled={picked.length < 2 || !humanImg || (user?.balance || 0) < picked.length}
         className="w-full bg-accent disabled:opacity-30 text-bg py-4 rounded-2xl text-sm font-medium uppercase">
         {picked.length < 2 ? 'Выберите минимум 2' : `Пример ${picked.length} вещи`}
@@ -389,9 +394,6 @@ function MultiTryonScreen({ catalog, user, onBack, onToast }) {
   );
 }
 
-// ============================================================
-// История
-// ============================================================
 function HistoryScreen({ onBack }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -422,13 +424,14 @@ function HistoryScreen({ onBack }) {
   );
 }
 
-// ============================================================
-// Профиль
-// ============================================================
 function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onOpenOwn, onOpenMulti, onToast }) {
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
+  const [ideaOpen, setIdeaOpen] = useState(false);
+  const [ideaText, setIdeaText] = useState('');
+  const [ideaLoading, setIdeaLoading] = useState(false);
+
   const redeemPromo = async () => {
     if (!promoCode.trim()) return;
     setPromoLoading(true);
@@ -442,6 +445,20 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onOpen
       else onToast(d.error || 'Ошибка');
     } catch { onToast('Ошибка'); } finally { setPromoLoading(false); }
   };
+  const sendIdea = async () => {
+    if (!ideaText.trim()) return;
+    setIdeaLoading(true);
+    try {
+      const r = await fetch(`${BACKEND}/api/idea`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', text: ideaText.trim() }),
+      });
+      const d = await r.json();
+      if (d.success) { onToast('💡 Спасибо! Идея отправлена.'); setIdeaText(''); setIdeaOpen(false); }
+      else onToast(d.error || 'Ошибка');
+    } catch { onToast('Ошибка соединения'); } finally { setIdeaLoading(false); }
+  };
+
   return (
     <main className="px-5 pt-6 pb-24">
       <h1 className="font-serif text-3xl mb-6">Профиль</h1>
@@ -451,13 +468,11 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onOpen
       </div>
       <div className="grid grid-cols-2 gap-3 mb-4">
         <button onClick={onOpenBuyTries} className="bg-card border border-border1 rounded-2xl p-4 text-left">
-          <div className="text-2xl mb-1">👗</div>
-          <div className="text-3xl font-serif">{user?.balance ?? 0}</div>
+          <div className="text-2xl mb-1">👗</div><div className="text-3xl font-serif">{user?.balance ?? 0}</div>
           <div className="text-[10px] uppercase text-muted mt-2">Обычных</div>
         </button>
         <button onClick={onOpenOwn} className="bg-card border border-border1 rounded-2xl p-4 text-left">
-          <div className="text-2xl mb-1">📦</div>
-          <div className="text-3xl font-serif">{user?.own_tries ?? 0}</div>
+          <div className="text-2xl mb-1">📦</div><div className="text-3xl font-serif">{user?.own_tries ?? 0}</div>
           <div className="text-[10px] uppercase text-muted mt-2">Своих</div>
         </button>
       </div>
@@ -467,6 +482,7 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onOpen
         <button onClick={onOpenOwn} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between"><span className="text-sm">📦 Примерка по ссылке</span><span className="text-muted">→</span></button>
         <button onClick={onOpenMulti} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between"><span className="text-sm">🎨 Мульти (2–3 вещи)</span><span className="text-muted">→</span></button>
         <button onClick={onOpenBuyTries} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between"><span className="text-sm">✨ Докупить попытки</span><span className="text-muted">→</span></button>
+        <button onClick={() => setIdeaOpen(true)} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between"><span className="text-sm">💡 Предложить идею</span><span className="text-muted">→</span></button>
       </div>
       {!promoOpen ? (
         <button onClick={() => setPromoOpen(true)} className="w-full bg-bgSoft border border-accentSoft text-accent rounded-2xl px-4 py-4">🎁 Ввести промокод</button>
@@ -478,13 +494,28 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onOpen
           </div>
         </div>
       )}
+
+      {ideaOpen && (
+        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-5" onClick={() => setIdeaOpen(false)}>
+          <div className="bg-card border border-border2 rounded-3xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="text-[10px] uppercase text-accent mb-2">💡 Идея</div>
+            <h3 className="font-serif text-xl mb-3">Что хочешь предложить?</h3>
+            <textarea value={ideaText} onChange={(e) => setIdeaText(e.target.value)}
+              placeholder="Опиши идею…" rows={5} maxLength={2000}
+              className="w-full bg-bg border border-border1 rounded-2xl px-4 py-3 text-sm outline-none focus:border-accentSoft resize-none mb-3" />
+            <div className="text-[10px] text-muted mb-3">{ideaText.length}/2000</div>
+            <button onClick={sendIdea} disabled={ideaLoading || !ideaText.trim()}
+              className="w-full bg-accent text-bg py-3.5 rounded-2xl text-xs font-bold uppercase disabled:opacity-40 mb-2">
+              {ideaLoading ? '…' : 'Отправить'}
+            </button>
+            <button onClick={() => setIdeaOpen(false)} className="w-full text-xs text-muted py-2">Отмена</button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
 
-// ============================================================
-// ПОИСК — с рекомендациями и скрытием клавиатуры
-// ============================================================
 function SearchScreen({ catalog, onPick }) {
   const [q, setQ] = useState('');
   const inputRef = useRef(null);
@@ -494,64 +525,38 @@ function SearchScreen({ catalog, onPick }) {
     haptic('light');
   };
 
-  const onSubmit = (e) => {
-    e.preventDefault();
-    hideKeyboard();
-  };
-
   const results = q.trim()
     ? catalog.filter(p => (p.name + ' ' + (p.description || '')).toLowerCase().includes(q.toLowerCase().trim()))
     : [];
 
-  // Рекомендации: 6 случайных товаров из каталога
   const recommended = React.useMemo(() => {
     if (!catalog.length) return [];
-    const shuffled = [...catalog].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 6);
+    return [...catalog].sort(() => Math.random() - 0.5).slice(0, 6);
   }, [catalog]);
 
   return (
-    <main className="px-5 pt-6 pb-24">
+    <main className="px-5 pt-6 pb-24" onClick={() => { if (document.activeElement?.tagName === 'INPUT') hideKeyboard(); }}>
       <h1 className="font-serif text-3xl mb-5">Поиск</h1>
-
-      <form onSubmit={onSubmit} className="relative mb-4">
-        <input
-          ref={inputRef}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
+      <div className="relative mb-5">
+        <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); hideKeyboard(); } }}
-          placeholder="Название вещи…"
-          enterKeyHint="search"
-          inputMode="search"
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck="false"
-          className="w-full bg-card border border-border1 rounded-2xl pl-11 pr-12 py-3.5 text-sm outline-none focus:border-accentSoft"
-        />
+          placeholder="Название вещи…" enterKeyHint="search" inputMode="search"
+          autoComplete="off" autoCorrect="off" spellCheck="false"
+          className="w-full bg-card border border-border1 rounded-2xl pl-11 pr-12 py-3.5 text-sm outline-none focus:border-accentSoft" />
         <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" />
         </svg>
         {q && (
-          <button type="button" onClick={() => { setQ(''); hideKeyboard(); }}
+          <button type="button" onClick={(e) => { e.stopPropagation(); setQ(''); }}
             className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border border-border2 text-muted flex items-center justify-center text-xs">✕</button>
         )}
-      </form>
-
-      <button type="button" onClick={hideKeyboard}
-        className="w-full bg-bgSoft border border-border2 text-accent py-3 rounded-2xl text-xs font-medium uppercase mb-5 active:scale-[0.98]">
-        ⌨️ Готово — скрыть клавиатуру
-      </button>
-
-      {!q.trim() && (
+      </div>
+      {!q.trim() && recommended.length > 0 && (
         <>
-          {recommended.length > 0 && (
-            <>
-              <div className="text-[10px] uppercase text-muted mb-3">✨ Рекомендуем</div>
-              <div className="grid grid-cols-2 gap-3">
-                {recommended.map(item => <ProductCard key={item.id} item={item} onPick={onPick} />)}
-              </div>
-            </>
-          )}
+          <div className="text-[10px] uppercase text-muted mb-3">✨ Рекомендуем</div>
+          <div className="grid grid-cols-2 gap-3">
+            {recommended.map(item => <ProductCard key={item.id} item={item} onPick={onPick} />)}
+          </div>
         </>
       )}
       {q.trim() && results.length === 0 && <div className="text-center py-16 text-muted text-sm">Ничего не найдено</div>}
@@ -564,9 +569,6 @@ function SearchScreen({ catalog, onPick }) {
   );
 }
 
-// ============================================================
-// Онбординг
-// ============================================================
 const SLIDES = [
   { emoji: '✨', title: 'Примерь любой образ', text: 'Загрузите фото, выберите вещь — ИИ покажет, как она сидит' },
   { emoji: '📦', title: 'Свои товары', text: 'Примерка по ссылке WB — попробуй любую вещь' },
@@ -617,9 +619,6 @@ function BottomNav({ active, onChange }) {
   );
 }
 
-// ============================================================
-// APP
-// ============================================================
 export default function App() {
   const [user, setUser] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -727,10 +726,7 @@ export default function App() {
         setResultImage(d.resultUrl);
         setUser(u => u ? { ...u, balance: Math.max(0, (u.balance || 0) - 1) } : u);
         setTab('result');
-      } else {
-        showToast(d.error || 'Не удалось. Попытки не списаны.');
-        setTab('catalog');
-      }
+      } else { showToast(d.error || 'Не удалось. Попытки не списаны.'); setTab('catalog'); }
     } catch { showToast('Ошибка соединения'); setTab('catalog'); }
   };
 
@@ -810,12 +806,13 @@ export default function App() {
             <div className="p-4">
               <div className="text-[10px] uppercase text-accentSoft mb-1">{CATEGORIES.find(x => x.key === selected.category)?.label}</div>
               <div className="font-serif text-base">{selected.description || selected.name}</div>
+              {selected.price && <div className="text-xs text-muted mt-1.5">≈ {selected.price.replace(/^≈\s*/, '')}</div>}
             </div>
           </div>
           <button onClick={() => fileRef.current?.click()} className="w-full bg-card border border-dashed border-border2 rounded-2xl py-8 text-sm text-muted2 mb-3 flex flex-col items-center gap-2">
             <span className="text-2xl">{humanImg ? '✓' : '📷'}</span><span>{humanImg ? 'Фото загружено' : 'Загрузить фото'}</span>
           </button>
-          <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={onPickFile} className="hidden" />
+          <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
           {humanImg && <img src={humanImg} alt="" className="w-full max-h-72 object-contain rounded-2xl mb-4" />}
           <button onClick={runTryOn} disabled={!humanImg} className="w-full bg-accent disabled:opacity-30 text-bg py-4 rounded-2xl text-sm font-medium uppercase mt-4">
             Запустить примерку
