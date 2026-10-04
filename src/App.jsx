@@ -72,35 +72,37 @@ function fixDrive(u) {
   return m && m[1] ? `https://lh3.googleusercontent.com/d/${m[1]}` : u;
 }
 
-// ============ PRODUCT IMAGE — через прокси ============
+// ============ PRODUCT IMAGE — 6 попыток загрузить ============
 function ProductImage({ src, fallback, alt, className = '' }) {
   const [i, setI] = useState(0);
+
   const list = (() => {
     const L = [];
     const add = (u) => { if (u && !L.includes(u)) L.push(u); };
-    const s = fixDrive(src), f = fixDrive(fallback);
+    const s = fixDrive(src);
+    const f = fixDrive(fallback);
 
-    if (s) {
-      add(`${PROXY_URL}/?url=${encodeURIComponent(s)}`);
-      add(s);
-    }
+    if (s) add(`${PROXY_URL}/?url=${encodeURIComponent(s)}`);
+    if (s) add(s);
 
-    const base = src && src.replace(/\/images\/(hq|big|small|c516x688)\/\d+\.(webp|jpg|png).*$/, '');
-    if (base) {
-      for (let n = 1; n <= 3; n++) {
-        add(`${PROXY_URL}/?url=${encodeURIComponent(`${base}/images/hq/${n}.webp`)}`);
-      }
-      add(`${PROXY_URL}/?url=${encodeURIComponent(`${base}/images/big/1.webp`)}`);
-    }
-
-    if (f) {
+    if (f && f !== s) {
       add(`${PROXY_URL}/?url=${encodeURIComponent(f)}`);
       add(f);
+    }
+
+    const m = (src || '').match(/^(https:\/\/[^/]+)\/vol(\d+)\/part(\d+)\/(\d+)\//);
+    if (m) {
+      const host = m[1], id = m[4];
+      const sizes = ['hq', 'big', 'c516x688', 'c246x328', 'small'];
+      for (const size of sizes) {
+        add(`${PROXY_URL}/?url=${encodeURIComponent(`${host}/vol${m[2]}/part${m[3]}/${id}/images/${size}/1.webp`)}`);
+      }
     }
 
     add('https://placehold.co/400x500/1A1412/D4B595?text=Style+Room');
     return L;
   })();
+
   const url = list[i] || list[list.length - 1];
 
   return (
@@ -332,9 +334,9 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onToas
   const balance = user?.balance || 0;
   const ownTries = user?.own_tries || 0;
   const hasSub = user?.sub_active === true && (user?.balance || 0) > 0;
-  const [promoOpen, setPromoOpen] = React.useState(false);
-  const [promoCode, setPromoCode] = React.useState('');
-  const [promoLoading, setPromoLoading] = React.useState(false);
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
 
   const redeemPromo = async () => {
     if (!promoCode.trim()) return;
@@ -477,7 +479,7 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onToas
   );
 }
 
-// ============ SEARCH — с «Готово» ============
+// ============ SEARCH с "Готово" ============
 function SearchScreen({ catalog, onPick }) {
   const [q, setQ] = useState('');
   const inputRef = useRef(null);
@@ -494,11 +496,6 @@ function SearchScreen({ catalog, onPick }) {
     haptic('light');
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    dismissKeyboard();
-  };
-
   const results = q.trim()
     ? catalog.filter(p => p.name.toLowerCase().includes(q.toLowerCase().trim()))
     : [];
@@ -510,7 +507,7 @@ function SearchScreen({ catalog, onPick }) {
         <h1 className="font-serif text-3xl leading-tight">Поиск</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="relative mb-3">
+      <form onSubmit={(e) => { e.preventDefault(); dismissKeyboard(); }} className="relative mb-3">
         <input
           ref={inputRef}
           value={q}
@@ -528,8 +525,7 @@ function SearchScreen({ catalog, onPick }) {
           <circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" />
         </svg>
         {q && (
-          <button
-            type="button"
+          <button type="button"
             onClick={() => { setQ(''); dismissKeyboard(); }}
             className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border border-border2 text-muted flex items-center justify-center text-xs">
             ✕
