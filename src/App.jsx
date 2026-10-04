@@ -10,7 +10,6 @@ const CATEGORIES = [
   { key: 'outerwear', label: 'Верхняя одежда', emoji: '🧥' },
   { key: 'suit',      label: 'Костюмы',        emoji: '🥼' },
   { key: 'dress',     label: 'Платья',         emoji: '👗' },
-  { key: 'shoes',     label: 'Обувь',          emoji: '👟' },
   { key: 'accessory', label: 'Аксессуары',     emoji: '🕶' },
 ];
 
@@ -36,7 +35,7 @@ const SUBS = [
 ];
 
 const FALLBACK = [
-  { id: 1, wb_id: 183581368, name: 'Платье миди трикотажное', price: '3 990 ₽', category: 'dress',
+  { id: 1, wb_id: 183581368, name: 'Платье Y2K миди', price: '3 990 ₽', category: 'dress',
     image_url: 'https://spb-basket-cdn-03.geobasket.ru/vol1835/part183581/183581368/images/hq/1.webp',
     fallback_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/1.webp' },
 ];
@@ -73,7 +72,7 @@ function fixDrive(u) {
   return m && m[1] ? `https://lh3.googleusercontent.com/d/${m[1]}` : u;
 }
 
-// ✅ Картинки через Cloudflare Worker-прокси
+// ============ PRODUCT IMAGE — через прокси ============
 function ProductImage({ src, fallback, alt, className = '' }) {
   const [i, setI] = useState(0);
   const list = (() => {
@@ -115,6 +114,7 @@ function ProductImage({ src, fallback, alt, className = '' }) {
   );
 }
 
+// ============ PRODUCT CARD ============
 function ProductCard({ item, onPick }) {
   return (
     <button
@@ -147,6 +147,7 @@ function ProductCard({ item, onPick }) {
   );
 }
 
+// ============ SUBSCRIPTIONS ============
 function SubscriptionsScreen({ onBack, onBuy }) {
   const [expanded, setExpanded] = useState('pro');
   return (
@@ -209,6 +210,7 @@ function SubscriptionsScreen({ onBack, onBuy }) {
   );
 }
 
+// ============ BUY TRIES ============
 function BuyTriesScreen({ onBack, onBuy, user }) {
   const [count, setCount] = useState(5);
   const total = count * 5;
@@ -257,6 +259,7 @@ function BuyTriesScreen({ onBack, onBuy, user }) {
   );
 }
 
+// ============ HISTORY ============
 function HistoryScreen({ onBack }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -324,6 +327,7 @@ function HistoryScreen({ onBack }) {
   );
 }
 
+// ============ PROFILE ============
 function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onToast }) {
   const balance = user?.balance || 0;
   const ownTries = user?.own_tries || 0;
@@ -440,7 +444,6 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onToas
         </button>
       </div>
 
-      {/* Промокод */}
       {!promoOpen ? (
         <button onClick={() => setPromoOpen(true)}
           className="w-full bg-bgSoft border border-accentSoft text-accent rounded-2xl px-4 py-4 flex items-center justify-center gap-2 active:scale-[0.99] transition">
@@ -456,6 +459,7 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onToas
               onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
               placeholder="ВВЕДИ КОД"
               disabled={promoLoading}
+              autoComplete="off"
               className="flex-1 bg-bg border border-border1 rounded-xl px-3 py-3 text-sm outline-none focus:border-accentSoft placeholder:text-muted uppercase"
             />
             <button onClick={redeemPromo} disabled={promoLoading || !promoCode.trim()}
@@ -473,28 +477,74 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onToas
   );
 }
 
+// ============ SEARCH — с «Готово» ============
 function SearchScreen({ catalog, onPick }) {
   const [q, setQ] = useState('');
   const inputRef = useRef(null);
-  useEffect(() => { inputRef.current?.focus(); }, []);
-  const results = q.trim() ? catalog.filter(p => p.name.toLowerCase().includes(q.toLowerCase().trim())) : [];
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try { inputRef.current?.focus({ preventScroll: true }); } catch {}
+    }, 300);
+    return () => clearTimeout(t);
+  }, []);
+
+  const dismissKeyboard = () => {
+    try { inputRef.current?.blur(); } catch {}
+    haptic('light');
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    dismissKeyboard();
+  };
+
+  const results = q.trim()
+    ? catalog.filter(p => p.name.toLowerCase().includes(q.toLowerCase().trim()))
+    : [];
+
   return (
     <main className="px-5 pt-6 animate-fade-in pb-24">
       <div className="mb-6">
         <div className="text-[10px] uppercase tracking-wider2 text-muted mb-1">Найти вещь</div>
         <h1 className="font-serif text-3xl leading-tight">Поиск</h1>
       </div>
-      <div className="relative mb-6">
-        <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)}
+
+      <form onSubmit={handleSubmit} className="relative mb-3">
+        <input
+          ref={inputRef}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') dismissKeyboard(); }}
           placeholder="Название, категория…"
-          className="w-full bg-card border border-border1 rounded-2xl pl-11 pr-4 py-3.5 text-sm outline-none focus:border-accentSoft placeholder:text-muted transition" />
+          enterKeyHint="done"
+          inputMode="search"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck="false"
+          className="w-full bg-card border border-border1 rounded-2xl pl-11 pr-12 py-3.5 text-sm outline-none focus:border-accentSoft placeholder:text-muted transition"
+        />
         <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" />
         </svg>
         {q && (
-          <button onClick={() => setQ('')} className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border border-border2 text-muted flex items-center justify-center text-xs">✕</button>
+          <button
+            type="button"
+            onClick={() => { setQ(''); dismissKeyboard(); }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border border-border2 text-muted flex items-center justify-center text-xs">
+            ✕
+          </button>
         )}
-      </div>
+      </form>
+
+      <button
+        type="button"
+        onClick={dismissKeyboard}
+        className="w-full bg-bgSoft border border-border2 text-accent py-3 rounded-2xl text-xs font-medium uppercase tracking-wider2 mb-6 active:scale-[0.98] transition"
+      >
+        ⌨️ Готово — скрыть клавиатуру
+      </button>
+
       {!q.trim() && (
         <div className="text-center py-20">
           <div className="text-6xl mb-4">🔍</div>
@@ -502,7 +552,9 @@ function SearchScreen({ catalog, onPick }) {
           <div className="text-xs text-muted max-w-xs mx-auto">Введите название вещи или категорию</div>
         </div>
       )}
-      {q.trim() && results.length === 0 && <div className="text-center py-16 text-muted text-sm">Ничего не найдено</div>}
+      {q.trim() && results.length === 0 && (
+        <div className="text-center py-16 text-muted text-sm">Ничего не найдено</div>
+      )}
       {q.trim() && results.length > 0 && (
         <div className="grid grid-cols-2 gap-3">
           {results.map(item => <ProductCard key={item.id} item={item} onPick={onPick} />)}
@@ -512,6 +564,7 @@ function SearchScreen({ catalog, onPick }) {
   );
 }
 
+// ============ ONBOARDING ============
 const SLIDES = [
   { emoji: '✨', title: 'Примерь любой образ', text: 'Загрузите фото в полный рост, выберите вещь — ИИ покажет, как она сидит именно на вас' },
   { emoji: '🛍️', title: 'Актуальные тренды WB', text: 'Каталог обновляется автоматически — свежие находки Wildberries всегда под рукой' },
@@ -541,6 +594,7 @@ function Onboarding({ onDone }) {
   );
 }
 
+// ============ BOTTOM NAV ============
 function BottomNav({ active, onChange }) {
   const items = [
     { key: 'catalog', label: 'Разделы',  emoji: '🗂' },
@@ -568,6 +622,7 @@ function BottomNav({ active, onChange }) {
   );
 }
 
+// ============ APP ============
 export default function App() {
   const [user, setUser] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -585,6 +640,7 @@ export default function App() {
 
   const showToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2500); };
 
+  // ============ AUTH с логами ============
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (tg) {
@@ -595,19 +651,33 @@ export default function App() {
     }
     const initData = tg?.initData || '';
     const startParam = tg?.initDataUnsafe?.start_param;
+
+    console.log('[auth] initData:', initData ? initData.slice(0, 80) + '...' : 'ПУСТО');
+    console.log('[auth] startParam:', startParam || '(нет)');
+
     fetch(`${BACKEND}/api/auth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ initData, refCode: startParam }),
     })
-      .then(r => r.json())
+      .then(r => {
+        console.log('[auth] HTTP', r.status);
+        return r.json();
+      })
       .then(d => {
+        console.log('[auth] ответ:', d);
         if (d.success) {
           setUser(d.user);
           if (!d.user.onboarded && localStorage.getItem('gf_onboarded') !== '1') setShowOnboarding(true);
-        } else setUserGuest();
+        } else {
+          console.error('[auth] failed:', d.error);
+          setUserGuest();
+        }
       })
-      .catch(() => setUserGuest());
+      .catch((e) => {
+        console.error('[auth] network error:', e);
+        setUserGuest();
+      });
   }, []);
 
   const setUserGuest = () => setUser({
