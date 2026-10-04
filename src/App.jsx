@@ -44,10 +44,6 @@ const HINTS = ['Обычно занимает 10–20 секунд', 'ИИ по�
 
 function haptic(t = 'light') { try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(t); } catch {} }
 
-const HINTS = ['Обычно занимает 10–20 секунд', 'ИИ подбирает образ…', 'Почти готово ✨', 'Это займёт ещё чуть-чуть'];
-
-function haptic(t = 'light') { try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(t); } catch {} }
-
 function compressImage(file, maxSide = 720, quality = 0.7) {
   return new Promise((res, rej) => {
     const r = new FileReader();
@@ -61,7 +57,6 @@ function compressImage(file, maxSide = 720, quality = 0.7) {
         c.width = width; c.height = height;
         c.getContext('2d').drawImage(img, 0, 0, width, height);
         let dataUrl = c.toDataURL('image/jpeg', quality);
-        // Если всё ещё больше 900 КБ — сжимаем сильнее
         if (dataUrl.length > 900 * 1024) {
           dataUrl = c.toDataURL('image/jpeg', 0.5);
         }
@@ -80,6 +75,7 @@ function fixDrive(u) {
   const m = u.match(/drive\.google\.com\/(?:uc\?.*id=|file\/d\/)([a-zA-Z0-9_-]+)/);
   return m && m[1] ? `https://lh3.googleusercontent.com/d/${m[1]}` : u;
 }
+
 function ProductImage({ src, fallback, alt, className = '' }) {
   const [i, setI] = useState(0);
   const list = (() => {
@@ -249,7 +245,7 @@ function OwnTriesScreen({ user, onBack, onToast }) {
 
   const onPickFile = async (e) => {
     const f = e.target.files?.[0]; if (!f) return;
-    try { setHumanImg(await compressImage(f, 1024, 0.85)); }
+    try { setHumanImg(await compressImage(f, 720, 0.7)); }
     catch { onToast('Ошибка фото'); }
   };
   const run = async () => {
@@ -328,7 +324,7 @@ function MultiTryonScreen({ catalog, user, onBack, onToast }) {
   };
   const onPickFile = async (e) => {
     const f = e.target.files?.[0]; if (!f) return;
-    try { setHumanImg(await compressImage(f, 1024, 0.85)); } catch { onToast('Ошибка фото'); }
+    try { setHumanImg(await compressImage(f, 720, 0.7)); } catch { onToast('Ошибка фото'); }
   };
   const run = async () => {
     if (picked.length < 2) return onToast('Выберите 2–3 вещи');
@@ -684,7 +680,7 @@ export default function App() {
 
   const onPickFile = async (e) => {
     const f = e.target.files?.[0]; if (!f) return;
-    try { setHumanImg(await compressImage(f, 1024, 0.85)); showToast('Фото загружено'); }
+    try { setHumanImg(await compressImage(f, 720, 0.7)); showToast('Фото загружено'); }
     catch { showToast('Ошибка фото'); }
   };
 
