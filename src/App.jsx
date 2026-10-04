@@ -57,9 +57,7 @@ function compressImage(file, maxSide = 720, quality = 0.7) {
         c.width = width; c.height = height;
         c.getContext('2d').drawImage(img, 0, 0, width, height);
         let dataUrl = c.toDataURL('image/jpeg', quality);
-        if (dataUrl.length > 900 * 1024) {
-          dataUrl = c.toDataURL('image/jpeg', 0.5);
-        }
+        if (dataUrl.length > 900 * 1024) dataUrl = c.toDataURL('image/jpeg', 0.5);
         res(dataUrl);
       };
       img.onerror = rej;
@@ -99,12 +97,13 @@ function ProductImage({ src, fallback, alt, className = '' }) {
 }
 
 function ProductCard({ item, onPick, selected, onToggle }) {
+  const title = item.description || item.name || 'Товар';
   return (
     <button
       onClick={() => { haptic('light'); onToggle ? onToggle(item) : onPick(item); }}
       className={`group relative bg-card border rounded-2xl overflow-hidden active:scale-[0.98] transition-all text-left w-full ${selected ? 'border-accent' : 'border-border1'}`}>
       <div className="relative aspect-[3/4] overflow-hidden">
-        <ProductImage src={item.image_url} fallback={item.fallback_url} alt={item.name} className="w-full h-full" />
+        <ProductImage src={item.image_url} fallback={item.fallback_url} alt={title} className="w-full h-full" />
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
         <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-bg/80 backdrop-blur border border-border2 text-[9px] uppercase tracking-wider2 text-accentSoft">
           {CATEGORIES.find(c => c.key === item.category)?.label || 'Одежда'}
@@ -127,7 +126,7 @@ function ProductCard({ item, onPick, selected, onToggle }) {
         )}
       </div>
       <div className="p-3">
-        <div className="font-serif text-[13px] leading-tight line-clamp-2 h-[34px] text-title">{item.description || item.name}</div>
+        <div className="font-sans font-medium text-[13px] leading-snug line-clamp-2 h-[36px] text-title">{title}</div>
         <div className="mt-3 flex items-center justify-between">
           <span className="text-[10px] uppercase tracking-wider2 text-muted">{onToggle ? (selected ? 'Выбрано' : 'Выбрать') : 'Примерить'}</span>
           <span className="w-7 h-7 rounded-full border border-accentSoft text-accent flex items-center justify-center text-xs">✨</span>
@@ -190,33 +189,26 @@ function BuyTriesScreen({ onBack, onBuy, onBuyOwn, user }) {
     <main className="px-5 pt-6 pb-24">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
       <h1 className="font-serif text-2xl mb-5">Попытки</h1>
-
       <div className="grid grid-cols-2 gap-2 mb-5">
         <button onClick={() => setMode('regular')} className={`py-3 rounded-2xl border text-xs font-medium ${mode === 'regular' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>✨ Обычные · 5⭐️</button>
         <button onClick={() => setMode('own')} className={`py-3 rounded-2xl border text-xs font-medium ${mode === 'own' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>📦 Свои · 10⭐️</button>
       </div>
-
       <div className="bg-card border border-border1 rounded-3xl p-6 mb-5 text-center">
         <div className="text-[10px] uppercase tracking-wider2 text-muted mb-4">Сколько?</div>
         <div className="flex items-center justify-center gap-5 mb-5">
-          <button onClick={() => { haptic('light'); setCount(c => Math.max(1, c - 1)); }}
-            className="w-12 h-12 rounded-full border border-border2 text-2xl text-accent active:scale-90 transition font-sans font-light">−</button>
+          <button onClick={() => { haptic('light'); setCount(c => Math.max(1, c - 1)); }} className="w-12 h-12 rounded-full border border-border2 text-2xl text-accent active:scale-90 font-sans font-light">−</button>
           <div className="text-6xl font-sans font-bold tracking-tight text-title min-w-[120px]">{count}</div>
-          <button onClick={() => { haptic('light'); setCount(c => Math.min(500, c + 1)); }}
-            className="w-12 h-12 rounded-full border border-accentSoft text-2xl text-accent active:scale-90 transition font-sans font-light">+</button>
+          <button onClick={() => { haptic('light'); setCount(c => Math.min(500, c + 1)); }} className="w-12 h-12 rounded-full border border-accentSoft text-2xl text-accent active:scale-90 font-sans font-light">+</button>
         </div>
         <div className="flex gap-2 justify-center mb-6">
           {[5, 10, 25, 50].map(n => (
             <button key={n} onClick={() => { haptic('light'); setCount(n); }}
-              className={`px-3 py-1.5 rounded-full border text-xs font-sans font-semibold ${count === n ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>
-              {n}
-            </button>
+              className={`px-3 py-1.5 rounded-full border text-xs font-sans font-semibold ${count === n ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>{n}</button>
           ))}
         </div>
         <div className="text-[10px] uppercase tracking-wider2 text-muted mb-2">Итого</div>
         <div className="text-4xl font-sans font-bold tracking-tight text-title">{total}<span className="text-accent text-2xl ml-1">⭐️</span></div>
       </div>
-
       <div className="grid grid-cols-2 gap-3 mb-5">
         <div className="bg-card border border-border1 rounded-2xl p-4">
           <div className="text-[10px] uppercase text-muted">Обычных</div>
@@ -227,7 +219,6 @@ function BuyTriesScreen({ onBack, onBuy, onBuyOwn, user }) {
           <div className="text-3xl font-sans font-bold text-accent mt-1">{user?.own_tries ?? 0}</div>
         </div>
       </div>
-
       <button onClick={() => { haptic('medium'); mode === 'regular' ? onBuy(count) : onBuyOwn(count); }}
         className="w-full bg-accent text-bg py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2">
         Купить {count} за {total}⭐️
@@ -263,6 +254,13 @@ function OwnTriesScreen({ user, onBack, onToast }) {
     } catch { onToast('Ошибка соединения'); }
     finally { setLoading(false); }
   };
+  const share = async () => {
+    if (!resultImage) return;
+    const text = 'Смотри, как я примерила вещь через Style Room ✨';
+    const url = `https://t.me/share/url?url=${encodeURIComponent(resultImage)}&text=${encodeURIComponent(text)}`;
+    if (window.Telegram?.WebApp?.openTelegramLink) window.Telegram.WebApp.openTelegramLink(url);
+    else window.open(url, '_blank');
+  };
 
   if (loading) return <div className="min-h-[75vh] flex flex-col items-center justify-center"><div className="spinner mb-8" /><div className="font-serif text-xl mb-2">Подбираем образ</div><div className="text-xs text-muted">{HINTS[0]}</div></div>;
 
@@ -271,6 +269,10 @@ function OwnTriesScreen({ user, onBack, onToast }) {
       <div className="text-[10px] uppercase text-muted mb-3">Результат</div>
       <img src={resultImage} alt="result" className="w-full rounded-2xl border border-border1 mb-5"
         onError={(e) => { e.target.style.display = 'none'; }} />
+      <button onClick={share}
+        className="w-full bg-accent text-bg py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2 mb-3">
+        📤 Поделиться
+      </button>
       <button onClick={() => { setResultImage(null); setHumanImg(''); setWbLink(''); }} className="w-full border border-border2 text-muted2 py-4 rounded-2xl text-sm">Ещё раз</button>
       <button onClick={onBack} className="w-full text-xs text-muted mt-4">← Назад</button>
     </main>
@@ -285,7 +287,7 @@ function OwnTriesScreen({ user, onBack, onToast }) {
         <div className="text-[10px] uppercase text-accentSoft mb-2">📦 У вас есть</div>
         <div className="flex items-center justify-between">
           <span className="text-sm">Своих примерок</span>
-          <span className="text-lg font-serif text-accent">{user?.own_tries ?? 0}</span>
+          <span className="text-lg font-sans font-bold text-accent">{user?.own_tries ?? 0}</span>
         </div>
         <div className="text-[10px] text-muted mt-1">10 ⭐️ за штуку</div>
       </div>
@@ -474,11 +476,11 @@ function ProfileScreen({ user, onOpenSubs, onOpenBuyTries, onOpenHistory, onOpen
       </div>
       <div className="grid grid-cols-2 gap-3 mb-4">
         <button onClick={onOpenBuyTries} className="bg-card border border-border1 rounded-2xl p-4 text-left">
-          <div className="text-2xl mb-1">👗</div><div className="text-3xl font-serif">{user?.balance ?? 0}</div>
+          <div className="text-2xl mb-1">👗</div><div className="text-3xl font-sans font-bold">{user?.balance ?? 0}</div>
           <div className="text-[10px] uppercase text-muted mt-2">Обычных</div>
         </button>
         <button onClick={onOpenOwn} className="bg-card border border-border1 rounded-2xl p-4 text-left">
-          <div className="text-2xl mb-1">📦</div><div className="text-3xl font-serif">{user?.own_tries ?? 0}</div>
+          <div className="text-2xl mb-1">📦</div><div className="text-3xl font-sans font-bold">{user?.own_tries ?? 0}</div>
           <div className="text-[10px] uppercase text-muted mt-2">Своих</div>
         </button>
       </div>
@@ -541,15 +543,25 @@ function SearchScreen({ catalog, onPick }) {
   }, [catalog]);
 
   return (
-    <main className="px-5 pt-6 pb-24" onClick={() => { if (document.activeElement?.tagName === 'INPUT') hideKeyboard(); }}>
+    <main className="px-5 pt-6 pb-24">
       <h1 className="font-serif text-3xl mb-5">Поиск</h1>
+
       <div className="relative mb-5">
-        <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)}
+        <input
+          ref={inputRef}
+          type="text"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); hideKeyboard(); } }}
-          placeholder="Название вещи…" enterKeyHint="search" inputMode="search"
-          autoComplete="off" autoCorrect="off" spellCheck="false"
-          className="w-full bg-card border border-border1 rounded-2xl pl-11 pr-12 py-3.5 text-sm outline-none focus:border-accentSoft" />
-        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          placeholder="Название вещи…"
+          enterKeyHint="search"
+          inputMode="search"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck="false"
+          className="w-full bg-card border border-border1 rounded-2xl pl-11 pr-12 py-3.5 text-sm outline-none focus:border-accentSoft"
+        />
+        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" />
         </svg>
         {q && (
@@ -557,6 +569,7 @@ function SearchScreen({ catalog, onPick }) {
             className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border border-border2 text-muted flex items-center justify-center text-xs">✕</button>
         )}
       </div>
+
       {!q.trim() && recommended.length > 0 && (
         <>
           <div className="text-[10px] uppercase text-muted mb-3">✨ Рекомендуем</div>
@@ -738,6 +751,13 @@ export default function App() {
 
   const resetTryOn = () => { setTab('catalog'); setSelected(null); setResultImage(null); setHumanImg(''); };
 
+  const shareResult = () => {
+    const text = 'Смотри, как я примерила вещь через Style Room ✨';
+    const url = `https://t.me/share/url?url=${encodeURIComponent(resultImage || '')}&text=${encodeURIComponent(text)}`;
+    if (window.Telegram?.WebApp?.openTelegramLink) window.Telegram.WebApp.openTelegramLink(url);
+    else window.open(url, '_blank');
+  };
+
   if (!user) return <div className="min-h-screen flex items-center justify-center bg-bg"><div className="spinner" /></div>;
   if (showOnboarding) return <Onboarding onDone={finishOnboarding} />;
 
@@ -811,7 +831,7 @@ export default function App() {
             <div className="aspect-[4/3]"><ProductImage src={selected.image_url} fallback={selected.fallback_url} alt={selected.name} className="w-full h-full" /></div>
             <div className="p-4">
               <div className="text-[10px] uppercase text-accentSoft mb-1">{CATEGORIES.find(x => x.key === selected.category)?.label}</div>
-              <div className="font-serif text-base">{selected.description || selected.name}</div>
+              <div className="font-sans font-medium text-base leading-snug">{selected.description || selected.name}</div>
               {selected.price && <div className="text-xs text-muted mt-1.5">≈ {selected.price.replace(/^≈\s*/, '')}</div>}
             </div>
           </div>
@@ -841,8 +861,14 @@ export default function App() {
             <>
               <img src={resultImage} alt="result" className="w-full rounded-2xl border border-border1 mb-5"
                 onError={(e) => { e.target.src = 'https://placehold.co/600x800/1A1412/D4B595?text=Фото+не+загрузилось'; }} />
+              <button onClick={shareResult}
+                className="w-full bg-accent text-bg py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2 mb-3">
+                📤 Поделиться
+              </button>
               <a href={`https://www.wildberries.ru/catalog/${selected?.wb_id}/detail.aspx`} target="_blank" rel="noreferrer"
-                className="block w-full bg-accent text-bg text-center py-4 rounded-2xl text-sm font-medium uppercase mb-3">Купить на WB</a>
+                className="block w-full border border-accentSoft text-accent text-center py-4 rounded-2xl text-sm font-medium uppercase mb-3">
+                🛍 Купить на WB
+              </a>
             </>
           ) : (
             <div className="text-center py-16">
