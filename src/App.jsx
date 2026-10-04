@@ -44,7 +44,11 @@ const HINTS = ['Обычно занимает 10–20 секунд', 'ИИ по�
 
 function haptic(t = 'light') { try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(t); } catch {} }
 
-function compressImage(file, maxSide = 1024, quality = 0.85) {
+const HINTS = ['Обычно занимает 10–20 секунд', 'ИИ подбирает образ…', 'Почти готово ✨', 'Это займёт ещё чуть-чуть'];
+
+function haptic(t = 'light') { try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(t); } catch {} }
+
+function compressImage(file, maxSide = 720, quality = 0.7) {
   return new Promise((res, rej) => {
     const r = new FileReader();
     r.onload = (e) => {
@@ -56,7 +60,12 @@ function compressImage(file, maxSide = 1024, quality = 0.85) {
         const c = document.createElement('canvas');
         c.width = width; c.height = height;
         c.getContext('2d').drawImage(img, 0, 0, width, height);
-        res(c.toDataURL('image/jpeg', quality));
+        let dataUrl = c.toDataURL('image/jpeg', quality);
+        // Если всё ещё больше 900 КБ — сжимаем сильнее
+        if (dataUrl.length > 900 * 1024) {
+          dataUrl = c.toDataURL('image/jpeg', 0.5);
+        }
+        res(dataUrl);
       };
       img.onerror = rej;
       img.src = e.target.result;
@@ -65,6 +74,7 @@ function compressImage(file, maxSide = 1024, quality = 0.85) {
     r.readAsDataURL(file);
   });
 }
+
 function fixDrive(u) {
   if (!u) return u;
   const m = u.match(/drive\.google\.com\/(?:uc\?.*id=|file\/d\/)([a-zA-Z0-9_-]+)/);
