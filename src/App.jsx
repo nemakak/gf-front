@@ -545,7 +545,6 @@ function SearchScreen({ catalog, onPick }) {
   return (
     <main className="px-5 pt-6 pb-24">
       <h1 className="font-serif text-3xl mb-5">Поиск</h1>
-
       <div className="relative mb-5">
         <input
           ref={inputRef}
@@ -569,7 +568,6 @@ function SearchScreen({ catalog, onPick }) {
             className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border border-border2 text-muted flex items-center justify-center text-xs">✕</button>
         )}
       </div>
-
       {!q.trim() && recommended.length > 0 && (
         <>
           <div className="text-[10px] uppercase text-muted mb-3">✨ Рекомендуем</div>
@@ -638,8 +636,20 @@ function BottomNav({ active, onChange }) {
   );
 }
 
+function MaintenanceScreen({ text }) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center bg-bg">
+      <div className="text-7xl mb-8">🚧</div>
+      <h1 className="font-serif text-3xl mb-4 text-title">Ведутся работы</h1>
+      <p className="text-sm text-muted2 max-w-xs leading-relaxed">{text || 'Скоро вернёмся, заходите чуть позже ✨'}</p>
+      <div className="mt-10 text-[10px] uppercase tracking-wider2 text-muted">Style Room</div>
+    </div>
+  );
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
+  const [maintenance, setMaintenance] = useState({ on: false, text: '' });
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [tab, setTab] = useState('catalog');
   const [screen, setScreen] = useState(null);
@@ -654,6 +664,20 @@ export default function App() {
   const fileRef = useRef(null);
 
   const showToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2500); };
+
+  useEffect(() => {
+    fetch(`${BACKEND}/api/settings`)
+      .then(r => r.json())
+      .then(d => { if (d.maintenance) setMaintenance({ on: true, text: d.maintenance_text || '' }); })
+      .catch(() => {});
+    const t = setInterval(() => {
+      fetch(`${BACKEND}/api/settings`)
+        .then(r => r.json())
+        .then(d => setMaintenance({ on: d.maintenance, text: d.maintenance_text || '' }))
+        .catch(() => {});
+    }, 60000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     if (tab !== 'loading') return;
@@ -758,6 +782,7 @@ export default function App() {
     else window.open(url, '_blank');
   };
 
+  if (maintenance.on) return <MaintenanceScreen text={maintenance.text} />;
   if (!user) return <div className="min-h-screen flex items-center justify-center bg-bg"><div className="spinner" /></div>;
   if (showOnboarding) return <Onboarding onDone={finishOnboarding} />;
 
