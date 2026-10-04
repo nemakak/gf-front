@@ -122,7 +122,6 @@ function ProductImage({ src, fallback, alt, className = '' }) {
   return <img src={url} alt={alt} onError={() => i < list.length - 1 && setI(i + 1)} className={`object-cover bg-card ${className}`} loading="lazy" />;
 }
 
-// ❤️ Лайк с анимацией
 function LikeButton({ liked, onToggle, size = 'md' }) {
   const [pulse, setPulse] = useState(false);
   const handleClick = (e) => {
@@ -180,7 +179,6 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike }) {
   );
 }
 
-// 🎯 Слайдер до/после
 function BeforeAfter({ before, after }) {
   const [pos, setPos] = useState(50);
   const ref = useRef(null);
@@ -198,7 +196,7 @@ function BeforeAfter({ before, after }) {
       onTouchStart={(e) => handleMove(e.touches[0].clientX)}>
       <img src={after} alt="after" className="absolute inset-0 w-full h-full object-cover" />
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
-        <img src={before} alt="before" className="absolute inset-0 w-full h-full object-cover" style={{ width: ref.current?.offsetWidth || '100%' }} />
+        <img src={before} alt="before" className="absolute inset-0 h-full object-cover" style={{ width: ref.current?.offsetWidth || '100vw', maxWidth: 'none' }} />
       </div>
       <div className="absolute top-0 bottom-0 w-0.5 bg-white/80 pointer-events-none" style={{ left: `${pos}%` }}>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white shadow-lg flex items-center justify-center text-black text-sm font-bold">⇆</div>
@@ -209,7 +207,6 @@ function BeforeAfter({ before, after }) {
   );
 }
 
-// ✨ Анимация загрузки
 function LoadingAnimation() {
   const [hintIdx, setHintIdx] = useState(0);
   useEffect(() => {
@@ -236,7 +233,6 @@ function LoadingAnimation() {
   );
 }
 
-// 🎨 Пустое состояние
 function EmptyState({ emoji, title, text, cta, onCta }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
@@ -251,8 +247,6 @@ function EmptyState({ emoji, title, text, cta, onCta }) {
     </div>
   );
 }
-
-// ============ ЭКРАНЫ ============
 
 function SubscriptionsScreen({ onBack, onBuy }) {
   const [expanded, setExpanded] = useState('pro');
@@ -976,9 +970,6 @@ function MaintenanceScreen({ text }) {
   );
 }
 
-// ============================================================
-// APP
-// ============================================================
 export default function App() {
   const [user, setUser] = useState(null);
   const [maintenance, setMaintenance] = useState({ on: false, text: '' });
@@ -1026,7 +1017,6 @@ export default function App() {
     }).catch(() => setUser({ tg_id: 0, first_name: 'Гость', username: '—', photo_url: '', balance: 0, own_tries: 0, onboarded: true, streak_days: 0 }));
   }, []);
 
-  // Загружаем лайки
   useEffect(() => {
     if (!user?.tg_id) return;
     fetch(`${BACKEND}/api/favorites/list`, {
@@ -1178,6 +1168,12 @@ export default function App() {
             </div>
           </button>
           <div className="flex items-center gap-2">
+            {user.streak_days > 0 && (
+              <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-orange-500/15 border border-orange-400/40">
+                <span className="text-[11px]">🔥</span>
+                <span className="text-xs font-bold text-orange-300">{user.streak_days}</span>
+              </div>
+            )}
             <button onClick={() => setScreen('buyTries')} className="px-3 py-1.5 rounded-full border border-border2 text-xs">✨ {user.balance ?? 0} <span className="text-accent font-bold">+</span></button>
             <button onClick={() => setScreen('subs')} className="px-3 py-1.5 rounded-full bg-accent text-bg text-xs font-bold">💎</button>
           </div>
