@@ -947,9 +947,13 @@ function GiftScreen({ onBack, onToast, user }) {
 function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
   const [loading, setLoading] = useState(null);
   const [last, setLast] = useState(null);
+  // добавление своих товаров по ссылкам
+  const [linksOpen, setLinksOpen] = useState(false);
+  const [linksText, setLinksText] = useState('');
+  const [linksLoading, setLinksLoading] = useState(false);
+  const [linksResult, setLinksResult] = useState(null);
 
   const CATS = [
-    { key: 'autumn',    label: 'Осень',           emoji: '🍂' },
     { key: 'top',       label: 'Верх',            emoji: '👕' },
     { key: 'bottom',    label: 'Низ',             emoji: '👖' },
     { key: 'outerwear', label: 'Верхняя одежда',  emoji: '🧥' },
@@ -967,16 +971,52 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', category }),
       });
+      if (!r.ok) {
+        const txt = await r.text().catch(() => '');
+        throw new Error(`HTTP ${r.status} ${txt.slice(0, 120)}`);
+      }
       const d = await r.json();
       setLast({ category, ...d });
       if (d.success) {
         onToast(`✅ +${d.added || 0} новых`);
         onCatalogRefreshed?.();
       } else {
-        onToast(d.reason || d.error || 'Ошибка');
+        onToast(d.reason || d.error || 'Ошибка WB');
       }
-    } catch (e) { onToast('Ошибка сети'); setLast({ category, success: false, reason: 'Ошибка сети' }); }
-    finally { setLoading(null); }
+    } catch (e) {
+      onToast('Ошибка сети: ' + e.message);
+      setLast({ category, success: false, reason: e.message });
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const addLinks = async () => {
+    if (!linksText.trim()) return onToast('Вставь ссылки');
+    setLinksLoading(true);
+    setLinksResult(null);
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/add-links`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', links: linksText.trim() }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        setLinksResult({ ok: d.added, fail: d.failed, items: d.items || [] });
+        onToast(`✅ Добавлено: ${d.added}`);
+        setLinksText('');
+        onCatalogRefreshed?.();
+      } else {
+        onToast(d.error || 'Ошибка');
+        setLinksResult({ ok: 0, fail: 0, error: d.error });
+      }
+    } catch (e) {
+      onToast('Ошибка сети: ' + e.message);
+      setLinksResult({ ok: 0, fail: 0, error: e.message });
+    } finally {
+      setLinksLoading(false);
+    }
   };
 
   return (
@@ -984,7 +1024,7 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
       <div className="text-[10px] uppercase text-accent mb-1">👑 Только для админа</div>
       <h1 className="font-serif text-3xl mb-2">Админка</h1>
-      <p className="text-xs text-muted mb-6">Пополнение каталога из Wildberries. «Осень» — тематическая подборка, пополняется отдельно.</p>
+      <p className="text-xs text-muted mb-6">Пополнение каталога из Wildberries. Осень подтягивается автоматически вместе с остальным.</p>
 
       {/* Всё разом */}
       <button
@@ -992,10 +1032,12 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
         disabled={!!loading}
         className="w-full bg-accent text-bg py-5 rounded-3xl text-sm font-bold uppercase tracking-wider2 mb-6 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
       >
-        {loading === 'all' ? <><span className="inline-block w-4 h-4 border-2 border-bg/40 border-t-bg rounded-full animate-spin" /> Пополняю всё…</> : <>🚀 Пополнить ВСЁ разом</>}
+        {loading === 'all'
+          ? <><span className="inline-block w-4 h-4 border-2 border-bg/40 border-t-bg rounded-full animate-spin" /> Пополняю всё…</>
+          : <>🚀 Пополнить ВСЁ разом</>}
       </button>
 
-      <div className="text-[10px] uppercase text-muted mb-3">По разделам</div>
+      <div className="text-[10px] uppercase text-muted mb-3">Отдельные разделы</div>
       <div className="grid grid-cols-2 gap-3 mb-5">
         {CATS.map(c => (
           <button
@@ -1026,14 +1068,57 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
             </div>
           ) : (
             <div className="text-[11px] text-muted2 leading-relaxed">
-              {last.reason || 'Не удалось получить товары с Wildberries. Скорее всего изменились endpoints или IP заблокирован.'}
+              {last.reason || 'Ошибка. Проверь логи Render.'}
             </div>
           )}
         </div>
       )}
 
-      <div className="text-[10px] text-muted leading-relaxed p-4 bg-bgSoft rounded-2xl border border-border1">
-        💡 Если WB не отдаёт товары — попробуй позже или через другой IP. Парсер сам ротирует endpoints.
+      {/* Свои товары по ссылкам */}
+      <div className="mt-6">
+        {!linksOpen ? (
+          <button
+            onClick={() => setLinksOpen(true)}
+            className="w-full bg-card border border-accentSoft text-accent rounded-2xl px-4 py-4 text-sm font-bold uppercase tracking-wider2 active:scale-[0.98]"
+          >
+            🔗 Добавить свои товары по ссылкам
+          </button>
+        ) : (
+          <div className="bg-card border border-accentSoft rounded-3xl p-4 animate-scale-in">
+            <div className="text-xs font-bold text-accent mb-3">🔗 Ссылки Wildberries</div>
+            <textarea
+              value={linksText}
+              onChange={(e) => setLinksText(e.target.value)}
+              placeholder={"Каждая ссылка с новой строки:\nhttps://www.wildberries.ru/catalog/183581368/detail.aspx\nhttps://www.wildberries.ru/catalog/123456789/detail.aspx"}
+              rows={6}
+              disabled={linksLoading}
+              className="w-full bg-bg border border-border1 rounded-2xl px-3 py-3 text-xs outline-none resize-none mb-3 font-mono"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={addLinks}
+                disabled={linksLoading || !linksText.trim()}
+                className="bg-accent text-bg py-3 rounded-2xl text-xs font-bold uppercase disabled:opacity-40"
+              >
+                {linksLoading ? '⏳ Добавляю…' : '✅ Добавить'}
+              </button>
+              <button
+                onClick={() => { setLinksOpen(false); setLinksText(''); setLinksResult(null); }}
+                disabled={linksLoading}
+                className="border border-border2 text-muted2 py-3 rounded-2xl text-xs uppercase"
+              >
+                Отмена
+              </button>
+            </div>
+            {linksResult && (
+              <div className="mt-4 text-[11px] text-muted2 space-y-1">
+                <div>✅ Добавлено: <b className="text-accent">{linksResult.ok}</b></div>
+                {linksResult.fail > 0 && <div>❌ Не удалось: <b>{linksResult.fail}</b></div>}
+                {linksResult.error && <div className="text-red-400">{linksResult.error}</div>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </main>
   );
