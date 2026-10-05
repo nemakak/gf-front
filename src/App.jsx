@@ -3,8 +3,9 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://gf-backend-uc51.onrender.com';
 const PROXY_URL = 'https://gf-images.maxgamingbrawlstars.workers.dev';
 
-// Осень первая, Все последняя
+// Категории: Для тебя — первая
 const CATEGORIES = [
+  { key: 'personal',  label: 'Для тебя',       emoji: '💫' },
   { key: 'autumn',    label: 'Осень',          emoji: '🍂' },
   { key: 'top',       label: 'Верх',           emoji: '👕' },
   { key: 'bottom',    label: 'Низ',            emoji: '👖' },
@@ -14,7 +15,6 @@ const CATEGORIES = [
   { key: 'all',       label: 'Все',            emoji: '✨' },
 ];
 
-// Подписки
 const SUBS = [
   { id: 'pro',    emoji: '💎', name: 'PRО',    subtitle: 'Максимум',        priceOld: 999, priceNew: 599, accent: '#D4B595',
     features: [
@@ -119,60 +119,38 @@ function compressImage(file, maxSide = 720, quality = 0.7) {
   });
 }
 
-// ============ СКАЧИВАНИЕ (ФИКС) ============
-// Пробуем по очереди: Telegram.downloadFile → fetch(blob) → fetch через прокси → openLink
 async function downloadImage(url, filename = 'style-room.jpg') {
   haptic('medium');
   if (!url) return;
-
-  // 1) Нативное скачивание в Telegram Mini App (Bot API 8.0+)
   try {
     const tg = window.Telegram?.WebApp;
     if (tg?.downloadFile) {
-      // downloadFile ожидает { url, file_name }
-      // В некоторых версиях SDK функция возвращает Promise
       const maybe = tg.downloadFile({ url, file_name: filename });
-      if (maybe && typeof maybe.then === 'function') {
-        await maybe;
-        return;
-      }
+      if (maybe && typeof maybe.then === 'function') { await maybe; return; }
       return;
     }
-  } catch (e) { /* фолбэк ниже */ }
-
-  // 2) fetch → blob → <a download> (обычный веб / Telegram Desktop)
+  } catch (e) {}
   const tryFetch = async (u) => {
     const res = await fetch(u, { mode: 'cors', credentials: 'omit' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return await res.blob();
   };
-
   let blob = null;
   const urls = [url];
-  // FAL-ссылки / WB-картинки иногда CORS-blocked — пробуем через прокси
-  if (!url.startsWith('data:')) {
-    urls.push(`${PROXY_URL}/?url=${encodeURIComponent(url)}`);
-  }
-
+  if (!url.startsWith('data:')) urls.push(`${PROXY_URL}/?url=${encodeURIComponent(url)}`);
   for (const u of urls) {
     try { blob = await tryFetch(u); if (blob) break; } catch {}
   }
-
   if (blob) {
     try {
       const objUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = objUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      a.href = objUrl; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(objUrl), 1500);
       return;
     } catch {}
   }
-
-  // 3) Финальный фолбэк — открываем в системном браузере
   try {
     if (window.Telegram?.WebApp?.openLink) {
       window.Telegram.WebApp.openLink(url, { try_instant_view: false });
@@ -200,9 +178,10 @@ function tgShare(url, text = SHARE_TEXT) {
   } catch { window.open(u, '_blank'); }
 }
 
-// ============ IMAGE ============
-function ProductImage({ src, fallback, alt, className = '' }) {   const [i, setI] = useState(0);   const [loaded, setLoaded] = useState(false);   const list = useMemo(() => {     const L = [];     const add = (u) => { if (u && !L.includes(u)) L.push(u); };     const s = fixDrive(src); const f = fixDrive(fallback);     if (s) add(`${PROXY_URL}/?url=${encodeURIComponent(s)}`);     if (s) add(s);     if (f && f !== s) { add(`${PROXY_URL}/?url=${encodeURIComponent(f)}`); add(f); }     add('https://placehold.co/400x500/1A1412/D4B595?text=Style+Room');     return L;   }, [src, fallback]);   const url = list[i] || list[list.length - 1];    return (     <div className="relative w-full h-full overflow-hidden">       {/* Скелетон пока грузится */}       {!loaded && (         <div className="absolute inset-0 bg-gradient-to-br from-bgSoft via-card to-bgSoft">           <div className="absolute inset-0 shimmer" />           <div className="absolute inset-0 flex items-center justify-center">             <div className="w-8 h-8 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />           </div>         </div>       )}       <img         src={url}         alt={alt}         onLoad={() => setLoaded(true)}         onError={() => i < list.length - 1 && setI(i + 1)}         className={`object-cover bg-card w-full h-full transition-all duration-500 ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'} ${className}`}         loading="lazy"       />     </div>   ); } = '' }) {
+// ============ IMAGE (с анимацией загрузки) ============
+function ProductImage({ src, fallback, alt, className = '' }) {
   const [i, setI] = useState(0);
+  const [loaded, setLoaded] = useState(false);
   const list = useMemo(() => {
     const L = [];
     const add = (u) => { if (u && !L.includes(u)) L.push(u); };
@@ -210,17 +189,31 @@ function ProductImage({ src, fallback, alt, className = '' }) {   const [i, setI
     if (s) add(`${PROXY_URL}/?url=${encodeURIComponent(s)}`);
     if (s) add(s);
     if (f && f !== s) { add(`${PROXY_URL}/?url=${encodeURIComponent(f)}`); add(f); }
-    const m = (src || '').match(/^(https:\/\/[^/]+)\/vol(\d+)\/part(\d+)\/(\d+)\//);
-    if (m) {
-      const host = m[1], id = m[4];
-      for (const size of ['hq', 'big', 'c516x688', 'c246x328', 'small'])
-        add(`${PROXY_URL}/?url=${encodeURIComponent(`${host}/vol${m[2]}/part${m[3]}/${id}/images/${size}/1.webp`)}`);
-    }
     add('https://placehold.co/400x500/1A1412/D4B595?text=Style+Room');
     return L;
   }, [src, fallback]);
   const url = list[i] || list[list.length - 1];
-  return <img src={url} alt={alt} onError={() => i < list.length - 1 && setI(i + 1)} className={`object-cover bg-card ${className}`} loading="lazy" />;
+
+  return (
+    <div className="relative w-full h-full overflow-hidden">
+      {!loaded && (
+        <div className="absolute inset-0 bg-gradient-to-br from-bgSoft via-card to-bgSoft">
+          <div className="absolute inset-0 shimmer" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+          </div>
+        </div>
+      )}
+      <img
+        src={url}
+        alt={alt}
+        onLoad={() => setLoaded(true)}
+        onError={() => i < list.length - 1 && setI(i + 1)}
+        className={`object-cover bg-card w-full h-full transition-all duration-500 ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'} ${className}`}
+        loading="lazy"
+      />
+    </div>
+  );
 }
 
 // ============ LIKE ============
@@ -279,13 +272,13 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon 
       <div className="px-3 pb-3 flex items-center gap-2">
         <a href={shopUrl} target="_blank" rel="noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="flex-1 text-center bg-bgSoft border border-border2 text-muted2 text-[9px] uppercase tracking-wider2 py-2 rounded-xl active:scale-95 transition">
+          className="flex-1 text-center bg-bgSoft border border-border2 text-muted2 text-[10px] uppercase tracking-wider2 py-2.5 rounded-xl active:scale-95 transition">
           🛍 WB
         </a>
         <button onClick={() => { haptic('medium'); onTryon ? onTryon(item) : onPick(item); }}
-  className="flex-1 bg-accent text-bg text-[10px] uppercase tracking-wider2 py-2.5 rounded-xl font-bold active:scale-95 transition">
-  Примерить
-</button>
+          className="flex-1 bg-accent text-bg text-[10px] uppercase tracking-wider2 py-2.5 rounded-xl font-bold active:scale-95 transition">
+          Примерить
+        </button>
       </div>
     </div>
   );
@@ -614,7 +607,7 @@ function OwnTriesScreen({ user, onBack, onToast }) {
       <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
       {humanImg && <img src={humanImg} alt="" className="w-full max-h-72 object-contain rounded-2xl mb-4 border border-border1 animate-scale-in" />}
       <button onClick={run} disabled={(user?.own_tries || 0) <= 0} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-sm font-bold uppercase mt-4">
-        {(user?.own_tries || 0) <= 0 ? 'Купите примерки' : '✨ Запустить · 1 попытка'}
+        {(user?.own_tries || 0) <= 0 ? 'Купите примерки' : 'Запустить · 1 попытка'}
       </button>
     </main>
   );
@@ -696,13 +689,13 @@ function MultiTryonScreen({ catalog, user, onBack, onToast }) {
         {catalog.slice(0, 30).map(item => <ProductCard key={item.id} item={item} selected={!!picked.find(x => x.id === item.id)} onToggle={toggle} />)}
       </div>
       <button onClick={run} disabled={picked.length < 2 || !humanImg || (user?.balance || 0) < picked.length} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-sm font-bold uppercase">
-        {picked.length < 2 ? 'Выберите минимум 2' : `✨ Пример ${picked.length} вещи`}
+        {picked.length < 2 ? 'Выберите минимум 2' : `Пример ${picked.length} вещи`}
       </button>
     </main>
   );
 }
 
-// ============ HISTORY (ФИКС скачивания и текста шаринга) ============
+// ============ HISTORY ============
 function HistoryScreen({ onBack }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -725,14 +718,8 @@ function HistoryScreen({ onBack }) {
             <div className="p-2.5">
               <div className="text-[10px] text-muted line-clamp-2 h-[26px] mb-2">{it.product_name || 'Товар'}</div>
               <div className="grid grid-cols-3 gap-1">
-                <button
-                  onClick={() => downloadImage(it.result_url, `style-room-${it.id}.jpg`)}
-                  className="bg-accent text-bg text-[10px] py-2 rounded-xl font-bold active:scale-95 transition"
-                  title="Скачать">📥</button>
-                <button
-                  onClick={() => tgShare(it.result_url)}
-                  className="bg-bgSoft border border-border2 text-accent text-[10px] py-2 rounded-xl active:scale-95 transition"
-                  title="Поделиться">📤</button>
+                <button onClick={() => downloadImage(it.result_url, `style-room-${it.id}.jpg`)} className="bg-accent text-bg text-[10px] py-2 rounded-xl font-bold active:scale-95 transition" title="Скачать">📥</button>
+                <button onClick={() => tgShare(it.result_url)} className="bg-bgSoft border border-border2 text-accent text-[10px] py-2 rounded-xl active:scale-95 transition" title="Поделиться">📤</button>
                 {it.product_wb_id ? <a href={wbUrl(it.product_wb_id)} target="_blank" rel="noreferrer" className="bg-bgSoft border border-border2 text-accent text-[10px] py-2 rounded-xl text-center">🛍</a> : <div />}
               </div>
             </div>
@@ -750,7 +737,7 @@ function FavoritesScreen({ onBack, onPick, onToast }) {
   const [cat, setCat] = useState('all');
   const load = useCallback((c) => {
     setLoading(true);
-    fetch(`${BACKEND}/api/favorites/list`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', category: c }) })
+    fetch(`${BACKEND}/api/favorites/list`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', category: c === 'personal' ? 'all' : c }) })
       .then(r => r.json()).then(d => { if (d.success) setItems(d.items || []); }).catch(() => {}).finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(cat); }, [cat, load]);
@@ -763,7 +750,7 @@ function FavoritesScreen({ onBack, onPick, onToast }) {
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
       <h1 className="font-serif text-2xl mb-5">❤️ Избранное</h1>
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-5 -mx-5 px-5">
-        {CATEGORIES.map(c => {
+        {CATEGORIES.filter(c => c.key !== 'personal').map(c => {
           const active = cat === c.key;
           return (
             <button key={c.key} onClick={() => setCat(c.key)} className={`whitespace-nowrap text-xs px-3.5 py-2 rounded-full border flex items-center gap-1.5 ${active ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted2'}`}>
@@ -945,11 +932,9 @@ function GiftScreen({ onBack, onToast, user }) {
 
 // ============ ADMIN SCREEN ============
 function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
-  // общее
-  const [tab, setTab] = useState('refresh'); // 'refresh' | 'cleanup'
-  const [loading, setLoading] = useState(null); // null | 'all' | 'autumn' | 'top' | ...
+  const [tab, setTab] = useState('refresh');
+  const [loading, setLoading] = useState(null);
   const [last, setLast] = useState(null);
-  const [refreshKey, setRefreshKey] = useState(0); // триггер для перерисовки каталога
 
   const CATS = [
     { key: 'autumn',    label: 'Осень',           emoji: '🍂' },
@@ -960,7 +945,6 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
     { key: 'dress',     label: 'Платья',          emoji: '👗' },
   ];
 
-  // Фоновое пополнение — не блокирует UI, статус в localStorage
   const refresh = (category) => {
     if (!user?.is_admin) return onToast('Нет доступа');
     if (loading) return onToast('Уже идёт пополнение');
@@ -968,14 +952,11 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
     setLoading(category);
     setLast(null);
 
-    // Помечаем в localStorage, чтобы при возврате в админку подхватить статус
     const startedAt = Date.now();
     localStorage.setItem('admin_refresh_started', JSON.stringify({ category, startedAt }));
-
-    onToast(`🔄 Пополняю «${category === 'all' ? 'всё разом' : category}»… можно уйти`);
+    onToast(`🔄 Пополняю… можно уйти`);
     haptic('medium');
 
-    // fire-and-forget
     fetch(`${BACKEND}/api/admin/refresh-catalog`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -984,54 +965,43 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
       .then(async (r) => {
         const txt = await r.text().catch(() => '');
         let d = {};
-        try { d = JSON.parse(txt); } catch { d = { success: false, reason: `HTTP ${r.status}: ${txt.slice(0, 200)}` }; }
-        const doneAt = Date.now();
-        const elapsed = ((doneAt - startedAt) / 1000).toFixed(1);
-        const result = { category, elapsed, ...d, doneAt };
+        try { d = JSON.parse(txt); } catch { d = { success: false, reason: `HTTP ${r.status}` }; }
+        const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
+        const result = { category, elapsed, ...d };
         setLast(result);
         setLoading(null);
         localStorage.removeItem('admin_refresh_started');
         localStorage.setItem('admin_last_refresh', JSON.stringify(result));
 
         if (d.success) {
-          const added = d.added || 0;
-          onToast(`✅ Пополнено (+${added}) за ${elapsed}с`);
-          haptic('medium');
-          // авто-обновление каталога
+          onToast(`✅ +${d.added || 0} за ${elapsed}с`);
           onCatalogRefreshed?.();
-          setRefreshKey(k => k + 1);
         } else {
           onToast(`❌ ${d.reason || d.error || 'Ошибка'}`);
         }
       })
       .catch((e) => {
-        const result = { category, success: false, reason: 'Ошибка сети: ' + e.message };
-        setLast(result);
+        setLast({ category, success: false, reason: 'Ошибка сети: ' + e.message });
         setLoading(null);
         localStorage.removeItem('admin_refresh_started');
-        localStorage.setItem('admin_last_refresh', JSON.stringify(result));
         onToast('❌ Ошибка сети');
       });
   };
 
-  // При входе — восстановить статус из localStorage, если было запущено
   useEffect(() => {
     try {
       const started = localStorage.getItem('admin_refresh_started');
       if (started) {
         const { category, startedAt } = JSON.parse(started);
-        setLoading(category);
-        // если >60 сек прошло и результата нет — считаем повисло
         if (Date.now() - startedAt > 60000) {
           localStorage.removeItem('admin_refresh_started');
-          setLoading(null);
-          onToast('⚠️ Прошлый запрос не завершился');
+        } else {
+          setLoading(category);
         }
       }
       const lastStr = localStorage.getItem('admin_last_refresh');
       if (lastStr) setLast(JSON.parse(lastStr));
     } catch {}
-    // eslint-disable-next-line
   }, []);
 
   return (
@@ -1041,21 +1011,13 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
       <h1 className="font-serif text-3xl mb-2">Админка</h1>
       <p className="text-xs text-muted mb-5">Пополнение каталога и подчистка товаров.</p>
 
-      {/* Табы */}
       <div className="grid grid-cols-2 gap-2 mb-6">
-        <button
-          onClick={() => setTab('refresh')}
-          className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 ${tab === 'refresh' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}
-        >🔄 Пополнение</button>
-        <button
-          onClick={() => setTab('cleanup')}
-          className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 ${tab === 'cleanup' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}
-        >🧹 Подчистка</button>
+        <button onClick={() => setTab('refresh')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 ${tab === 'refresh' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🔄 Пополнение</button>
+        <button onClick={() => setTab('cleanup')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 ${tab === 'cleanup' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🧹 Подчистка</button>
       </div>
 
       {tab === 'refresh' && (
         <>
-          {/* Пополнить всё */}
           <button
             onClick={() => refresh('all')}
             disabled={!!loading}
@@ -1063,21 +1025,15 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
           >
             {loading === 'all'
               ? <><span className="inline-block w-4 h-4 border-2 border-bg/40 border-t-bg rounded-full animate-spin" /> Пополняю…</>
-              : <>🚀 Пополнить ВСЁ разом (с Осенью)</>}
+              : <>🚀 Пополнить всё разом</>}
           </button>
-          <p className="text-[10px] text-muted text-center mb-5">
-            Можно уйти в другой раздел — пополнение продолжится. При возврате увидишь результат.
-          </p>
+          <p className="text-[10px] text-muted text-center mb-5">Можно уйти в другой раздел — пополнение продолжится.</p>
 
           <div className="text-[10px] uppercase text-muted mb-3">Отдельные разделы</div>
           <div className="grid grid-cols-2 gap-3 mb-5">
             {CATS.map(c => (
-              <button
-                key={c.key}
-                onClick={() => refresh(c.key)}
-                disabled={!!loading}
-                className="bg-card border border-border1 rounded-2xl p-4 text-left active:scale-[0.98] disabled:opacity-50 transition"
-              >
+              <button key={c.key} onClick={() => refresh(c.key)} disabled={!!loading}
+                className="bg-card border border-border1 rounded-2xl p-4 text-left active:scale-[0.98] disabled:opacity-50 transition">
                 <div className="text-3xl mb-2">{c.emoji}</div>
                 <div className="text-sm font-medium mb-1 text-title">{c.label}</div>
                 <div className="text-[10px] text-accent font-semibold">
@@ -1087,17 +1043,11 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
             ))}
           </div>
 
-          {/* Статус фонового пополнения */}
           {loading && (
             <div className="rounded-2xl p-4 border border-accent bg-accent/10 mb-5 animate-pulse">
               <div className="flex items-center gap-3">
                 <span className="inline-block w-4 h-4 border-2 border-accent/40 border-t-accent rounded-full animate-spin" />
-                <div className="text-xs font-bold text-accent">
-                  Идёт пополнение «{loading === 'all' ? 'всё разом' : loading}»…
-                </div>
-              </div>
-              <div className="text-[10px] text-muted mt-2">
-                Можешь свернуть приложение или перейти в другой раздел — не потеряется.
+                <div className="text-xs font-bold text-accent">Идёт пополнение «{loading === 'all' ? 'всё разом' : loading}»…</div>
               </div>
             </div>
           )}
@@ -1115,9 +1065,7 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
                   <div>⊘ Пропущено: <b>{last.failed || 0}</b></div>
                 </div>
               ) : (
-                <div className="text-[11px] text-muted2 leading-relaxed break-words">
-                  {last.reason || 'Не удалось получить товары. Попробуй позже.'}
-                </div>
+                <div className="text-[11px] text-muted2 leading-relaxed break-words">{last.reason || 'Не удалось'}</div>
               )}
             </div>
           )}
@@ -1167,7 +1115,7 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const act = async (action, productId, wbId) => {
+  const act = async (action, productId, wbId, extra = {}) => {
     setBusy(productId);
     try {
       const r = await fetch(`${BACKEND}/api/admin/products/action`, {
@@ -1175,7 +1123,7 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           initData: window.Telegram?.WebApp?.initData || '',
-          action, productId, wbId,
+          action, productId, wbId, ...extra,
         }),
       });
       const d = await r.json();
@@ -1183,12 +1131,65 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
         onToast(d.message || '✅ Готово');
         haptic('medium');
         onCatalogRefreshed?.();
-        // локальное обновление
         if (action === 'delete') setItems(prev => prev.filter(x => x.id !== productId));
         else if (action === 'hide') setItems(prev => prev.map(x => x.id === productId ? { ...x, is_active: false } : x));
         else if (action === 'unhide') setItems(prev => prev.map(x => x.id === productId ? { ...x, is_active: true } : x));
         else if (action === 'pin') setItems(prev => prev.map(x => x.id === productId ? { ...x, is_pinned: true } : x));
         else if (action === 'unpin') setItems(prev => prev.map(x => x.id === productId ? { ...x, is_pinned: false } : x));
+      } else onToast(d.error || 'Ошибка');
+    } catch { onToast('Ошибка сети'); }
+    finally { setBusy(null); }
+  };
+
+  const rename = async (item) => {
+    const newName = prompt('Новое название:', item.name);
+    if (!newName || newName === item.name) return;
+    setBusy(item.id);
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/products/rename`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData: window.Telegram?.WebApp?.initData || '',
+          productId: item.id,
+          newName,
+        }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        setItems(prev => prev.map(x => x.id === item.id ? { ...x, name: d.name } : x));
+        onToast('✏️ Переименовано');
+        onCatalogRefreshed?.();
+      } else onToast(d.error || 'Ошибка');
+    } catch { onToast('Ошибка сети'); }
+    finally { setBusy(null); }
+  };
+
+  const clearCategory = async (mode) => {
+    if (filter === 'all') return;
+    const label = CATS.find(c => c.key === filter)?.label || filter;
+    if (mode === 'delete') {
+      if (!confirm(`УДАЛИТЬ ВСЕ товары из раздела «${label}»?`)) return;
+      if (!confirm('Точно? Это необратимо.')) return;
+    } else {
+      if (!confirm(`Скрыть все товары из раздела «${label}»?`)) return;
+    }
+    setBusy('category');
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/products/clear-category`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData: window.Telegram?.WebApp?.initData || '',
+          category: filter,
+          mode,
+        }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        onToast(mode === 'delete' ? `🗑 Удалено: ${d.affected}` : `🙈 Скрыто: ${d.affected}`);
+        load();
+        onCatalogRefreshed?.();
       } else onToast(d.error || 'Ошибка');
     } catch { onToast('Ошибка сети'); }
     finally { setBusy(null); }
@@ -1201,12 +1202,8 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
   return (
     <div>
       <div className="bg-card border border-border2 rounded-2xl p-3 mb-3 flex items-center gap-2">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Поиск по названию…"
-          className="flex-1 bg-bg border border-border1 rounded-xl px-3 py-2.5 text-xs outline-none focus:border-accentSoft"
-        />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск по названию…"
+          className="flex-1 bg-bg border border-border1 rounded-xl px-3 py-2.5 text-xs outline-none focus:border-accentSoft" />
         <button onClick={load} className="px-3 py-2.5 rounded-xl border border-border2 text-xs">🔄</button>
       </div>
 
@@ -1214,16 +1211,26 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
         {CATS.map(c => {
           const active = filter === c.key;
           return (
-            <button
-              key={c.key}
-              onClick={() => setFilter(c.key)}
-              className={`whitespace-nowrap text-xs px-3 py-2 rounded-full border flex items-center gap-1.5 ${active ? 'bg-accent text-bg border-accent font-bold' : 'border-border2 text-muted2'}`}
-            >
+            <button key={c.key} onClick={() => setFilter(c.key)}
+              className={`whitespace-nowrap text-xs px-3 py-2 rounded-full border flex items-center gap-1.5 ${active ? 'bg-accent text-bg border-accent font-bold' : 'border-border2 text-muted2'}`}>
               <span>{c.emoji}</span>{c.label}
             </button>
           );
         })}
       </div>
+
+      {filter !== 'all' && (
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          <button onClick={() => clearCategory('hide')} disabled={busy === 'category'}
+            className="bg-card border border-orange-500/40 text-orange-300 py-3 rounded-2xl text-[10px] font-bold uppercase active:scale-[0.98] disabled:opacity-50">
+            🙈 Скрыть весь раздел
+          </button>
+          <button onClick={() => clearCategory('delete')} disabled={busy === 'category'}
+            className="bg-card border border-red-500/40 text-red-400 py-3 rounded-2xl text-[10px] font-bold uppercase active:scale-[0.98] disabled:opacity-50">
+            🗑 Удалить весь раздел
+          </button>
+        </div>
+      )}
 
       <div className="text-[10px] text-muted mb-3">Товаров: <b className="text-title">{filtered.length}</b></div>
 
@@ -1245,33 +1252,23 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
               <div className="text-[11px] text-title line-clamp-2 leading-snug mb-1">{item.name}</div>
               <div className="text-[10px] text-muted mb-1.5">{item.price || '—'} · WB {item.wb_id}</div>
               <div className="flex flex-wrap gap-1">
-                <button
-                  onClick={() => act(item.is_pinned ? 'unpin' : 'pin', item.id, item.wb_id)}
-                  disabled={busy === item.id}
-                  className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 disabled:opacity-40"
-                >{item.is_pinned ? '📌 Убрать' : '📌 Пин'}</button>
+                <button onClick={() => act(item.is_pinned ? 'unpin' : 'pin', item.id, item.wb_id)} disabled={busy === item.id}
+                  className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 disabled:opacity-40">
+                  {item.is_pinned ? '📌 Убрать' : '📌 Пин'}
+                </button>
                 {item.is_active ? (
-                  <button
-                    onClick={() => act('hide', item.id, item.wb_id)}
-                    disabled={busy === item.id}
-                    className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 disabled:opacity-40"
-                  >🙈 Скрыть</button>
+                  <button onClick={() => act('hide', item.id, item.wb_id)} disabled={busy === item.id}
+                    className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 disabled:opacity-40">🙈 Скрыть</button>
                 ) : (
-                  <button
-                    onClick={() => act('unhide', item.id, item.wb_id)}
-                    disabled={busy === item.id}
-                    className="text-[9px] px-2 py-1 rounded-lg border border-accentSoft text-accent disabled:opacity-40"
-                  >👁 Вернуть</button>
+                  <button onClick={() => act('unhide', item.id, item.wb_id)} disabled={busy === item.id}
+                    className="text-[9px] px-2 py-1 rounded-lg border border-accentSoft text-accent disabled:opacity-40">👁 Вернуть</button>
                 )}
-                <a
-                  href={wbUrl(item.wb_id)} target="_blank" rel="noreferrer"
-                  className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2"
-                >🛍 WB</a>
-                <button
-                  onClick={() => { if (confirm('Удалить товар насовсем?')) act('delete', item.id, item.wb_id); }}
-                  disabled={busy === item.id}
-                  className="text-[9px] px-2 py-1 rounded-lg border border-red-500/40 text-red-400 disabled:opacity-40"
-                >🗑 Удалить</button>
+                <button onClick={() => rename(item)} disabled={busy === item.id}
+                  className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 disabled:opacity-40">✏️ Имя</button>
+                <a href={wbUrl(item.wb_id)} target="_blank" rel="noreferrer"
+                  className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2">🛍 WB</a>
+                <button onClick={() => { if (confirm('Удалить товар насовсем?')) act('delete', item.id, item.wb_id); }} disabled={busy === item.id}
+                  className="text-[9px] px-2 py-1 rounded-lg border border-red-500/40 text-red-400 disabled:opacity-40">🗑 Удалить</button>
               </div>
             </div>
           </div>
@@ -1361,7 +1358,7 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
         <button onClick={() => setIdeaOpen(true)} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99]"><span className="text-sm">💡 Предложить идею</span><span className="text-muted">→</span></button>
         {user?.is_admin && (
           <button onClick={onOpenAdmin} className="w-full bg-gradient-to-r from-accent/20 to-accent/5 border border-accent rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99]">
-            <span className="text-sm font-bold text-accent">👑 Админка · пополнить каталог</span>
+            <span className="text-sm font-bold text-accent">👑 Админка</span>
             <span className="text-accent">→</span>
           </button>
         )}
@@ -1394,24 +1391,84 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
   );
 }
 
-// ============ SEARCH ============ function SearchScreen({ onPick, likedIds, onLike }) {   const [q, setQ] = useState('');   const [results, setResults] = useState([]);   const [loading, setLoading] = useState(false);   const [error, setError] = useState(null);   const inputRef = useRef(null);   const abortRef = useRef(null);    const hideKeyboard = () => {     try { inputRef.current?.blur(); } catch {}     haptic('light');   };    useEffect(() => {     const query = q.trim();     if (query.length < 2) {       setResults([]);       setLoading(false);       setError(null);       return;     }      setLoading(true);     setError(null);      const t = setTimeout(async () => {       // Отменяем предыдущий запрос, если он ещё летит       if (abortRef.current) abortRef.current.abort();       const ctrl = new AbortController();       abortRef.current = ctrl;        try {         const r = await fetch(           `${BACKEND}/api/search?q=${encodeURIComponent(query)}&limit=60`,           { signal: ctrl.signal }         );         if (!r.ok) throw new Error(`HTTP ${r.status}`);         const d = await r.json();         if (d.success) setResults(d.items || []);         else setError(d.error || 'Ошибка поиска');       } catch (e) {         if (e.name !== 'AbortError') {           setError('Не удалось найти. Проверь связь');           setResults([]);         }       } finally {         setLoading(false);       }     }, 300); // debounce 300 мс      return () => clearTimeout(t);   }, [q]);    return (     <main className="px-5 pt-6 pb-24 animate-fade-in">       <h1 className="font-serif text-3xl mb-5">Поиск</h1>        <div className="relative mb-5">         <input           ref={inputRef}           type="text"           value={q}           onChange={(e) => setQ(e.target.value)}           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); hideKeyboard(); } }}           placeholder="Пальто, костюм, платье…"           className="w-full bg-card border border-border1 rounded-2xl pl-11 pr-12 py-3.5 text-sm outline-none focus:border-accentSoft"         />         <svg           className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none"           fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"         >           <circle cx="11" cy="11" r="7" />           <path d="m21 21-4.35-4.35" />         </svg>         {q && (           <button             type="button"             onClick={() => setQ('')}             className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border border-border2 text-muted flex items-center justify-center text-xs"           >✕</button>         )}       </div>        {!q.trim() && (         <EmptyState           emoji="🔍"           title="Что ищем?"           text="Введи название вещи: пальто, костюм, джинсы, платье…"         />       )}        {loading && (         <div className="flex items-center justify-center gap-3 py-16 text-muted text-sm">           <span className="inline-block w-4 h-4 border-2 border-muted/30 border-t-accent rounded-full animate-spin" />           Ищу…         </div>       )}        {!loading && error && (         <EmptyState emoji="😕" title="Ошибка" text={error} />       )}        {!loading && !error && q.trim().length >= 2 && results.length === 0 && (         <EmptyState           emoji="🤷‍♀️"           title="Ничего не найдено"           text={`По запросу «${q.trim()}» ничего нет. Попробуй другое слово.`}         />       )}        {!loading && results.length > 0 && (         <>           <div className="text-[10px] uppercase text-muted mb-3">             Найдено: <b className="text-title">{results.length}</b>           </div>           <div className="grid grid-cols-2 gap-3">             {results.map(item => (               <ProductCard                 key={item.id}                 item={item}                 onPick={onPick}                 liked={likedIds.has(item.id)}                 onLike={onLike}               />             ))}           </div>         </>       )}     </main>   ); }
-function SearchScreen({ catalog, onPick, likedIds, onLike }) {
+// ============ SEARCH ============
+function SearchScreen({ onPick, likedIds, onLike }) {
   const [q, setQ] = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const inputRef = useRef(null);
+  const abortRef = useRef(null);
+
   const hideKeyboard = () => { try { inputRef.current?.blur(); } catch {} haptic('light'); };
-  const results = q.trim() ? catalog.filter(p => (p.name + ' ' + (p.description || '')).toLowerCase().includes(q.toLowerCase().trim())) : [];
+
+  useEffect(() => {
+    const query = q.trim();
+    if (query.length < 2) { setResults([]); setLoading(false); setError(null); return; }
+
+    setLoading(true);
+    setError(null);
+
+    const t = setTimeout(async () => {
+      if (abortRef.current) abortRef.current.abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+
+      try {
+        const r = await fetch(`${BACKEND}/api/search?q=${encodeURIComponent(query)}&limit=60`, { signal: ctrl.signal });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const d = await r.json();
+        if (d.success) setResults(d.items || []);
+        else setError(d.error || 'Ошибка поиска');
+      } catch (e) {
+        if (e.name !== 'AbortError') { setError('Не удалось найти. Проверь связь'); setResults([]); }
+      } finally { setLoading(false); }
+    }, 300);
+
+    return () => clearTimeout(t);
+  }, [q]);
+
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <h1 className="font-serif text-3xl mb-5">Поиск</h1>
+
       <div className="relative mb-5">
-        <input ref={inputRef} type="text" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); hideKeyboard(); } }} placeholder="Название вещи…" className="w-full bg-card border border-border1 rounded-2xl pl-11 pr-12 py-3.5 text-sm outline-none focus:border-accentSoft" />
-        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" /></svg>
-        {q && <button type="button" onClick={() => setQ('')} className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border border-border2 text-muted flex items-center justify-center text-xs">✕</button>}
+        <input ref={inputRef} type="text" value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); hideKeyboard(); } }}
+          placeholder="Пальто, костюм, платье…"
+          className="w-full bg-card border border-border1 rounded-2xl pl-11 pr-12 py-3.5 text-sm outline-none focus:border-accentSoft" />
+        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" />
+        </svg>
+        {q && (
+          <button type="button" onClick={() => setQ('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border border-border2 text-muted flex items-center justify-center text-xs">✕</button>
+        )}
       </div>
-      {!q.trim() && <EmptyState emoji="🔍" title="Что ищем?" text="Введи название вещи или категорию" />}
-      {q.trim() && results.length === 0 && <EmptyState emoji="🤷‍♀️" title="Ничего не найдено" text="Попробуй другое название" />}
-      {q.trim() && results.length > 0 && (
-        <div className="grid grid-cols-2 gap-3">{results.map(item => <ProductCard key={item.id} item={item} onPick={onPick} liked={likedIds.has(item.id)} onLike={onLike} />)}</div>
+
+      {!q.trim() && <EmptyState emoji="🔍" title="Что ищем?" text="Введи название: пальто, костюм, джинсы…" />}
+
+      {loading && (
+        <div className="flex items-center justify-center gap-3 py-16 text-muted text-sm">
+          <span className="inline-block w-4 h-4 border-2 border-muted/30 border-t-accent rounded-full animate-spin" />
+          Ищу…
+        </div>
+      )}
+
+      {!loading && error && <EmptyState emoji="😕" title="Ошибка" text={error} />}
+
+      {!loading && !error && q.trim().length >= 2 && results.length === 0 && (
+        <EmptyState emoji="🤷‍♀️" title="Ничего не найдено" text={`По запросу «${q.trim()}» ничего нет.`} />
+      )}
+
+      {!loading && results.length > 0 && (
+        <>
+          <div className="text-[10px] uppercase text-muted mb-3">Найдено: <b className="text-title">{results.length}</b></div>
+          <div className="grid grid-cols-2 gap-3">
+            {results.map(item => <ProductCard key={item.id} item={item} onPick={onPick} liked={likedIds.has(item.id)} onLike={onLike} />)}
+          </div>
+        </>
       )}
     </main>
   );
@@ -1484,7 +1541,7 @@ function StyleTestScreen({ onBack, onPick }) {
 }
 
 // ============ КАТАЛОГ ============
-function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenTest, onOpenOwn, onOpenMulti, shareRef, seed }) {
+function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenTest, onOpenOwn, onOpenMulti, shareRef }) {
   return (
     <main className="px-5 pt-6 animate-fade-in">
       <div className="flex items-end justify-between mb-6">
@@ -1600,13 +1657,32 @@ export default function App() {
   const loadCatalog = useCallback(async (cat) => {
     setLoading(true);
     try {
-      const q = cat && cat !== 'all' ? `?category=${encodeURIComponent(cat)}&seed=${seed}` : `?seed=${seed}`;
-      const r = await fetch(`${BACKEND}/api/catalog${q}`, { headers: { 'x-init-data': window.Telegram?.WebApp?.initData || '' } });
+      let url;
+      if (cat === 'personal') {
+        url = `${BACKEND}/api/catalog-personal?limit=40`;
+      } else {
+        const q = cat && cat !== 'all' ? `?category=${encodeURIComponent(cat)}&seed=${seed}` : `?seed=${seed}`;
+        url = `${BACKEND}/api/catalog${q}`;
+      }
+      const r = await fetch(url, { headers: { 'x-init-data': window.Telegram?.WebApp?.initData || '' } });
       const d = await r.json();
-      setCatalog(d.success && d.items.length ? d.items : (cat === 'autumn' ? [] : FALLBACK));
+      setCatalog(d.success && d.items.length ? d.items : (cat === 'autumn' || cat === 'personal' ? [] : FALLBACK));
     } catch { setCatalog(FALLBACK); } finally { setLoading(false); }
   }, [seed]);
   useEffect(() => { loadCatalog(category); }, [category, loadCatalog]);
+
+  const handleProductPick = useCallback((item) => {
+    setSelected(item);
+    setTab('upload');
+    fetch(`${BACKEND}/api/view`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        initData: window.Telegram?.WebApp?.initData || '',
+        productId: item.id,
+        category: item.category,
+      }),
+    }).catch(() => {});
+  }, []);
 
   const onPickFile = async (e) => {
     const f = e.target.files?.[0]; if (!f) return;
@@ -1679,11 +1755,11 @@ export default function App() {
   if (screen === 'history') return <><HistoryScreen onBack={() => setScreen(null)} />{nav}</>;
   if (screen === 'own') return <><OwnTriesScreen user={user} onBack={() => setScreen(null)} onToast={showToast} />{nav}</>;
   if (screen === 'multi') return <><MultiTryonScreen catalog={catalog} user={user} onBack={() => setScreen(null)} onToast={showToast} />{nav}</>;
-  if (screen === 'favorites') return <><FavoritesScreen onBack={() => setScreen(null)} onPick={(it) => { setSelected(it); setTab('upload'); }} onToast={showToast} />{nav}</>;
+  if (screen === 'favorites') return <><FavoritesScreen onBack={() => setScreen(null)} onPick={handleProductPick} onToast={showToast} />{nav}</>;
   if (screen === 'achievements') return <><AchievementsScreen onBack={() => setScreen(null)} />{nav}</>;
-  if (screen === 'leaderboard') return <><LeaderboardScreen onBack={() => setScreen(null)} onPick={(it) => { setSelected(it); setTab('upload'); }} user={user} myRank={myRank} />{nav}</>;
+  if (screen === 'leaderboard') return <><LeaderboardScreen onBack={() => setScreen(null)} onPick={handleProductPick} user={user} myRank={myRank} />{nav}</>;
   if (screen === 'gift') return <><GiftScreen onBack={() => setScreen(null)} onToast={showToast} user={user} />{nav}</>;
-  if (screen === 'test') return <><StyleTestScreen onBack={() => setScreen(null)} onPick={(it) => { setSelected(it); setTab('upload'); }} />{nav}</>;
+  if (screen === 'test') return <><StyleTestScreen onBack={() => setScreen(null)} onPick={handleProductPick} />{nav}</>;
   if (screen === 'admin') return <><AdminScreen user={user} onBack={() => setScreen(null)} onToast={showToast} onCatalogRefreshed={() => loadCatalog(category)} />{nav}</>;
 
   return (
@@ -1735,12 +1811,12 @@ export default function App() {
 
       {tab === 'catalog' && (
         <CatalogScreen catalog={catalog} loading={loading} category={category} setCategory={setCategory}
-          onPick={(it) => { setSelected(it); setTab('upload'); }} likedIds={likedIds} onLike={toggleLike}
+          onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike}
           onOpenTest={() => setScreen('test')} onOpenOwn={() => setScreen('own')} onOpenMulti={() => setScreen('multi')}
-          shareRef={shareRef} seed={seed} />
+          shareRef={shareRef} />
       )}
 
-      {tab === 'search' && <SearchScreen catalog={catalog} onPick={(it) => { setSelected(it); setTab('upload'); }} likedIds={likedIds} onLike={toggleLike} />}
+      {tab === 'search' && <SearchScreen onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike} />}
 
       {tab === 'profile' && <ProfileScreen user={user} myRank={myRank}
         onOpenSubs={() => setScreen('subs')} onOpenBuyTries={() => setScreen('buyTries')}
@@ -1769,7 +1845,7 @@ export default function App() {
           <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
           {humanImg && <img src={humanImg} alt="" className="w-full max-h-72 object-contain rounded-2xl mb-4 animate-scale-in" />}
           <button onClick={runTryOn} disabled={!humanImg} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-sm font-bold uppercase mt-4">
-            ✨ Запустить примерку
+            Запустить примерку
           </button>
         </main>
       )}
