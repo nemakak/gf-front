@@ -283,9 +283,9 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon 
           🛍 WB
         </a>
         <button onClick={() => { haptic('medium'); onTryon ? onTryon(item) : onPick(item); }}
-          className="flex-1 bg-accent text-bg text-[9px] uppercase tracking-wider2 py-2 rounded-xl font-bold active:scale-95 transition">
-          ✨ Примерить
-        </button>
+  className="flex-1 bg-accent text-bg text-[10px] uppercase tracking-wider2 py-2.5 rounded-xl font-bold active:scale-95 transition">
+  Примерить
+</button>
       </div>
     </div>
   );
