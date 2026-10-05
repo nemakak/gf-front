@@ -201,7 +201,7 @@ function tgShare(url, text = SHARE_TEXT) {
 }
 
 // ============ IMAGE ============
-function ProductImage({ src, fallback, alt, className = '' }) {
+function ProductImage({ src, fallback, alt, className = '' }) {   const [i, setI] = useState(0);   const [loaded, setLoaded] = useState(false);   const list = useMemo(() => {     const L = [];     const add = (u) => { if (u && !L.includes(u)) L.push(u); };     const s = fixDrive(src); const f = fixDrive(fallback);     if (s) add(`${PROXY_URL}/?url=${encodeURIComponent(s)}`);     if (s) add(s);     if (f && f !== s) { add(`${PROXY_URL}/?url=${encodeURIComponent(f)}`); add(f); }     add('https://placehold.co/400x500/1A1412/D4B595?text=Style+Room');     return L;   }, [src, fallback]);   const url = list[i] || list[list.length - 1];    return (     <div className="relative w-full h-full overflow-hidden">       {/* Скелетон пока грузится */}       {!loaded && (         <div className="absolute inset-0 bg-gradient-to-br from-bgSoft via-card to-bgSoft">           <div className="absolute inset-0 shimmer" />           <div className="absolute inset-0 flex items-center justify-center">             <div className="w-8 h-8 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />           </div>         </div>       )}       <img         src={url}         alt={alt}         onLoad={() => setLoaded(true)}         onError={() => i < list.length - 1 && setI(i + 1)}         className={`object-cover bg-card w-full h-full transition-all duration-500 ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'} ${className}`}         loading="lazy"       />     </div>   ); } = '' }) {
   const [i, setI] = useState(0);
   const list = useMemo(() => {
     const L = [];
