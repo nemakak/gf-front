@@ -943,17 +943,16 @@ function GiftScreen({ onBack, onToast, user }) {
   );
 }
 
-// ============ ADMIN SCREEN (НОВОЕ) ============
+// ============ ADMIN SCREEN ============
 function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
-  const [loading, setLoading] = useState(null);
+  // общее
+  const [tab, setTab] = useState('refresh'); // 'refresh' | 'cleanup'
+  const [loading, setLoading] = useState(null); // null | 'all' | 'autumn' | 'top' | ...
   const [last, setLast] = useState(null);
-  // добавление своих товаров по ссылкам
-  const [linksOpen, setLinksOpen] = useState(false);
-  const [linksText, setLinksText] = useState('');
-  const [linksLoading, setLinksLoading] = useState(false);
-  const [linksResult, setLinksResult] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0); // триггер для перерисовки каталога
 
   const CATS = [
+    { key: 'autumn',    label: 'Осень',           emoji: '🍂' },
     { key: 'top',       label: 'Верх',            emoji: '👕' },
     { key: 'bottom',    label: 'Низ',             emoji: '👖' },
     { key: 'outerwear', label: 'Верхняя одежда',  emoji: '🧥' },
@@ -961,166 +960,324 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
     { key: 'dress',     label: 'Платья',          emoji: '👗' },
   ];
 
-  const refresh = async (category) => {
+  // Фоновое пополнение — не блокирует UI, статус в localStorage
+  const refresh = (category) => {
     if (!user?.is_admin) return onToast('Нет доступа');
+    if (loading) return onToast('Уже идёт пополнение');
+
     setLoading(category);
     setLast(null);
-    try {
-      const r = await fetch(`${BACKEND}/api/admin/refresh-catalog`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', category }),
-      });
-      if (!r.ok) {
+
+    // Помечаем в localStorage, чтобы при возврате в админку подхватить статус
+    const startedAt = Date.now();
+    localStorage.setItem('admin_refresh_started', JSON.stringify({ category, startedAt }));
+
+    onToast(`🔄 Пополняю «${category === 'all' ? 'всё разом' : category}»… можно уйти`);
+    haptic('medium');
+
+    // fire-and-forget
+    fetch(`${BACKEND}/api/admin/refresh-catalog`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', category }),
+    })
+      .then(async (r) => {
         const txt = await r.text().catch(() => '');
-        throw new Error(`HTTP ${r.status} ${txt.slice(0, 120)}`);
-      }
-      const d = await r.json();
-      setLast({ category, ...d });
-      if (d.success) {
-        onToast(`✅ +${d.added || 0} новых`);
-        onCatalogRefreshed?.();
-      } else {
-        onToast(d.reason || d.error || 'Ошибка WB');
-      }
-    } catch (e) {
-      onToast('Ошибка сети: ' + e.message);
-      setLast({ category, success: false, reason: e.message });
-    } finally {
-      setLoading(null);
-    }
+        let d = {};
+        try { d = JSON.parse(txt); } catch { d = { success: false, reason: `HTTP ${r.status}: ${txt.slice(0, 200)}` }; }
+        const doneAt = Date.now();
+        const elapsed = ((doneAt - startedAt) / 1000).toFixed(1);
+        const result = { category, elapsed, ...d, doneAt };
+        setLast(result);
+        setLoading(null);
+        localStorage.removeItem('admin_refresh_started');
+        localStorage.setItem('admin_last_refresh', JSON.stringify(result));
+
+        if (d.success) {
+          const added = d.added || 0;
+          onToast(`✅ Пополнено (+${added}) за ${elapsed}с`);
+          haptic('medium');
+          // авто-обновление каталога
+          onCatalogRefreshed?.();
+          setRefreshKey(k => k + 1);
+        } else {
+          onToast(`❌ ${d.reason || d.error || 'Ошибка'}`);
+        }
+      })
+      .catch((e) => {
+        const result = { category, success: false, reason: 'Ошибка сети: ' + e.message };
+        setLast(result);
+        setLoading(null);
+        localStorage.removeItem('admin_refresh_started');
+        localStorage.setItem('admin_last_refresh', JSON.stringify(result));
+        onToast('❌ Ошибка сети');
+      });
   };
 
-  const addLinks = async () => {
-    if (!linksText.trim()) return onToast('Вставь ссылки');
-    setLinksLoading(true);
-    setLinksResult(null);
+  // При входе — восстановить статус из localStorage, если было запущено
+  useEffect(() => {
     try {
-      const r = await fetch(`${BACKEND}/api/admin/add-links`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', links: linksText.trim() }),
-      });
-      const d = await r.json();
-      if (d.success) {
-        setLinksResult({ ok: d.added, fail: d.failed, items: d.items || [] });
-        onToast(`✅ Добавлено: ${d.added}`);
-        setLinksText('');
-        onCatalogRefreshed?.();
-      } else {
-        onToast(d.error || 'Ошибка');
-        setLinksResult({ ok: 0, fail: 0, error: d.error });
+      const started = localStorage.getItem('admin_refresh_started');
+      if (started) {
+        const { category, startedAt } = JSON.parse(started);
+        setLoading(category);
+        // если >60 сек прошло и результата нет — считаем повисло
+        if (Date.now() - startedAt > 60000) {
+          localStorage.removeItem('admin_refresh_started');
+          setLoading(null);
+          onToast('⚠️ Прошлый запрос не завершился');
+        }
       }
-    } catch (e) {
-      onToast('Ошибка сети: ' + e.message);
-      setLinksResult({ ok: 0, fail: 0, error: e.message });
-    } finally {
-      setLinksLoading(false);
-    }
-  };
+      const lastStr = localStorage.getItem('admin_last_refresh');
+      if (lastStr) setLast(JSON.parse(lastStr));
+    } catch {}
+    // eslint-disable-next-line
+  }, []);
 
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
       <div className="text-[10px] uppercase text-accent mb-1">👑 Только для админа</div>
       <h1 className="font-serif text-3xl mb-2">Админка</h1>
-      <p className="text-xs text-muted mb-6">Пополнение каталога из Wildberries. Осень подтягивается автоматически вместе с остальным.</p>
+      <p className="text-xs text-muted mb-5">Пополнение каталога и подчистка товаров.</p>
 
-      {/* Всё разом */}
-      <button
-        onClick={() => refresh('all')}
-        disabled={!!loading}
-        className="w-full bg-accent text-bg py-5 rounded-3xl text-sm font-bold uppercase tracking-wider2 mb-6 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-      >
-        {loading === 'all'
-          ? <><span className="inline-block w-4 h-4 border-2 border-bg/40 border-t-bg rounded-full animate-spin" /> Пополняю всё…</>
-          : <>🚀 Пополнить ВСЁ разом</>}
-      </button>
-
-      <div className="text-[10px] uppercase text-muted mb-3">Отдельные разделы</div>
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        {CATS.map(c => (
-          <button
-            key={c.key}
-            onClick={() => refresh(c.key)}
-            disabled={!!loading}
-            className="bg-card border border-border1 rounded-2xl p-4 text-left active:scale-[0.98] disabled:opacity-50 transition"
-          >
-            <div className="text-3xl mb-2">{c.emoji}</div>
-            <div className="text-sm font-medium mb-1 text-title">{c.label}</div>
-            <div className="text-[10px] text-accent font-semibold">
-              {loading === c.key ? '⏳ Загрузка…' : '🔄 Пополнить'}
-            </div>
-          </button>
-        ))}
+      {/* Табы */}
+      <div className="grid grid-cols-2 gap-2 mb-6">
+        <button
+          onClick={() => setTab('refresh')}
+          className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 ${tab === 'refresh' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}
+        >🔄 Пополнение</button>
+        <button
+          onClick={() => setTab('cleanup')}
+          className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 ${tab === 'cleanup' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}
+        >🧹 Подчистка</button>
       </div>
 
-      {last && (
-        <div className={`rounded-2xl p-4 border mb-5 ${last.success ? 'bg-card border-accentSoft' : 'bg-card border-red-500/40'}`}>
-          <div className="text-xs font-bold mb-2">
-            {last.success ? '✅ Готово' : '❌ Ошибка'} · <span className="text-muted font-normal">{last.category}</span>
+      {tab === 'refresh' && (
+        <>
+          {/* Пополнить всё */}
+          <button
+            onClick={() => refresh('all')}
+            disabled={!!loading}
+            className="w-full bg-accent text-bg py-5 rounded-3xl text-sm font-bold uppercase tracking-wider2 mb-2 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {loading === 'all'
+              ? <><span className="inline-block w-4 h-4 border-2 border-bg/40 border-t-bg rounded-full animate-spin" /> Пополняю…</>
+              : <>🚀 Пополнить ВСЁ разом (с Осенью)</>}
+          </button>
+          <p className="text-[10px] text-muted text-center mb-5">
+            Можно уйти в другой раздел — пополнение продолжится. При возврате увидишь результат.
+          </p>
+
+          <div className="text-[10px] uppercase text-muted mb-3">Отдельные разделы</div>
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            {CATS.map(c => (
+              <button
+                key={c.key}
+                onClick={() => refresh(c.key)}
+                disabled={!!loading}
+                className="bg-card border border-border1 rounded-2xl p-4 text-left active:scale-[0.98] disabled:opacity-50 transition"
+              >
+                <div className="text-3xl mb-2">{c.emoji}</div>
+                <div className="text-sm font-medium mb-1 text-title">{c.label}</div>
+                <div className="text-[10px] text-accent font-semibold">
+                  {loading === c.key ? '⏳ Загрузка…' : '🔄 Пополнить'}
+                </div>
+              </button>
+            ))}
           </div>
-          {last.success ? (
-            <div className="text-[11px] text-muted2 space-y-0.5">
-              <div>➕ Новых: <b className="text-accent">{last.added || 0}</b></div>
-              <div>🔄 Обновлено: <b>{last.updated || 0}</b></div>
-              <div>⊘ Пропущено: <b>{last.failed || 0}</b></div>
-            </div>
-          ) : (
-            <div className="text-[11px] text-muted2 leading-relaxed">
-              {last.reason || 'Ошибка. Проверь логи Render.'}
+
+          {/* Статус фонового пополнения */}
+          {loading && (
+            <div className="rounded-2xl p-4 border border-accent bg-accent/10 mb-5 animate-pulse">
+              <div className="flex items-center gap-3">
+                <span className="inline-block w-4 h-4 border-2 border-accent/40 border-t-accent rounded-full animate-spin" />
+                <div className="text-xs font-bold text-accent">
+                  Идёт пополнение «{loading === 'all' ? 'всё разом' : loading}»…
+                </div>
+              </div>
+              <div className="text-[10px] text-muted mt-2">
+                Можешь свернуть приложение или перейти в другой раздел — не потеряется.
+              </div>
             </div>
           )}
-        </div>
+
+          {last && !loading && (
+            <div className={`rounded-2xl p-4 border mb-5 ${last.success ? 'bg-card border-accentSoft' : 'bg-card border-red-500/40'}`}>
+              <div className="text-xs font-bold mb-2">
+                {last.success ? '✅ Готово' : '❌ Ошибка'} · <span className="text-muted font-normal">{last.category === 'all' ? 'всё разом' : last.category}</span>
+                {last.elapsed && <span className="text-muted font-normal"> · {last.elapsed}с</span>}
+              </div>
+              {last.success ? (
+                <div className="text-[11px] text-muted2 space-y-0.5">
+                  <div>➕ Новых: <b className="text-accent">{last.added || 0}</b></div>
+                  <div>🔄 Обновлено: <b>{last.updated || 0}</b></div>
+                  <div>⊘ Пропущено: <b>{last.failed || 0}</b></div>
+                </div>
+              ) : (
+                <div className="text-[11px] text-muted2 leading-relaxed break-words">
+                  {last.reason || 'Не удалось получить товары. Попробуй позже.'}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
 
-      {/* Свои товары по ссылкам */}
-      <div className="mt-6">
-        {!linksOpen ? (
-          <button
-            onClick={() => setLinksOpen(true)}
-            className="w-full bg-card border border-accentSoft text-accent rounded-2xl px-4 py-4 text-sm font-bold uppercase tracking-wider2 active:scale-[0.98]"
-          >
-            🔗 Добавить свои товары по ссылкам
-          </button>
-        ) : (
-          <div className="bg-card border border-accentSoft rounded-3xl p-4 animate-scale-in">
-            <div className="text-xs font-bold text-accent mb-3">🔗 Ссылки Wildberries</div>
-            <textarea
-              value={linksText}
-              onChange={(e) => setLinksText(e.target.value)}
-              placeholder={"Каждая ссылка с новой строки:\nhttps://www.wildberries.ru/catalog/183581368/detail.aspx\nhttps://www.wildberries.ru/catalog/123456789/detail.aspx"}
-              rows={6}
-              disabled={linksLoading}
-              className="w-full bg-bg border border-border1 rounded-2xl px-3 py-3 text-xs outline-none resize-none mb-3 font-mono"
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={addLinks}
-                disabled={linksLoading || !linksText.trim()}
-                className="bg-accent text-bg py-3 rounded-2xl text-xs font-bold uppercase disabled:opacity-40"
-              >
-                {linksLoading ? '⏳ Добавляю…' : '✅ Добавить'}
-              </button>
-              <button
-                onClick={() => { setLinksOpen(false); setLinksText(''); setLinksResult(null); }}
-                disabled={linksLoading}
-                className="border border-border2 text-muted2 py-3 rounded-2xl text-xs uppercase"
-              >
-                Отмена
-              </button>
-            </div>
-            {linksResult && (
-              <div className="mt-4 text-[11px] text-muted2 space-y-1">
-                <div>✅ Добавлено: <b className="text-accent">{linksResult.ok}</b></div>
-                {linksResult.fail > 0 && <div>❌ Не удалось: <b>{linksResult.fail}</b></div>}
-                {linksResult.error && <div className="text-red-400">{linksResult.error}</div>}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      {tab === 'cleanup' && <AdminCleanup onToast={onToast} onCatalogRefreshed={onCatalogRefreshed} />}
     </main>
+  );
+}
+
+// ============ ADMIN CLEANUP ============
+function AdminCleanup({ onToast, onCatalogRefreshed }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const [q, setQ] = useState('');
+  const [busy, setBusy] = useState(null);
+
+  const CATS = [
+    { key: 'all',       label: 'Все',             emoji: '✨' },
+    { key: 'autumn',    label: 'Осень',           emoji: '🍂' },
+    { key: 'top',       label: 'Верх',            emoji: '👕' },
+    { key: 'bottom',    label: 'Низ',             emoji: '👖' },
+    { key: 'outerwear', label: 'Верх.одежда',     emoji: '🧥' },
+    { key: 'suit',      label: 'Костюмы',         emoji: '🥼' },
+    { key: 'dress',     label: 'Платья',          emoji: '👗' },
+  ];
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/products/list`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData: window.Telegram?.WebApp?.initData || '',
+          category: filter === 'all' ? null : filter,
+        }),
+      });
+      const d = await r.json();
+      if (d.success) setItems(d.items || []);
+      else onToast(d.error || 'Ошибка загрузки');
+    } catch { onToast('Ошибка сети'); }
+    finally { setLoading(false); }
+  }, [filter, onToast]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const act = async (action, productId, wbId) => {
+    setBusy(productId);
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/products/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData: window.Telegram?.WebApp?.initData || '',
+          action, productId, wbId,
+        }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        onToast(d.message || '✅ Готово');
+        haptic('medium');
+        onCatalogRefreshed?.();
+        // локальное обновление
+        if (action === 'delete') setItems(prev => prev.filter(x => x.id !== productId));
+        else if (action === 'hide') setItems(prev => prev.map(x => x.id === productId ? { ...x, is_active: false } : x));
+        else if (action === 'unhide') setItems(prev => prev.map(x => x.id === productId ? { ...x, is_active: true } : x));
+        else if (action === 'pin') setItems(prev => prev.map(x => x.id === productId ? { ...x, is_pinned: true } : x));
+        else if (action === 'unpin') setItems(prev => prev.map(x => x.id === productId ? { ...x, is_pinned: false } : x));
+      } else onToast(d.error || 'Ошибка');
+    } catch { onToast('Ошибка сети'); }
+    finally { setBusy(null); }
+  };
+
+  const filtered = q.trim()
+    ? items.filter(x => (x.name || '').toLowerCase().includes(q.toLowerCase().trim()))
+    : items;
+
+  return (
+    <div>
+      <div className="bg-card border border-border2 rounded-2xl p-3 mb-3 flex items-center gap-2">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Поиск по названию…"
+          className="flex-1 bg-bg border border-border1 rounded-xl px-3 py-2.5 text-xs outline-none focus:border-accentSoft"
+        />
+        <button onClick={load} className="px-3 py-2.5 rounded-xl border border-border2 text-xs">🔄</button>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 -mx-5 px-5">
+        {CATS.map(c => {
+          const active = filter === c.key;
+          return (
+            <button
+              key={c.key}
+              onClick={() => setFilter(c.key)}
+              className={`whitespace-nowrap text-xs px-3 py-2 rounded-full border flex items-center gap-1.5 ${active ? 'bg-accent text-bg border-accent font-bold' : 'border-border2 text-muted2'}`}
+            >
+              <span>{c.emoji}</span>{c.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="text-[10px] text-muted mb-3">Товаров: <b className="text-title">{filtered.length}</b></div>
+
+      {loading && <div className="text-center py-12 text-muted text-sm">Загрузка…</div>}
+      {!loading && filtered.length === 0 && <div className="text-center py-12 text-muted text-sm">Пусто</div>}
+
+      <div className="space-y-2">
+        {filtered.map(item => (
+          <div key={item.id} className={`bg-card border rounded-2xl overflow-hidden flex gap-3 ${item.is_active ? 'border-border1' : 'border-red-500/30 opacity-60'}`}>
+            <div className="w-20 h-24 flex-shrink-0 bg-bgSoft">
+              <ProductImage src={item.image_url} fallback={item.fallback_url} alt={item.name} className="w-full h-full" />
+            </div>
+            <div className="flex-1 min-w-0 py-2.5 pr-2.5">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-[9px] uppercase text-accentSoft">{CATS.find(c => c.key === item.category)?.label || item.category}</span>
+                {item.is_pinned && <span className="text-[9px] text-yellow-400">📌</span>}
+                {!item.is_active && <span className="text-[9px] text-red-400">СКРЫТ</span>}
+              </div>
+              <div className="text-[11px] text-title line-clamp-2 leading-snug mb-1">{item.name}</div>
+              <div className="text-[10px] text-muted mb-1.5">{item.price || '—'} · WB {item.wb_id}</div>
+              <div className="flex flex-wrap gap-1">
+                <button
+                  onClick={() => act(item.is_pinned ? 'unpin' : 'pin', item.id, item.wb_id)}
+                  disabled={busy === item.id}
+                  className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 disabled:opacity-40"
+                >{item.is_pinned ? '📌 Убрать' : '📌 Пин'}</button>
+                {item.is_active ? (
+                  <button
+                    onClick={() => act('hide', item.id, item.wb_id)}
+                    disabled={busy === item.id}
+                    className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 disabled:opacity-40"
+                  >🙈 Скрыть</button>
+                ) : (
+                  <button
+                    onClick={() => act('unhide', item.id, item.wb_id)}
+                    disabled={busy === item.id}
+                    className="text-[9px] px-2 py-1 rounded-lg border border-accentSoft text-accent disabled:opacity-40"
+                  >👁 Вернуть</button>
+                )}
+                <a
+                  href={wbUrl(item.wb_id)} target="_blank" rel="noreferrer"
+                  className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2"
+                >🛍 WB</a>
+                <button
+                  onClick={() => { if (confirm('Удалить товар насовсем?')) act('delete', item.id, item.wb_id); }}
+                  disabled={busy === item.id}
+                  className="text-[9px] px-2 py-1 rounded-lg border border-red-500/40 text-red-400 disabled:opacity-40"
+                >🗑 Удалить</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
