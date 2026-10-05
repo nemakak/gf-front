@@ -38,12 +38,6 @@ const SUBS = [
     features: [] },
 ];
 
-const FALLBACK = [
-  { id: 1, wb_id: 183581368, name: 'Платье Y2K миди', price: '3 990 ₽', category: 'dress',
-    image_url: 'https://spb-basket-cdn-03.geobasket.ru/vol1835/part183581/183581368/images/hq/1.webp',
-    fallback_url: 'https://basket-13.wbbasket.ru/vol1835/part183581/183581368/images/big/1.webp' },
-];
-
 const HINTS = ['Подбираем образ…', 'Почти готово ✨', 'Примеряем на тебя…', 'Ещё чуть-чуть', 'Смотрим, как сидит'];
 
 const STYLE_QUESTIONS = [
@@ -178,7 +172,7 @@ function tgShare(url, text = SHARE_TEXT) {
   } catch { window.open(u, '_blank'); }
 }
 
-// ============ IMAGE (с анимацией загрузки) ============
+// ============ IMAGE ============
 function ProductImage({ src, fallback, alt, className = '' }) {
   const [i, setI] = useState(0);
   const [loaded, setLoaded] = useState(false);
@@ -186,24 +180,16 @@ function ProductImage({ src, fallback, alt, className = '' }) {
     const L = [];
     const add = (u) => { if (u && !L.includes(u)) L.push(u); };
     const s = fixDrive(src); const f = fixDrive(fallback);
-
-    // 1) Пробуем ПРЯМУЮ ссылку WB (она обычно быстрее и надёжнее)
     if (s) add(s);
-    // 2) Fallback WB (другой basket-домен)
     if (f && f !== s) add(f);
-    // 3) Через прокси (если прямой заблокирован CORS)
     if (s) add(`${PROXY_URL}/?url=${encodeURIComponent(s)}`);
     if (f && f !== s) add(`${PROXY_URL}/?url=${encodeURIComponent(f)}`);
-
-    // 4) Похожие размеры того же товара
     const m = (s || '').match(/^(https:\/\/[^/]+)\/vol(\d+)\/part(\d+)\/(\d+)\//);
     if (m) {
       const host = m[1], id = m[4];
       for (const size of ['big', 'c516x688', 'c246x328'])
         add(`${host}/vol${m[2]}/part${m[3]}/${id}/images/${size}/1.webp`);
     }
-
-    // 5) Плейсхолдер
     add('https://placehold.co/400x500/1A1412/D4B595?text=Style+Room');
     return L;
   }, [src, fallback]);
@@ -255,26 +241,55 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon 
   const title = item.description || item.name || 'Товар';
   const shopUrl = wbUrl(item.wb_id);
   return (
-    <div className="px-3 pb-3 flex items-center gap-2">
-  <a href={shopUrl} target="_blank" rel="noreferrer"
-    onClick={(e) => e.stopPropagation()}
-    className="w-10 h-10 rounded-xl bg-bgSoft border border-border2 flex items-center justify-center text-base active:scale-95 transition shrink-0">
-    🛍
-  </a>
-  <button
-    onClick={() => { haptic('medium'); onTryon ? onTryon(item) : onPick(item); }}
-    className="flex-1 h-10 rounded-xl font-bold text-[11px] uppercase tracking-wider2 text-bg active:scale-[0.97] transition-all relative overflow-hidden group"
-    style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
-  >
-    <span className="relative z-10 flex items-center justify-center gap-1.5">
-      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path d="M12 3v3m6.36-.36-2.12 2.12M21 12h-3m.36 6.36-2.12-2.12M12 18v3m-6.36-.36 2.12-2.12M3 12h3M3 12l-.36-6.36 2.12 2.12M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>
-      </svg>
-      Примерить
-    </span>
-    <span className="absolute inset-0 -translate-x-full group-active:translate-x-0 transition-transform bg-white/10" />
-  </button>
-</div>
+    <div className={`group relative bg-card border rounded-2xl overflow-hidden transition-all ${selected ? 'border-accent shadow-soft' : 'border-border1 hover:border-accentSoft'}`}>
+      <button onClick={() => { haptic('light'); onToggle ? onToggle(item) : onPick(item); }} className="block w-full text-left active:scale-[0.98] transition">
+        <div className="relative aspect-[3/4] overflow-hidden">
+          <ProductImage src={item.image_url} fallback={item.fallback_url} alt={title} className="w-full h-full group-hover:scale-105 transition-transform duration-500" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+          <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-bg/80 backdrop-blur border border-border2 text-[9px] uppercase tracking-wider2 text-accentSoft">
+            {CATEGORIES.find(c => c.key === item.category)?.label || 'Одежда'}
+          </div>
+          {onToggle ? (
+            <div className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center border ${selected ? 'bg-accent text-bg border-accent' : 'bg-bg/80 border-border2 text-title'}`}>
+              {selected ? '✓' : '+'}
+            </div>
+          ) : (
+            onLike && (
+              <div className="absolute top-2.5 right-2.5">
+                <LikeButton liked={liked} onToggle={() => onLike(item.id)} />
+              </div>
+            )
+          )}
+          {item.price && (
+            <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1">
+              <span className="text-xs font-bold text-white">≈ {item.price.replace(/^≈\s*/, '')}</span>
+            </div>
+          )}
+        </div>
+        <div className="p-3 pb-2">
+          <div className="font-sans font-medium text-[13px] leading-snug line-clamp-2 h-[36px] text-title">{title}</div>
+        </div>
+      </button>
+      <div className="px-3 pb-3 flex items-center gap-2">
+        <a href={shopUrl} target="_blank" rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="w-10 h-10 rounded-xl bg-bgSoft border border-border2 flex items-center justify-center text-base active:scale-95 transition shrink-0">
+          🛍
+        </a>
+        <button
+          onClick={() => { haptic('medium'); onTryon ? onTryon(item) : onPick(item); }}
+          className="flex-1 h-10 rounded-xl font-bold text-[11px] uppercase tracking-wider2 text-bg active:scale-[0.97] transition-all relative overflow-hidden group"
+          style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
+        >
+          <span className="relative z-10 flex items-center justify-center gap-1.5">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/>
+            </svg>
+            Примерить
+          </span>
+          <span className="absolute inset-0 -translate-x-full group-active:translate-x-0 transition-transform bg-white/10" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -946,7 +961,6 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
 
     setLoading(category);
     setLast(null);
-
     const startedAt = Date.now();
     localStorage.setItem('admin_refresh_started', JSON.stringify({ category, startedAt }));
     onToast(`🔄 Пополняю… можно уйти`);
@@ -988,11 +1002,8 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
       const started = localStorage.getItem('admin_refresh_started');
       if (started) {
         const { category, startedAt } = JSON.parse(started);
-        if (Date.now() - startedAt > 60000) {
-          localStorage.removeItem('admin_refresh_started');
-        } else {
-          setLoading(category);
-        }
+        if (Date.now() - startedAt > 60000) localStorage.removeItem('admin_refresh_started');
+        else setLoading(category);
       }
       const lastStr = localStorage.getItem('admin_last_refresh');
       if (lastStr) setLast(JSON.parse(lastStr));
@@ -1110,7 +1121,7 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const act = async (action, productId, wbId, extra = {}) => {
+  const act = async (action, productId, wbId) => {
     setBusy(productId);
     try {
       const r = await fetch(`${BACKEND}/api/admin/products/action`, {
@@ -1118,7 +1129,7 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           initData: window.Telegram?.WebApp?.initData || '',
-          action, productId, wbId, ...extra,
+          action, productId, wbId,
         }),
       });
       const d = await r.json();
@@ -1400,7 +1411,6 @@ function SearchScreen({ onPick, likedIds, onLike }) {
   useEffect(() => {
     const query = q.trim();
     if (query.length < 2) { setResults([]); setLoading(false); setError(null); return; }
-
     setLoading(true);
     setError(null);
 
@@ -1408,7 +1418,6 @@ function SearchScreen({ onPick, likedIds, onLike }) {
       if (abortRef.current) abortRef.current.abort();
       const ctrl = new AbortController();
       abortRef.current = ctrl;
-
       try {
         const r = await fetch(`${BACKEND}/api/search?q=${encodeURIComponent(query)}&limit=60`, { signal: ctrl.signal });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -1564,7 +1573,8 @@ function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedI
       {loading ? (
         <div className="grid grid-cols-2 gap-3">{Array.from({length: 6}).map((_,i)=><div key={i} className="aspect-[3/4] shimmer rounded-2xl" />)}</div>
       ) : catalog.length === 0 ? (
-        <EmptyState emoji="🛍" title="Каталог пуст" text="Заходи чуть позже — товары обновляются каждые 2 часа" />
+        <EmptyState emoji="🛍" title={category === 'personal' ? 'Пока нечего показать' : 'Каталог пуст'}
+          text={category === 'personal' ? 'Посмотри несколько товаров — мы подберём похожие' : 'Заходи чуть позже — товары обновляются каждые 2 часа'} />
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {catalog.map(item => <ProductCard key={item.id} item={item} onPick={onPick} liked={likedIds.has(item.id)} onLike={onLike} />)}
@@ -1587,7 +1597,7 @@ export default function App() {
   const [screen, setScreen] = useState(null);
   const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState('autumn');
+  const [category, setCategory] = useState('personal');
   const [selected, setSelected] = useState(null);
   const [humanImg, setHumanImg] = useState('');
   const [resultImage, setResultImage] = useState(null);
@@ -1661,8 +1671,12 @@ export default function App() {
       }
       const r = await fetch(url, { headers: { 'x-init-data': window.Telegram?.WebApp?.initData || '' } });
       const d = await r.json();
-      setCatalog(d.success && d.items.length ? d.items : (cat === 'autumn' || cat === 'personal' ? [] : FALLBACK));
-    } catch { setCatalog(FALLBACK); } finally { setLoading(false); }
+      if (d.success && d.items && d.items.length) {
+        setCatalog(d.items);
+      } else {
+        setCatalog([]);
+      }
+    } catch { setCatalog([]); } finally { setLoading(false); }
   }, [seed]);
   useEffect(() => { loadCatalog(category); }, [category, loadCatalog]);
 
