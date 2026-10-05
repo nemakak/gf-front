@@ -186,9 +186,24 @@ function ProductImage({ src, fallback, alt, className = '' }) {
     const L = [];
     const add = (u) => { if (u && !L.includes(u)) L.push(u); };
     const s = fixDrive(src); const f = fixDrive(fallback);
-    if (s) add(`${PROXY_URL}/?url=${encodeURIComponent(s)}`);
+
+    // 1) Пробуем ПРЯМУЮ ссылку WB (она обычно быстрее и надёжнее)
     if (s) add(s);
-    if (f && f !== s) { add(`${PROXY_URL}/?url=${encodeURIComponent(f)}`); add(f); }
+    // 2) Fallback WB (другой basket-домен)
+    if (f && f !== s) add(f);
+    // 3) Через прокси (если прямой заблокирован CORS)
+    if (s) add(`${PROXY_URL}/?url=${encodeURIComponent(s)}`);
+    if (f && f !== s) add(`${PROXY_URL}/?url=${encodeURIComponent(f)}`);
+
+    // 4) Похожие размеры того же товара
+    const m = (s || '').match(/^(https:\/\/[^/]+)\/vol(\d+)\/part(\d+)\/(\d+)\//);
+    if (m) {
+      const host = m[1], id = m[4];
+      for (const size of ['big', 'c516x688', 'c246x328'])
+        add(`${host}/vol${m[2]}/part${m[3]}/${id}/images/${size}/1.webp`);
+    }
+
+    // 5) Плейсхолдер
     add('https://placehold.co/400x500/1A1412/D4B595?text=Style+Room');
     return L;
   }, [src, fallback]);
