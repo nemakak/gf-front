@@ -3,6 +3,42 @@
 @tailwind utilities;
 
 /* ============================================
+   Базовые стили
+   ============================================ */
+html, body {
+  background: #0C0A08;
+  color: #F2EAE0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ============================================
+   Скроллбар
+   ============================================ */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================
    Shimmer — анимация загрузки картинок
    ============================================ */
 .shimmer {
@@ -19,4 +55,138 @@
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
+}
+
+/* ============================================
+   Spinner — крутилка загрузки
+   ============================================ */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(212, 181, 149, 0.2);
+  border-top-color: #D4B595;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   Кнопка с блеском (btn-shine)
+   ============================================ */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #D4B595 0%, #B89876 100%);
+}
+.btn-shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.25),
+    transparent
+  );
+  animation: btnShine 3s infinite;
+}
+@keyframes btnShine {
+  0%   { left: -100%; }
+  60%  { left: 100%; }
+  100% { left: 100%; }
+}
+
+/* ============================================
+   Кастомные анимации (для Tailwind-классов вида animate-*)
+   ============================================ */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fadeIn 0.35s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out both;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes sheet {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.animate-sheet {
+  animation: sheet 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes bounceIn {
+  0%   { opacity: 0; transform: scale(0.8); }
+  60%  { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.animate-bounce-in {
+  animation: bounceIn 0.5s ease-out;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 181, 149, 0.5); }
+  50%      { box-shadow: 0 0 0 8px rgba(212, 181, 149, 0); }
+}
+.animate-pulse-glow {
+  animation: pulseGlow 2s infinite;
+}
+
+@keyframes heart {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.35); }
+  60%  { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.animate-heart {
+  animation: heart 0.4s ease-out;
+}
+
+/* ============================================
+   Утилиты
+   ============================================ */
+.shadow-soft {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.tracking-wider2 {
+  letter-spacing: 0.08em;
+}
+
+/* ============================================
+   Отключаем выделение текста на кнопках
+   ============================================ */
+button, a {
+  -webkit-user-select: none;
+  user-select: none;
 }
