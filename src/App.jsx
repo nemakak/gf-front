@@ -255,46 +255,26 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon 
   const title = item.description || item.name || 'Товар';
   const shopUrl = wbUrl(item.wb_id);
   return (
-    <div className={`group relative bg-card border rounded-2xl overflow-hidden transition-all ${selected ? 'border-accent shadow-soft' : 'border-border1 hover:border-accentSoft'}`}>
-      <button onClick={() => { haptic('light'); onToggle ? onToggle(item) : onPick(item); }} className="block w-full text-left active:scale-[0.98] transition">
-        <div className="relative aspect-[3/4] overflow-hidden">
-          <ProductImage src={item.image_url} fallback={item.fallback_url} alt={title} className="w-full h-full group-hover:scale-105 transition-transform duration-500" />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
-          <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-bg/80 backdrop-blur border border-border2 text-[9px] uppercase tracking-wider2 text-accentSoft">
-            {CATEGORIES.find(c => c.key === item.category)?.label || 'Одежда'}
-          </div>
-          {onToggle ? (
-            <div className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center border ${selected ? 'bg-accent text-bg border-accent' : 'bg-bg/80 border-border2 text-title'}`}>
-              {selected ? '✓' : '+'}
-            </div>
-          ) : (
-            onLike && (
-              <div className="absolute top-2.5 right-2.5">
-                <LikeButton liked={liked} onToggle={() => onLike(item.id)} />
-              </div>
-            )
-          )}
-          {item.price && (
-            <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1">
-              <span className="text-xs font-bold text-white">≈ {item.price.replace(/^≈\s*/, '')}</span>
-            </div>
-          )}
-        </div>
-        <div className="p-3 pb-2">
-          <div className="font-sans font-medium text-[13px] leading-snug line-clamp-2 h-[36px] text-title">{title}</div>
-        </div>
-      </button>
-      <div className="px-3 pb-3 flex items-center gap-2">
-        <a href={shopUrl} target="_blank" rel="noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="flex-1 text-center bg-bgSoft border border-border2 text-muted2 text-[10px] uppercase tracking-wider2 py-2.5 rounded-xl active:scale-95 transition">
-          🛍 WB
-        </a>
-        <button onClick={() => { haptic('medium'); onTryon ? onTryon(item) : onPick(item); }}
-          className="flex-1 bg-accent text-bg text-[10px] uppercase tracking-wider2 py-2.5 rounded-xl font-bold active:scale-95 transition">
-          Примерить
-        </button>
-      </div>
+    <div className="px-3 pb-3 flex items-center gap-2">
+  <a href={shopUrl} target="_blank" rel="noreferrer"
+    onClick={(e) => e.stopPropagation()}
+    className="w-10 h-10 rounded-xl bg-bgSoft border border-border2 flex items-center justify-center text-base active:scale-95 transition shrink-0">
+    🛍
+  </a>
+  <button
+    onClick={() => { haptic('medium'); onTryon ? onTryon(item) : onPick(item); }}
+    className="flex-1 h-10 rounded-xl font-bold text-[11px] uppercase tracking-wider2 text-bg active:scale-[0.97] transition-all relative overflow-hidden group"
+    style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
+  >
+    <span className="relative z-10 flex items-center justify-center gap-1.5">
+      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path d="M12 3v3m6.36-.36-2.12 2.12M21 12h-3m.36 6.36-2.12-2.12M12 18v3m-6.36-.36 2.12-2.12M3 12h3M3 12l-.36-6.36 2.12 2.12M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>
+      </svg>
+      Примерить
+    </span>
+    <span className="absolute inset-0 -translate-x-full group-active:translate-x-0 transition-transform bg-white/10" />
+  </button>
+</div>
     </div>
   );
 }
