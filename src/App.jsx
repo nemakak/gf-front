@@ -1112,9 +1112,11 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
       <p className="text-xs text-muted mb-5 font-btn">Пополнение и подчистка</p>
 
       <div className="grid grid-cols-2 gap-2 mb-6">
-        <button onClick={() => setTab('refresh')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'refresh' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🔄 Пополнение</button>
-        <button onClick={() => setTab('cleanup')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'cleanup' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🧹 Подчистка</button>
-      </div>
+  <button onClick={() => setTab('refresh')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'refresh' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🔄 Пополнение</button>
+  <button onClick={() => setTab('cleanup')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'cleanup' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🧹 Подчистка</button>
+  <button onClick={() => setTab('streak')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'streak' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🔥 Серия</button>
+  <button onClick={() => setTab('banner')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'banner' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>📢 Баннер</button>
+</div>
 
       {tab === 'refresh' && (
         <>
@@ -1173,7 +1175,207 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
       )}
 
       {tab === 'cleanup' && <AdminCleanup onToast={onToast} onCatalogRefreshed={onCatalogRefreshed} />}
-    </main>
+{tab === 'streak' && <AdminStreak onToast={onToast} />}
+{tab === 'banner' && <AdminBanner onToast={onToast} />}
+</main>
+  );
+}
+
+// ============ ADMIN STREAK ============
+function AdminStreak({ onToast }) {
+  const [rewards, setRewards] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(`${BACKEND}/api/streak-rewards`);
+      const d = await r.json();
+      if (d.success) setRewards(d.rewards || []);
+    } catch { onToast('Ошибка загрузки'); }
+    finally { setLoading(false); }
+  }, [onToast]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const update = async (day, patch) => {
+    setSaving(day);
+    const current = rewards.find(x => x.day === day) || {};
+    const next = { ...current, ...patch };
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/streak-rewards/update`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData: window.Telegram?.WebApp?.initData || '',
+          day, enabled: next.enabled, tries: next.tries, own_tries: next.own_tries, text: next.text,
+        }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        setRewards(prev => prev.map(x => x.day === day ? next : x));
+        onToast('✅ Сохранено');
+      } else onToast(d.error || 'Ошибка');
+    } catch { onToast('Ошибка сети'); }
+    finally { setSaving(null); }
+  };
+
+  if (loading) return <div className="text-center py-12 text-muted text-sm font-btn">Загрузка…</div>;
+
+  return (
+    <div>
+      <p className="text-xs text-muted mb-4 font-btn">Настрой награды за серию. Отключи день — награда не выдаётся.</p>
+      <div className="space-y-3">
+        {[1,2,3,4,5].map(day => {
+          const r = rewards.find(x => x.day === day) || { day, enabled: true, tries: 0, own_tries: 0, text: '' };
+          return (
+            <div key={day} className={`bg-card border rounded-2xl p-4 ${r.enabled ? 'border-accentSoft' : 'border-border1 opacity-60'}`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-btn font-bold">День {day}</div>
+                <button onClick={() => update(day, { enabled: !r.enabled })}
+                  className={`px-3 py-1.5 rounded-full text-[10px] font-bold font-btn ${r.enabled ? 'bg-accent text-bg' : 'bg-bgSoft border border-border2 text-muted'}`}>
+                  {r.enabled ? '✓ ВКЛ' : 'ВЫКЛ'}
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <label className="block">
+                  <div className="text-[10px] uppercase text-muted mb-1 font-btn">Обычных</div>
+                  <input type="number" min="0" value={r.tries} onChange={(e) => setRewards(prev => prev.map(x => x.day === day ? { ...x, tries: Number(e.target.value) } : x))}
+                    className="w-full bg-bg border border-border1 rounded-xl px-3 py-2 text-sm outline-none font-btn" />
+                </label>
+                <label className="block">
+                  <div className="text-[10px] uppercase text-muted mb-1 font-btn">Своих</div>
+                  <input type="number" min="0" value={r.own_tries} onChange={(e) => setRewards(prev => prev.map(x => x.day === day ? { ...x, own_tries: Number(e.target.value) } : x))}
+                    className="w-full bg-bg border border-border1 rounded-xl px-3 py-2 text-sm outline-none font-btn" />
+                </label>
+              </div>
+              <label className="block mb-3">
+                <div className="text-[10px] uppercase text-muted mb-1 font-btn">Текст награды</div>
+                <input type="text" value={r.text} maxLength={100} placeholder="День 5 · +3 примерки"
+                  onChange={(e) => setRewards(prev => prev.map(x => x.day === day ? { ...x, text: e.target.value } : x))}
+                  className="w-full bg-bg border border-border1 rounded-xl px-3 py-2 text-sm outline-none font-btn" />
+              </label>
+              <button onClick={() => update(day, { tries: r.tries, own_tries: r.own_tries, text: r.text, enabled: r.enabled })}
+                disabled={saving === day}
+                className="w-full bg-accent text-bg py-2.5 rounded-xl text-[10px] font-bold uppercase font-btn disabled:opacity-50">
+                {saving === day ? '⏳ Сохраняю…' : 'Сохранить'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ============ ADMIN BANNER ============
+function AdminBanner({ onToast }) {
+  const [banner, setBanner] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch(`${BACKEND}/api/banner`).then(r => r.json()).then(d => {
+      setBanner(d.banner || { title: 'Ограниченное предложение', subtitle: 'СЕКРЕТНАЯ подписка', sub_id: 'secret', bg_from: '#E91E63', bg_to: '#880E4F', emoji: '🎁', enabled: true });
+    }).catch(() => {
+      setBanner({ title: 'Ограниченное предложение', subtitle: 'СЕКРЕТНАЯ подписка', sub_id: 'secret', bg_from: '#E91E63', bg_to: '#880E4F', emoji: '🎁', enabled: true });
+    }).finally(() => setLoading(false));
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/banner/update`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', ...banner }),
+      });
+      const d = await r.json();
+      if (d.success) onToast('✅ Сохранено');
+      else onToast(d.error || 'Ошибка');
+    } catch { onToast('Ошибка сети'); }
+    finally { setSaving(false); }
+  };
+
+  if (loading || !banner) return <div className="text-center py-12 text-muted text-sm font-btn">Загрузка…</div>;
+
+  return (
+    <div>
+      <p className="text-xs text-muted mb-4 font-btn">Баннер в каталоге. Нажми — откроются подписки.</p>
+
+      {/* Превью */}
+      <div className="rounded-2xl overflow-hidden mb-4 p-4"
+        style={{ background: `linear-gradient(135deg, ${banner.bg_from} 0%, ${banner.bg_to} 100%)` }}>
+        <div className="flex items-center gap-3">
+          <div className="text-3xl">{banner.emoji}</div>
+          <div className="flex-1">
+            <div className="text-[10px] uppercase text-white/70 font-btn">{banner.title}</div>
+            <div className="text-sm font-btn font-bold text-white">{banner.subtitle}</div>
+          </div>
+          <div className="text-white text-2xl">→</div>
+        </div>
+      </div>
+
+      <label className="block mb-3">
+        <div className="text-[10px] uppercase text-muted mb-1 font-btn">Заголовок</div>
+        <input value={banner.title} maxLength={100}
+          onChange={(e) => setBanner({ ...banner, title: e.target.value })}
+          className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn" />
+      </label>
+
+      <label className="block mb-3">
+        <div className="text-[10px] uppercase text-muted mb-1 font-btn">Подзаголовок</div>
+        <input value={banner.subtitle} maxLength={100}
+          onChange={(e) => setBanner({ ...banner, subtitle: e.target.value })}
+          className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn" />
+      </label>
+
+      <label className="block mb-3">
+        <div className="text-[10px] uppercase text-muted mb-1 font-btn">Подписка (sub_id)</div>
+        <select value={banner.sub_id}
+          onChange={(e) => setBanner({ ...banner, sub_id: e.target.value })}
+          className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn">
+          <option value="secret">🎁 СЕКРЕТНАЯ</option>
+          <option value="start">👌 START</option>
+          <option value="medium">💥 MEDIUM</option>
+          <option value="pro">💎 PRО</option>
+        </select>
+      </label>
+
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <label className="block">
+          <div className="text-[10px] uppercase text-muted mb-1 font-btn">Цвет 1</div>
+          <input type="color" value={banner.bg_from}
+            onChange={(e) => setBanner({ ...banner, bg_from: e.target.value })}
+            className="w-full h-10 bg-bg border border-border1 rounded-xl outline-none" />
+        </label>
+        <label className="block">
+          <div className="text-[10px] uppercase text-muted mb-1 font-btn">Цвет 2</div>
+          <input type="color" value={banner.bg_to}
+            onChange={(e) => setBanner({ ...banner, bg_to: e.target.value })}
+            className="w-full h-10 bg-bg border border-border1 rounded-xl outline-none" />
+        </label>
+      </div>
+
+      <label className="block mb-3">
+        <div className="text-[10px] uppercase text-muted mb-1 font-btn">Эмодзи</div>
+        <input value={banner.emoji} maxLength={4}
+          onChange={(e) => setBanner({ ...banner, emoji: e.target.value })}
+          className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn" />
+      </label>
+
+      <div className="flex items-center justify-between mb-4 bg-card border border-border1 rounded-2xl p-3">
+        <span className="text-xs font-btn">Показывать баннер</span>
+        <button onClick={() => setBanner({ ...banner, enabled: !banner.enabled })}
+          className={`px-3 py-1.5 rounded-full text-[10px] font-bold font-btn ${banner.enabled ? 'bg-accent text-bg' : 'bg-bgSoft border border-border2 text-muted'}`}>
+          {banner.enabled ? '✓ ВКЛ' : 'ВЫКЛ'}
+        </button>
+      </div>
+
+      <button onClick={save} disabled={saving}
+        className="w-full bg-accent text-bg py-4 rounded-2xl text-xs font-bold uppercase font-btn disabled:opacity-50">
+        {saving ? '⏳ Сохраняю…' : 'Сохранить баннер'}
+      </button>
+    </div>
   );
 }
 
@@ -1633,33 +1835,33 @@ function StyleTestScreen({ onBack, onPick }) {
 }
 
 // ============ КАТАЛОГ ============
-function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenMulti, onOpenSearch, shareRef, onOpenSubs }) {
+function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenMulti, onOpenSearch, shareRef, onOpenSubs, banner }) {
   return (
         <main className="px-5 pt-6 animate-fade-in overflow-x-hidden">
       {/* БАННЕР ПОДПИСКИ */}
-      <button
-        onClick={() => { haptic('medium'); onOpenSubs(); }}
-        className="w-full mb-5 rounded-2xl overflow-hidden relative animate-slide-up active:scale-[0.99] transition-transform"
-        style={{
-          background: 'linear-gradient(135deg, #E91E63 0%, #C2185B 50%, #880E4F 100%)',
-          boxShadow: '0 8px 30px rgba(233, 30, 99, 0.4)'
-        }}
-      >
-        <div className="flex items-center gap-3 px-4 py-3.5">
-          <div className="text-3xl animate-pulse">🎁</div>
-          <div className="flex-1 text-left">
-            <div className="text-[10px] uppercase tracking-wider2 text-white/70 font-btn mb-0.5">
-              Ограниченное предложение
+            {banner && banner.enabled && (
+        <button
+          onClick={() => { haptic('medium'); onOpenSubs(); }}
+          className="w-full mb-5 rounded-2xl overflow-hidden relative animate-slide-up active:scale-[0.99] transition-transform"
+          style={{
+            background: `linear-gradient(135deg, ${banner.bg_from || '#E91E63'} 0%, ${banner.bg_to || '#880E4F'} 100%)`,
+            boxShadow: `0 8px 30px ${(banner.bg_from || '#E91E63')}40`,
+          }}
+        >
+          <div className="flex items-center gap-3 px-4 py-3.5">
+            <div className="text-3xl animate-pulse">{banner.emoji || '🎁'}</div>
+            <div className="flex-1 text-left">
+              <div className="text-[10px] uppercase tracking-wider2 text-white/70 font-btn mb-0.5">
+                {banner.title}
+              </div>
+              <div className="text-sm font-btn font-bold text-white">
+                {banner.subtitle}
+              </div>
             </div>
-            <div className="text-sm font-btn font-bold text-white">
-              СЕКРЕТНАЯ подписка · 10⭐️
-            </div>
+            <div className="text-white text-2xl">→</div>
           </div>
-          <div className="text-white text-2xl">→</div>
-        </div>
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)', animation: 'btnShine 3s infinite' }} />
-      </button>
+        </button>
+      )}
 
       <div className="flex items-end justify-between mb-4">
         {/* ... остальной код CatalogScreen без изменений ... */}
@@ -1710,7 +1912,8 @@ const [previousTab, setPreviousTab] = useState('catalog');
   const [toast, setToast] = useState('');
   const [welcomeBonus, setWelcomeBonus] = useState(null);
   const [showStreak, setShowStreak] = useState(false);
-  const [myRank, setMyRank] = useState(null);
+  const [myRank, setMyRank] = useState(null); 
+  const [banner, setBanner] = useState(null);
   const fileRef = useRef(null);
 
   const seed = useMemo(() => Math.random().toString(36).slice(2, 10), []);
@@ -1741,6 +1944,7 @@ const closeScreen = () => {
     }).then(r => r.json()).then(d => {
       if (d.success) {
         setUser(d.user);
+        fetch(`${BACKEND}/api/banner`).then(r => r.json()).then(b => { if (b.success && b.banner) setBanner(b.banner); }).catch(() => {});
         if (d.one_time_message) setOneTimeMsg(d.one_time_message);
         if (!d.user.onboarded && localStorage.getItem('gf_onboarded') !== '1') setShowOnboarding(true);
         else if (!d.user.personalized) setShowPersonalization(true);
@@ -1996,13 +2200,14 @@ const closeScreen = () => {
       )}
 
       {tab === 'catalog' && (
-        <CatalogScreen catalog={catalog} loading={loading} category={category} setCategory={setCategory}
-  onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike}
-  onOpenMulti={() => setScreen('multi')}
-  onOpenSearch={() => setTab('search')}
-  onOpenSubs={() => { setPreviousTab('profile'); setScreen('subs'); setTab('subs'); }}
-  shareRef={shareRef} />
-      )}
+  <CatalogScreen catalog={catalog} loading={loading} category={category} setCategory={setCategory}
+    onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike}
+    onOpenMulti={() => setScreen('multi')}
+    onOpenSearch={() => setTab('search')}
+    onOpenSubs={() => { setPreviousTab('catalog'); setScreen('subs'); setTab('subs'); }}
+    banner={banner}
+    shareRef={shareRef} />
+)}
 
       {tab === 'search' && <SearchScreen onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike} />}
 
