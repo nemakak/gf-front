@@ -333,28 +333,75 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon 
 // ============ BEFORE/AFTER ============
 function BeforeAfter({ before, after }) {
   const [pos, setPos] = useState(50);
+  const [afterLoaded, setAfterLoaded] = useState(false);
+  const [beforeLoaded, setBeforeLoaded] = useState(false);
   const ref = useRef(null);
+
   const handleMove = (clientX) => {
     const el = ref.current; if (!el) return;
     const r = el.getBoundingClientRect();
     const p = Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100));
     setPos(p);
   };
+
+  const ready = afterLoaded && beforeLoaded;
+
   return (
     <div ref={ref} className="relative w-full rounded-2xl overflow-hidden select-none border border-border1 bg-card aspect-[3/4]"
       onMouseMove={(e) => e.buttons === 1 && handleMove(e.clientX)}
       onMouseDown={(e) => handleMove(e.clientX)}
       onTouchMove={(e) => handleMove(e.touches[0].clientX)}
       onTouchStart={(e) => handleMove(e.touches[0].clientX)}>
-      <img src={after} alt="after" className="absolute inset-0 w-full h-full object-cover" />
+
+      {/* Skeleton, пока грузится */}
+      {!ready && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-bgSoft via-card to-bgSoft z-10">
+          <div className="absolute inset-0 shimmer" />
+          <div className="relative z-10 flex flex-col items-center gap-3">
+            <div className="w-10 h-10 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+            <div className="text-xs text-muted font-btn">Загружаем результат…</div>
+          </div>
+        </div>
+      )}
+
+      {/* Before — картинка человека */}
+      <img
+        src={before}
+        alt="before"
+        onLoad={() => setBeforeLoaded(true)}
+        className={`absolute inset-0 h-full object-cover ${ready ? 'opacity-100' : 'opacity-0'}`}
+        style={{ width: ref.current?.offsetWidth || '100vw', maxWidth: 'none' }}
+      />
+
+      {/* After — результат, обрезается по width */}
+      <img
+        src={after}
+        alt="after"
+        onLoad={() => setAfterLoaded(true)}
+        className={`absolute inset-0 w-full h-full object-cover ${ready ? 'opacity-100' : 'opacity-0'}`}
+      />
+
+      {/* Обрезка before по ширине pos */}
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
-        <img src={before} alt="before" className="absolute inset-0 h-full object-cover" style={{ width: ref.current?.offsetWidth || '100vw', maxWidth: 'none' }} />
+        <img
+          src={before}
+          alt="before-clip"
+          onLoad={() => setBeforeLoaded(true)}
+          className="absolute inset-0 h-full object-cover"
+          style={{ width: ref.current?.offsetWidth || '100vw', maxWidth: 'none' }}
+        />
       </div>
-      <div className="absolute top-0 bottom-0 w-0.5 bg-white/80 pointer-events-none" style={{ left: `${pos}%` }}>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white shadow-lg flex items-center justify-center text-black text-sm font-bold">⇆</div>
-      </div>
-      <div className="absolute top-3 left-3 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-white text-[9px] uppercase tracking-wider2 pointer-events-none font-btn">До</div>
-      <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-white text-[9px] uppercase tracking-wider2 pointer-events-none font-btn">После</div>
+
+      {/* Ползунок */}
+      {ready && (
+        <>
+          <div className="absolute top-0 bottom-0 w-0.5 bg-white/80 pointer-events-none" style={{ left: `${pos}%` }}>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white shadow-lg flex items-center justify-center text-black text-sm font-bold">⇆</div>
+          </div>
+          <div className="absolute top-3 left-3 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-white text-[9px] uppercase tracking-wider2 pointer-events-none font-btn">До</div>
+          <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-white text-[9px] uppercase tracking-wider2 pointer-events-none font-btn">После</div>
+        </>
+      )}
     </div>
   );
 }
