@@ -486,8 +486,12 @@ function SubscriptionsScreen({ onBack, onBuy }) {
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted">←</button>
-        <div><div className="text-[10px] uppercase text-muted">Style Room</div><div className="font-serif text-2xl">Подписки</div></div>
+  <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted">←</button>
+  <div>
+    <div className="text-[10px] uppercase text-muted font-btn">Style Room</div>
+    <div className="text-2xl font-btn">Подписки</div>
+  </div>
+</div>
       </div>
       <div className="space-y-4">
         {SUBS.map(sub => {
