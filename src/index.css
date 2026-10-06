@@ -197,3 +197,11 @@ button, a {
 .tracking-wider2 {
   letter-spacing: 0.08em;
 }
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+#root {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
