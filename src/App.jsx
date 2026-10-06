@@ -353,9 +353,9 @@ function BeforeAfter({ before, after }) {
       onTouchMove={(e) => handleMove(e.touches[0].clientX)}
       onTouchStart={(e) => handleMove(e.touches[0].clientX)}>
 
-      {/* Skeleton, пока грузится */}
+      {/* Лоадер пока грузятся обе картинки */}
       {!ready && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-bgSoft via-card to-bgSoft z-10">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-bgSoft via-card to-bgSoft z-20">
           <div className="absolute inset-0 shimmer" />
           <div className="relative z-10 flex flex-col items-center gap-3">
             <div className="w-10 h-10 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
@@ -364,35 +364,26 @@ function BeforeAfter({ before, after }) {
         </div>
       )}
 
-      {/* Before — картинка человека */}
-      <img
-        src={before}
-        alt="before"
-        onLoad={() => setBeforeLoaded(true)}
-        className={`absolute inset-0 h-full object-cover ${ready ? 'opacity-100' : 'opacity-0'}`}
-        style={{ width: ref.current?.offsetWidth || '100vw', maxWidth: 'none' }}
-      />
-
-      {/* After — результат, обрезается по width */}
+      {/* After — фон */}
       <img
         src={after}
         alt="after"
         onLoad={() => setAfterLoaded(true)}
-        className={`absolute inset-0 w-full h-full object-cover ${ready ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${ready ? 'opacity-100' : 'opacity-0'}`}
       />
 
-      {/* Обрезка before по ширине pos */}
-      <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
+      {/* Before — обрезается по width */}
+      <div className="absolute inset-0 overflow-hidden transition-opacity duration-500" style={{ width: `${pos}%`, opacity: ready ? 1 : 0 }}>
         <img
           src={before}
-          alt="before-clip"
+          alt="before"
           onLoad={() => setBeforeLoaded(true)}
           className="absolute inset-0 h-full object-cover"
           style={{ width: ref.current?.offsetWidth || '100vw', maxWidth: 'none' }}
         />
       </div>
 
-      {/* Ползунок */}
+      {/* Ползунок и метки — только после загрузки */}
       {ready && (
         <>
           <div className="absolute top-0 bottom-0 w-0.5 bg-white/80 pointer-events-none" style={{ left: `${pos}%` }}>
