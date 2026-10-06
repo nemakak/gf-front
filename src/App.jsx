@@ -499,14 +499,30 @@ function SubscriptionsScreen({ onBack, onBuy }) {
                     <ul className="space-y-3 mb-5">
                       {sub.features.map((f, i) => <li key={i} className="flex items-start gap-3 text-xs"><span>{f.icon}</span><span>{f.text}</span></li>)}
                     </ul>
-                    <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition" style={{ background: sub.accent }}>Оформить за {sub.priceNew}⭐️</button>
+                    <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2" style={{ background: sub.accent }}>Оформить за {sub.priceNew}⭐️</button>
+<a
+  href="https://buynstars.com/?ref=5wsgoi6fjrn2"
+  target="_blank"
+  rel="noreferrer"
+  className="block w-full text-center border border-border2 text-muted2 py-3 rounded-2xl text-[11px] font-btn uppercase active:scale-95"
+>
+  💰 Купить звёзды
+</a>
                   </div>
                 </div>
               )}
               {isSecret && (
                 <div className="border-t border-border1 px-5 py-4">
                   <div className="text-xs text-muted mb-4 italic">Секретное предложение. Внутри — сюрприз 🎁</div>
-                  <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition" style={{ background: sub.accent }}>Оформить за {sub.priceNew}⭐️</button>
+                  <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2" style={{ background: sub.accent }}>Оформить за {sub.priceNew}⭐️</button>
+<a
+  href="https://buynstars.com/?ref=5wsgoi6fjrn2"
+  target="_blank"
+  rel="noreferrer"
+  className="block w-full text-center border border-border2 text-muted2 py-3 rounded-2xl text-[11px] font-btn uppercase active:scale-95"
+>
+  💰 Купить звёзды
+</a>
                 </div>
               )}
             </div>
