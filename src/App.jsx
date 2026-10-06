@@ -1397,7 +1397,7 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
     } catch { onToast('Нет связи'); } finally { setIdeaLoading(false); }
   };
 
-    return (
+      return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <h1 className="text-2xl font-btn font-bold mb-6">Профиль</h1>
 
@@ -1484,60 +1484,6 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
       )}
     </main>
   );
-
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <button onClick={onOpenBuyTries} className="bg-card border border-border1 rounded-2xl p-4 text-left active:scale-[0.98] transition">
-          <div className="text-2xl mb-1">👗</div>
-          <div className="text-2xl font-btn font-bold">{user?.balance ?? 0}</div>
-          <div className="text-[10px] uppercase text-muted mt-2 font-btn">Из каталога</div>
-        </button>
-    
-     </div>
-
-      <div className="space-y-2 mb-4">
-        <button onClick={onOpenHistory} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🕓 Мои примерки</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenFavorites} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">❤️ Избранное</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenAchievements} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🏆 Достижения</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenLeaderboard} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">👑 Лидеры</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenSubs} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">💎 Подписки</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenOwn} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">📦 Свои товары</span><span className="text-[10px] text-accent">скоро</span></button>
-        <button onClick={onOpenMulti} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🎨 Мульти (2–3 вещи)</span><span className="text-[10px] text-accent">скоро</span></button>
-        <button onClick={onOpenGift} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🎁 Подарить подруге</span><span className="text-muted">→</span></button>
-        <button onClick={() => setIdeaOpen(true)} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">💡 Предложить идею</span><span className="text-muted">→</span></button>
-        {user?.is_admin && (
-          <button onClick={onOpenAdmin} className="w-full bg-gradient-to-r from-accent/20 to-accent/5 border border-accent rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn">
-            <span className="text-xs font-bold text-accent">👑 Админка</span>
-            <span className="text-accent">→</span>
-          </button>
-        )}
-      </div>
-
-      {!promoOpen ? (
-        <button onClick={() => setPromoOpen(true)} className="w-full bg-bgSoft border border-accentSoft text-accent rounded-2xl px-4 py-4 font-btn text-xs">🎁 Ввести промокод</button>
-      ) : (
-        <div className="bg-card border border-accentSoft rounded-2xl p-4 animate-scale-in">
-          <div className="flex gap-2">
-            <input value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())} placeholder="ВВЕДИ КОД" disabled={promoLoading} className="flex-1 bg-bg border border-border1 rounded-xl px-3 py-3 text-sm uppercase outline-none font-btn" />
-            <button onClick={redeemPromo} disabled={promoLoading || !promoCode.trim()} className="px-4 py-3 rounded-xl bg-accent text-bg text-xs font-bold disabled:opacity-40 font-btn">{promoLoading ? '…' : 'OK'}</button>
-          </div>
-          <button onClick={() => { setPromoOpen(false); setPromoCode(''); }} className="text-[10px] text-muted mt-3 font-btn">Отмена</button>
-        </div>
-      )}
-
-      {ideaOpen && (
-        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-5 animate-fade-in" onClick={() => setIdeaOpen(false)}>
-          <div className="bg-card border border-border2 rounded-3xl p-6 max-w-sm w-full animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <div className="text-[10px] uppercase text-accent mb-2 font-btn">💡 Идея</div>
-            <h3 className="text-lg font-btn font-bold mb-3">Что хочешь предложить?</h3>
-            <textarea value={ideaText} onChange={(e) => setIdeaText(e.target.value)} placeholder="Опиши идею…" rows={5} maxLength={2000} className="w-full bg-bg border border-border1 rounded-2xl px-4 py-3 text-sm outline-none resize-none mb-3 font-btn" />
-            <button onClick={sendIdea} disabled={ideaLoading || !ideaText.trim()} className="w-full bg-accent text-bg py-3.5 rounded-2xl text-xs font-bold uppercase disabled:opacity-40 mb-2 font-btn">{ideaLoading ? '…' : 'Отправить'}</button>
-            <button onClick={() => setIdeaOpen(false)} className="w-full text-xs text-muted py-2 font-btn">Отмена</button>
-          </div>
-        </div>
-      )}
-    </main>
-  );
-}
 
 // ============ SEARCH ============
 function SearchScreen({ onPick, likedIds, onLike }) {
