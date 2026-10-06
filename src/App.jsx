@@ -534,20 +534,31 @@ function BottomNav({ active, onChange }) {
     { key: 'profile', label: 'Профиль',  emoji: '👤' },
   ];
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-bg/95 backdrop-blur-md border-t border-border1 px-3 pt-2"
-      style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)' }}>
-      <div className="flex items-center justify-around max-w-md mx-auto">
-        {items.map(it => {
-          const isActive = active === it.key;
-          return (
-            <button key={it.key} onClick={() => { haptic('light'); onChange(it.key); }} className="flex flex-col items-center gap-1 py-2 px-3">
-              <span className={`text-lg ${isActive ? 'opacity-100 scale-110' : 'opacity-50'} transition-transform`}>{it.emoji}</span>
-              <span className={`text-[9px] uppercase font-btn ${isActive ? 'text-accent font-bold' : 'text-muted'}`}>{it.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+    <div className="fixed bottom-0 left-0 right-0 z-30 px-3 pointer-events-none"
+      style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 12px)' }}>
+      <nav className="mx-auto max-w-md pointer-events-auto rounded-3xl overflow-hidden"
+        style={{
+          background: 'rgba(26, 20, 18, 0.65)',
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          border: '1px solid rgba(212, 181, 149, 0.12)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+        }}>
+        <div className="flex items-center justify-around px-2 py-2">
+          {items.map(it => {
+            const isActive = active === it.key;
+            return (
+              <button key={it.key}
+                onClick={() => { haptic('light'); onChange(it.key); }}
+                className={`flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-2xl transition-all duration-300 ${isActive ? 'bg-accent/15' : ''}`}>
+                <span className={`text-lg transition-transform duration-300 ${isActive ? 'scale-110' : 'opacity-60'}`}>{it.emoji}</span>
+                <span className={`text-[9px] uppercase font-btn transition-colors ${isActive ? 'text-accent font-bold' : 'text-muted'}`}>{it.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
   );
 }
 
@@ -579,7 +590,7 @@ function ComingSoonScreen({ onBack, title = 'В разработке', descripti
 
 // ============ SUBSCRIPTIONS ============
 function SubscriptionsScreen({ onBack, onBuy }) {
-  const [expanded, setExpanded] = useState('pro');
+  const [expanded, setExpanded] = useState('secret');
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <div className="flex items-center gap-3 mb-6">
