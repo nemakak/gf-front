@@ -408,7 +408,7 @@ function StreakSheet({ streak, onClose }) {
         <div className="w-12 h-1 bg-border2 rounded-full mx-auto mb-5" />
         <div className="text-center mb-5">
           <div className="text-5xl mb-2">🔥</div>
-          <div className="text-xl font-btn font-bold mb-1">Стрик {streak} {streak === 1 ? 'день' : streak < 5 ? 'дня' : 'дней'}</div>
+          <div className="text-xl font-btn font-bold mb-1">Серия {streak} {streak === 1 ? 'день' : streak < 5 ? 'дня' : 'дней'}</div>
           <div className="text-xs text-muted font-btn">Заходи каждый день и получай награды</div>
         </div>
         <div className="space-y-2 mb-5">
@@ -1400,7 +1400,7 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
         <button onClick={onOpenAchievements} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🏆 Достижения</span><span className="text-muted">→</span></button>
         <button onClick={onOpenLeaderboard} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">👑 Лидеры</span><span className="text-muted">→</span></button>
         <button onClick={onOpenSubs} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">💎 Подписки</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenOwn} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">📦 Примерка по ссылке</span><span className="text-muted">→</span></button>
+        <button onClick={onOpenOwn} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">📦 Свои товары</span><span className="text-[10px] text-accent">скоро</span></button>
         <button onClick={onOpenMulti} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🎨 Мульти (2–3 вещи)</span><span className="text-[10px] text-accent">скоро</span></button>
         <button onClick={onOpenGift} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🎁 Подарить подруге</span><span className="text-muted">→</span></button>
         <button onClick={() => setIdeaOpen(true)} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">💡 Предложить идею</span><span className="text-muted">→</span></button>
@@ -1681,7 +1681,7 @@ export default function App() {
         if (!d.user.onboarded && localStorage.getItem('gf_onboarded') !== '1') setShowOnboarding(true);
         else if (!d.user.personalized) setShowPersonalization(true);
         if (d.daily_bonus > 0) { setWelcomeBonus(`🎁 +${d.daily_bonus} попытка за вход!`); setTimeout(() => setWelcomeBonus(null), 4000); }
-        if (d.streak_bonus > 0) { setTimeout(() => { setWelcomeBonus(`🔥 Стрик 5 дней! +${d.streak_bonus} своих`); setTimeout(() => setWelcomeBonus(null), 5000); }, 5000); }
+        if (d.streak_bonus > 0) { setTimeout(() => { setWelcomeBonus(`🔥 Серия 5 дней! +${d.streak_bonus}`); setTimeout(() => setWelcomeBonus(null), 5000); }, 5000); }
       } else setUser({ tg_id: 0, first_name: 'Гость', username: '—', photo_url: '', balance: 0, own_tries: 0, onboarded: true, personalized: true, streak_days: 0, is_admin: false });
     }).catch(() => setUser({ tg_id: 0, first_name: 'Гость', username: '—', photo_url: '', balance: 0, own_tries: 0, onboarded: true, personalized: true, streak_days: 0, is_admin: false }));
   }, []);
@@ -1818,7 +1818,7 @@ export default function App() {
   if (screen === 'subs') return <><SubscriptionsScreen onBack={() => setScreen(null)} onBuy={buySubscription} />{nav}</>;
   if (screen === 'buyTries') return <><BuyTriesScreen onBack={() => setScreen(null)} onBuy={buyTries} onBuyOwn={buyOwnTries} user={user} />{nav}</>;
   if (screen === 'history') return <><HistoryScreen onBack={() => setScreen(null)} />{nav}</>;
-  if (screen === 'own') return <><OwnTriesScreen user={user} onBack={() => setScreen(null)} onToast={showToast} />{nav}</>;
+  if (screen === 'own') return <><ComingSoonScreen onBack={() => setScreen(null)} title="Примерка своих товаров" description="Скоро ты сможешь загрузить любую вещь по ссылке с Wildberries и примерить её на себя. Мы уже работаем над этим ✨" />{nav}</>;
   if (screen === 'multi') return <><ComingSoonScreen onBack={() => setScreen(null)} title="Мульти-примерка в разработке" description="Скоро ты сможешь примерять сразу 2–3 вещи: топ + низ, платье + аксессуар и другие комбинации. Мы уже работаем над этим ✨" />{nav}</>;
   if (screen === 'favorites') return <><FavoritesScreen onBack={() => setScreen(null)} onPick={handleProductPick} onToast={showToast} />{nav}</>;
   if (screen === 'achievements') return <><AchievementsScreen onBack={() => setScreen(null)} />{nav}</>;
