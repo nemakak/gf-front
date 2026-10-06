@@ -1827,8 +1827,7 @@ export default function App() {
             <button onClick={() => setScreen('buyTries')} className="px-3 py-1.5 rounded-full border border-border2 text-xs font-btn whitespace-nowrap shrink-0">
   ✨ {user.balance ?? 0} <span className="text-accent font-bold">+</span>
 </button>
-            <button onClick={() => setScreen('subs')}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold active:scale-95 transition font-btn ${user.sub_active ? 'bg-accent text-bg shadow-soft animate-pulse-glow' : 'bg-accent text-bg'}`}>
+            <button onClick={() => setScreen('subs')} className={`px-3 py-1.5 rounded-full text-xs font-bold active:scale-95 transition font-btn shrink-0 ...`}>
               💎
             </button>
           </div>
