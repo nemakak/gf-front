@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || 'https://gf-backend-uc51.onrender.com';
 const PROXY_URL = 'https://gf-images.maxgamingbrawlstars.workers.dev';
+const BUY_STARS_URL = 'https://buynstars.com/?ref=5wsgoi6fjrn2';
 
-// Категории: Для тебя — первая
 const CATEGORIES = [
   { key: 'personal',  label: 'Для тебя',       emoji: '💫' },
   { key: 'autumn',    label: 'Осень',          emoji: '🍂' },
@@ -260,33 +260,31 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon 
               </div>
             )
           )}
-          {item.price && (
-            <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1">
-  <span className="text-xs font-bold text-white">
-    {item.price ? `≈ ${item.price.replace(/^≈\s*/, '')}` : '— ₽'}
-  </span>
-</div>
-          )}
+          <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1">
+            <span className="text-xs font-bold text-white">
+              {item.price ? `≈ ${item.price.replace(/^≈\s*/, '')}` : '— ₽'}
+            </span>
+          </div>
         </div>
         <div className="p-3 pb-2">
           <div className="font-sans font-medium text-[13px] leading-snug line-clamp-2 h-[36px] text-title">{title}</div>
         </div>
       </button>
       <div className="px-3 pb-3 flex items-center gap-2">
-  <a href={shopUrl} target="_blank" rel="noreferrer"
-    onClick={(e) => e.stopPropagation()}
-    className="w-10 h-10 rounded-xl bg-bgSoft border border-border2 flex items-center justify-center text-base active:scale-95 transition shrink-0">
-    🛍
-  </a>
-  <button
-    onClick={() => { haptic('medium'); onTryon ? onTryon(item) : onPick(item); }}
-    className="flex-1 h-9 rounded-xl font-bold text-[11px] uppercase tracking-wider2 text-bg active:scale-[0.97] transition-all relative overflow-hidden group font-btn"
-    style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
-  >
-    <span className="relative z-10 flex items-center justify-center">Примерить</span>
-    <span className="absolute inset-0 -translate-x-full group-active:translate-x-0 transition-transform bg-white/10" />
-  </button>
-</div>
+        <a href={shopUrl} target="_blank" rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="w-10 h-9 rounded-xl bg-bgSoft border border-border2 flex items-center justify-center text-base active:scale-95 transition shrink-0">
+          🛍
+        </a>
+        <button
+          onClick={() => { haptic('medium'); onTryon ? onTryon(item) : onPick(item); }}
+          className="flex-1 h-9 rounded-xl font-bold text-[11px] uppercase tracking-wider2 text-bg active:scale-[0.97] transition-all relative overflow-hidden group font-btn"
+          style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
+        >
+          <span className="relative z-10 flex items-center justify-center">Примерить</span>
+          <span className="absolute inset-0 -translate-x-full group-active:translate-x-0 transition-transform bg-white/10" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -494,20 +492,16 @@ function SubscriptionsScreen({ onBack, onBuy }) {
                 {!isSecret && <span className="text-lg" style={{ color: sub.accent, transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }}>⌄</span>}
               </button>
               {!isSecret && (
-                <div className="overflow-hidden" style={{ maxHeight: isOpen ? 400 : 0 }}>
+                <div className="overflow-hidden" style={{ maxHeight: isOpen ? 500 : 0 }}>
                   <div className="border-t border-border1 px-5 py-4">
                     <ul className="space-y-3 mb-5">
                       {sub.features.map((f, i) => <li key={i} className="flex items-start gap-3 text-xs"><span>{f.icon}</span><span>{f.text}</span></li>)}
                     </ul>
                     <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2" style={{ background: sub.accent }}>Оформить за {sub.priceNew}⭐️</button>
-<a
-  href="https://buynstars.com/?ref=5wsgoi6fjrn2"
-  target="_blank"
-  rel="noreferrer"
-  className="block w-full text-center border border-border2 text-muted2 py-3 rounded-2xl text-[11px] font-btn uppercase active:scale-95"
->
-  💰 Купить звёзды
-</a>
+                    <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
+                      className="block w-full text-center border border-border2 text-muted2 py-3 rounded-2xl text-[11px] font-btn uppercase active:scale-95">
+                      💰 Купить звёзды
+                    </a>
                   </div>
                 </div>
               )}
@@ -515,14 +509,10 @@ function SubscriptionsScreen({ onBack, onBuy }) {
                 <div className="border-t border-border1 px-5 py-4">
                   <div className="text-xs text-muted mb-4 italic">Секретное предложение. Внутри — сюрприз 🎁</div>
                   <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2" style={{ background: sub.accent }}>Оформить за {sub.priceNew}⭐️</button>
-<a
-  href="https://buynstars.com/?ref=5wsgoi6fjrn2"
-  target="_blank"
-  rel="noreferrer"
-  className="block w-full text-center border border-border2 text-muted2 py-3 rounded-2xl text-[11px] font-btn uppercase active:scale-95"
->
-  💰 Купить звёзды
-</a>
+                  <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
+                    className="block w-full text-center border border-border2 text-muted2 py-3 rounded-2xl text-[11px] font-btn uppercase active:scale-95">
+                    💰 Купить звёзды
+                  </a>
                 </div>
               )}
             </div>
@@ -564,14 +554,10 @@ function BuyTriesScreen({ onBack, onBuy, onBuyOwn, user }) {
         <div className="bg-card border border-border1 rounded-2xl p-4"><div className="text-[10px] uppercase text-muted">Своих</div><div className="text-3xl font-sans font-bold text-accent mt-1">{user?.own_tries ?? 0}</div></div>
       </div>
       <button onClick={() => mode === 'regular' ? onBuy(count) : onBuyOwn(count)} className="w-full bg-accent text-bg py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2 font-btn">Купить {count} за {total}⭐️</button>
-<a
-  href="https://buynstars.com/?ref=5wsgoi6fjrn2"
-  target="_blank"
-  rel="noreferrer"
-  className="block w-full mt-2 text-center border border-border2 text-muted2 py-3 rounded-2xl text-xs font-btn uppercase active:scale-95"
->
-  💰 Купить звёзды
-</a>
+      <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
+        className="block w-full mt-2 text-center border border-border2 text-muted2 py-3 rounded-2xl text-xs font-btn uppercase active:scale-95">
+        💰 Купить звёзды
+      </a>
     </main>
   );
 }
@@ -653,37 +639,18 @@ function MultiTryonScreen({ catalog, user, onBack, onToast }) {
   const fileRef = useRef(null);
 
   const toggle = (item) => {
-  // уже выбрано — убираем
-  const isSelected = picked.some(x => x.id === item.id);
-  if (isSelected) {
-    setPicked(prev => prev.filter(x => x.id !== item.id));
+    const isSelected = picked.some(x => x.id === item.id);
+    if (isSelected) { setPicked(prev => prev.filter(x => x.id !== item.id)); haptic('light'); return; }
+    if (picked.length >= 3) return onToast('Максимум 3 вещи');
+    if (picked.some(x => x.category === item.category)) return onToast('Можно только из разных категорий');
+    const hasSuit = picked.some(x => x.category === 'suit');
+    const hasTopBottom = picked.some(x => x.category === 'top' || x.category === 'bottom');
+    if (item.category === 'suit' && hasTopBottom) return onToast('Костюм не сочетается с верхом или низом');
+    if ((item.category === 'top' || item.category === 'bottom') && hasSuit) return onToast('Костюм не сочетается с верхом или низом');
     haptic('light');
-    return;
-  }
-  // лимит
-  if (picked.length >= 3) {
-    onToast('Максимум 3 вещи');
-    return;
-  }
-  // одна и та же категория
-  if (picked.some(x => x.category === item.category)) {
-    onToast('Можно только из разных категорий');
-    return;
-  }
-  // костюм + верх/низ
-  const hasSuit = picked.some(x => x.category === 'suit');
-  const hasTopBottom = picked.some(x => x.category === 'top' || x.category === 'bottom');
-  if (item.category === 'suit' && hasTopBottom) {
-    onToast('Костюм не сочетается с верхом или низом');
-    return;
-  }
-  if ((item.category === 'top' || item.category === 'bottom') && hasSuit) {
-    onToast('Костюм не сочетается с верхом или низом');
-    return;
-  }
-  haptic('light');
-  setPicked(prev => [...prev, item]);
-};
+    setPicked(prev => [...prev, item]);
+  };
+
   const onPickFile = async (e) => { const f = e.target.files?.[0]; if (!f) return; try { setHumanImg(await compressImage(f, 720, 0.7)); } catch { onToast('Ошибка'); } };
   const run = async () => {
     if (picked.length < 2) return onToast('Выберите 2–3 вещи');
@@ -738,16 +705,16 @@ function MultiTryonScreen({ catalog, user, onBack, onToast }) {
         </div>
       )}
       <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
-     <div className="grid grid-cols-2 gap-3 mb-5">
-  {catalog.slice(0, 30).map(item => (
-    <ProductCard
-      key={item.id}
-      item={item}
-      selected={picked.some(x => x.id === item.id)}
-      onToggle={toggle}
-    />
-  ))}
-</div>
+      <div className="grid grid-cols-2 gap-3 mb-5">
+        {catalog.slice(0, 30).map(item => (
+          <ProductCard
+            key={item.id}
+            item={item}
+            selected={picked.some(x => x.id === item.id)}
+            onToggle={toggle}
+          />
+        ))}
+      </div>
       <button onClick={run} disabled={picked.length < 2 || !humanImg || (user?.balance || 0) < picked.length} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-sm font-bold uppercase">
         {picked.length < 2 ? 'Выберите минимум 2' : `Пример ${picked.length} вещи`}
       </button>
@@ -972,9 +939,13 @@ function GiftScreen({ onBack, onToast, user }) {
             <div className="text-[10px] uppercase text-muted mb-1">Итого</div>
             <div className="text-3xl font-sans font-bold">{total}<span className="text-accent text-xl ml-1">⭐️</span></div>
           </div>
-          <button onClick={create} disabled={loading} className="btn-shine w-full text-bg py-4 rounded-2xl text-sm font-bold uppercase disabled:opacity-40">
+          <button onClick={create} disabled={loading} className="btn-shine w-full text-bg py-4 rounded-2xl text-sm font-bold uppercase disabled:opacity-40 font-btn">
             {loading ? 'Создаю…' : `Оплатить ${total}⭐️`}
           </button>
+          <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
+            className="block w-full mt-2 text-center border border-border2 text-muted2 py-3 rounded-2xl text-xs font-btn uppercase active:scale-95">
+            💰 Купить звёзды
+          </a>
         </>
       ) : (
         <div className="bg-card border border-accentSoft rounded-3xl p-6 text-center animate-bounce-in">
@@ -1077,7 +1048,7 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
           <button
             onClick={() => refresh('all')}
             disabled={!!loading}
-            className="w-full bg-accent text-bg py-5 rounded-3xl text-sm font-bold uppercase tracking-wider2 mb-2 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
+            className="w-full bg-accent text-bg py-5 rounded-3xl text-sm font-bold uppercase tracking-wider2 mb-2 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 font-btn"
           >
             {loading === 'all'
               ? <><span className="inline-block w-4 h-4 border-2 border-bg/40 border-t-bg rounded-full animate-spin" /> Пополняю…</>
@@ -1177,10 +1148,7 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
       const r = await fetch(`${BACKEND}/api/admin/products/action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          initData: window.Telegram?.WebApp?.initData || '',
-          action, productId, wbId,
-        }),
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', action, productId, wbId }),
       });
       const d = await r.json();
       if (d.success) {
@@ -1205,11 +1173,7 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
       const r = await fetch(`${BACKEND}/api/admin/products/rename`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          initData: window.Telegram?.WebApp?.initData || '',
-          productId: item.id,
-          newName,
-        }),
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', productId: item.id, newName }),
       });
       const d = await r.json();
       if (d.success) {
@@ -1235,11 +1199,7 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
       const r = await fetch(`${BACKEND}/api/admin/products/clear-category`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          initData: window.Telegram?.WebApp?.initData || '',
-          category: filter,
-          mode,
-        }),
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', category: filter, mode }),
       });
       const d = await r.json();
       if (d.success) {
@@ -1595,28 +1555,26 @@ function StyleTestScreen({ onBack, onPick }) {
 }
 
 // ============ КАТАЛОГ ============
-function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenTest, onOpenOwn, onOpenMulti, shareRef }) {
+function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenMulti, onOpenSearch, shareRef }) {
   return (
     <main className="px-5 pt-6 animate-fade-in">
       <div className="flex items-end justify-between mb-4">
-  <div>
-    <div className="text-[10px] uppercase text-muted mb-1">Коллекция</div>
-    <h1 className="font-serif text-3xl">Гардероб</h1>
-  </div>
-  <button onClick={onOpenMulti} className="px-3 py-2 rounded-full bg-card border border-border2 text-xs active:scale-95 font-btn">🎨 2–3</button>
-</div>
+        <div>
+          <div className="text-[10px] uppercase text-muted mb-1">Коллекция</div>
+          <h1 className="font-serif text-3xl">Гардероб</h1>
+        </div>
+        <button onClick={onOpenMulti} className="px-3 py-2 rounded-full bg-card border border-border2 text-xs active:scale-95 font-btn">🎨 2–3</button>
+      </div>
 
-{/* Большая кнопка поиска */}
-<button
-  onClick={onOpenSearch}
-  className="w-full mb-4 h-12 rounded-2xl bg-card border border-border1 flex items-center px-4 gap-3 active:scale-[0.98] transition"
->
-  <svg className="w-4 h-4 text-muted shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <circle cx="11" cy="11" r="7" />
-    <path d="m21 21-4.35-4.35" />
-  </svg>
-  <span className="text-sm text-muted font-btn">Найти вещь…</span>
-</button>
+      <button onClick={onOpenSearch}
+        className="w-full mb-4 h-12 rounded-2xl bg-card border border-border1 flex items-center px-4 gap-3 active:scale-[0.98] transition">
+        <svg className="w-4 h-4 text-muted shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+        <span className="text-sm text-muted font-btn">Найти вещь…</span>
+      </button>
+
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 -mx-5 px-5">
         {CATEGORIES.map(c => {
           const active = category === c.key;
@@ -1638,7 +1596,7 @@ function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedI
           {catalog.map(item => <ProductCard key={item.id} item={item} onPick={onPick} liked={likedIds.has(item.id)} onLike={onLike} />)}
         </div>
       )}
-      <button onClick={shareRef} className="w-full mt-8 bg-bgSoft border border-border2 text-accent py-4 rounded-2xl text-xs font-medium uppercase tracking-wider2 flex items-center justify-center gap-2 active:scale-[0.98] transition">
+      <button onClick={shareRef} className="w-full mt-8 bg-bgSoft border border-border2 text-accent py-4 rounded-2xl text-xs font-medium uppercase tracking-wider2 flex items-center justify-center gap-2 active:scale-[0.98] transition font-btn">
         <span>👥</span> Поделиться с подругой · +1
       </button>
     </main>
@@ -1877,12 +1835,12 @@ export default function App() {
       )}
 
       {tab === 'catalog' && (
-  <CatalogScreen catalog={catalog} loading={loading} category={category} setCategory={setCategory}
-    onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike}
-    onOpenMulti={() => setScreen('multi')}
-    onOpenSearch={() => setTab('search')}
-    shareRef={shareRef} />
-)}
+        <CatalogScreen catalog={catalog} loading={loading} category={category} setCategory={setCategory}
+          onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike}
+          onOpenMulti={() => setScreen('multi')}
+          onOpenSearch={() => setTab('search')}
+          shareRef={shareRef} />
+      )}
 
       {tab === 'search' && <SearchScreen onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike} />}
 
@@ -1912,7 +1870,7 @@ export default function App() {
           </button>
           <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
           {humanImg && <img src={humanImg} alt="" className="w-full max-h-72 object-contain rounded-2xl mb-4 animate-scale-in" />}
-          <button onClick={runTryOn} disabled={!humanImg} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-sm font-bold uppercase mt-4">
+          <button onClick={runTryOn} disabled={!humanImg} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-sm font-bold uppercase mt-4 font-btn">
             Запустить примерку
           </button>
         </main>
@@ -1927,8 +1885,8 @@ export default function App() {
           {resultImage ? (
             <>
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <button onClick={() => downloadImage(resultImage, `style-room-${selected?.wb_id || 'result'}.jpg`)} className="w-full bg-accent text-bg py-4 rounded-2xl text-xs font-bold uppercase">📥 Скачать</button>
-                <button onClick={() => tgShare(resultImage)} className="w-full border border-accentSoft text-accent py-4 rounded-2xl text-xs font-bold uppercase">📤 Поделиться</button>
+                <button onClick={() => downloadImage(resultImage, `style-room-${selected?.wb_id || 'result'}.jpg`)} className="w-full bg-accent text-bg py-4 rounded-2xl text-xs font-bold uppercase font-btn">📥 Скачать</button>
+                <button onClick={() => tgShare(resultImage)} className="w-full border border-accentSoft text-accent py-4 rounded-2xl text-xs font-bold uppercase font-btn">📤 Поделиться</button>
               </div>
               <a href={wbUrl(selected?.wb_id)} target="_blank" rel="noreferrer" className="block w-full border border-border2 text-muted2 text-center py-3 rounded-2xl text-xs uppercase mb-3">🛍 Открыть на WB</a>
             </>
