@@ -827,16 +827,25 @@ function FavoritesScreen({ onBack, onPick, onToast }) {
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
       <h1 className="text-2xl font-btn font-bold mb-5">❤️ Избранное</h1>
-      <div className="flex gap-2 overflow-x-auto no-scrollbar mb-5 -mx-5 px-5">
-        {CATEGORIES.filter(c => c.key !== 'personal').map(c => {
-          const active = cat === c.key;
-          return (
-            <button key={c.key} onClick={() => setCat(c.key)} className={`whitespace-nowrap text-xs px-3.5 py-2 rounded-full border flex items-center gap-1.5 font-btn ${active ? 'bg-accent text-bg border-accent font-bold' : 'border-border2 text-muted2'}`}>
-              <span>{c.emoji}</span>{c.label}
-            </button>
-          );
-        })}
-      </div>
+      <div className="relative -mx-5 mb-6">
+  <div
+    className="flex gap-2 overflow-x-auto no-scrollbar px-5 pb-1"
+    style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+  >
+    {CATEGORIES.map(c => {
+      const active = category === c.key;
+      return (
+        <button
+          key={c.key}
+          onClick={() => { haptic('light'); setCategory(c.key); }}
+          className={`shrink-0 whitespace-nowrap text-xs px-3.5 py-2 rounded-full border flex items-center gap-1.5 transition-all font-btn ${active ? 'bg-accent text-bg border-accent font-bold shadow-soft' : 'border-border2 text-muted2'}`}
+        >
+          <span>{c.emoji}</span>{c.label}
+        </button>
+      );
+    })}
+  </div>
+</div>
       {loading && <div className="text-center py-16 text-muted text-sm font-btn">Загрузка…</div>}
       {!loading && items.length === 0 && <EmptyState emoji="💔" title="Пока пусто" text="Нажимай ❤️ на товары — они появятся здесь" />}
       <div className="grid grid-cols-2 gap-3">
