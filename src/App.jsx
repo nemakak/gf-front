@@ -40,6 +40,32 @@ const SUBS = [
 
 const HINTS = ['Подбираем образ…', 'Почти готово ✨', 'Примеряем на тебя…', 'Ещё чуть-чуть', 'Смотрим, как сидит'];
 
+// ============ ОНБОРДИНГ-ТЕСТ ============
+const ONBOARD_QUESTIONS = [
+  { id: 'age', q: 'Сколько тебе лет?', options: [
+    { text: 'До 18', emoji: '🌱', value: 'teen' },
+    { text: '18–24', emoji: '✨', value: 'young' },
+    { text: '25–34', emoji: '💫', value: 'adult' },
+    { text: '35+',  emoji: '🌹', value: 'mature' },
+  ]},
+  { id: 'style', q: 'Какой стиль тебе ближе?', options: [
+    { text: 'Романтичный', emoji: '🌸', value: 'romantic', cat: 'dress' },
+    { text: 'Кэжуал', emoji: '👕', value: 'casual', cat: 'top' },
+    { text: 'Строгий / деловой', emoji: '🥼', value: 'formal', cat: 'suit' },
+    { text: 'Y2K / уличный', emoji: '🎨', value: 'y2k', cat: 'top' },
+  ]},
+  { id: 'season', q: 'Что сейчас носишь?', options: [
+    { text: 'Осеннее / тёплое', emoji: '🍂', value: 'autumn', cat: 'autumn' },
+    { text: 'Лёгкое / летнее', emoji: '☀️', value: 'summer', cat: 'top' },
+    { text: 'Универсальное', emoji: '🌤', value: 'all', cat: 'all' },
+  ]},
+  { id: 'color', q: 'Любимые цвета?', options: [
+    { text: 'Тёплые (беж, коричневый)', emoji: '🤎', value: 'warm' },
+    { text: 'Тёмные (чёрный, серый)',   emoji: '🖤', value: 'dark' },
+    { text: 'Яркие',                    emoji: '❤️', value: 'bright' },
+  ]},
+];
+
 const STYLE_QUESTIONS = [
   { q: 'Какой образ тебе ближе?', options: [
     { text: 'Романтичный и нежный', emoji: '🌸', cat: 'dress' },
@@ -411,9 +437,8 @@ function StreakSheet({ streak, onClose }) {
 // ============ ONBOARDING ============
 const SLIDES = [
   { emoji: '✨', title: 'Примерь любой образ', text: 'Загрузите фото в полный рост, выберите вещь — ИИ покажет, как она сидит именно на вас' },
-  { emoji: '🛍', title: 'Готовый гардероб', text: 'Свежие находки с Wildberries каждый день. Понравилось — покупай сразу на WB' },
-  { emoji: '❤️', title: 'Сохраняй любимое', text: 'Тапни ❤️ на товаре — он уйдёт в избранное. Возвращайся к нему в любой момент' },
-  { emoji: '🎁', title: 'Приглашай подруг', text: 'За первую примерку подруги +1 попытка каждой из вас' },
+  { emoji: '🛍', title: 'Готовый гардероб', text: 'Свежие находки с Wildberries каждый день' },
+  { emoji: '❤️', title: 'Сохраняй любимое', text: 'Тапни ❤️ на товаре — он уйдёт в избранное' },
 ];
 function Onboarding({ onDone }) {
   const [i, setI] = useState(0);
@@ -429,9 +454,74 @@ function Onboarding({ onDone }) {
         <p className="text-sm text-muted2 max-w-xs leading-relaxed">{SLIDES[i].text}</p>
       </div>
       <button onClick={() => { haptic('medium'); last ? onDone() : setI(i + 1); }} className="w-full bg-accent text-bg py-4 rounded-2xl text-sm font-medium uppercase font-btn">
-        {last ? 'Начать ✨' : 'Продолжить'}
+        {last ? 'Продолжить' : 'Далее'}
       </button>
-      {!last && <button onClick={onDone} className="mt-4 text-xs text-muted font-btn">Пропустить</button>}
+    </div>
+  );
+}
+
+// ============ ОБЯЗАТЕЛЬНЫЙ ТЕСТ ПЕРСОНАЛИЗАЦИИ ============
+function PersonalizationTest({ user, onDone, onToast }) {
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  const choose = (q, opt) => {
+    haptic('medium');
+    const next = { ...answers, [q.id]: opt.value, [`${q.id}_cat`]: opt.cat };
+    setAnswers(next);
+
+    if (step < ONBOARD_QUESTIONS.length - 1) {
+      setStep(step + 1);
+    } else {
+      setSaving(true);
+      fetch(`${BACKEND}/api/save-personalization`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initData: window.Telegram?.WebApp?.initData || '',
+          answers: next,
+        }),
+      })
+        .then(r => r.json())
+        .then(d => { if (d.success) onDone(); else onToast('Ошибка сохранения'); })
+        .catch(() => onToast('Нет связи'))
+        .finally(() => setSaving(false));
+    }
+  };
+
+  if (saving) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-bg">
+      <div className="spinner mb-6" />
+      <div className="text-sm text-muted font-btn">Подбираем для тебя…</div>
+    </div>
+  );
+
+  const q = ONBOARD_QUESTIONS[step];
+  return (
+    <div className="min-h-screen flex flex-col px-6 pt-12 pb-8 bg-bg">
+      <div className="text-center mb-8">
+        <div className="text-[10px] uppercase tracking-wider2 text-accent mb-2 font-btn">Шаг {step + 1} из {ONBOARD_QUESTIONS.length}</div>
+        <h2 className="text-xl font-btn font-bold">Немного о тебе</h2>
+        <p className="text-xs text-muted mt-2 font-btn">Чтобы подобрать вещи именно под тебя</p>
+      </div>
+      <div className="flex gap-1.5 mb-8">
+        {ONBOARD_QUESTIONS.map((_, i) => (
+          <div key={i} className={`h-1 flex-1 rounded-full ${i <= step ? 'bg-accent' : 'bg-border2'} transition-all`} />
+        ))}
+      </div>
+      <div className="text-base font-btn font-bold mb-6">{q.q}</div>
+      <div className="space-y-3 flex-1">
+        {q.options.map((opt, i) => (
+          <button key={i} onClick={() => choose(q, opt)}
+            className="w-full bg-card border border-border1 rounded-2xl p-4 flex items-center gap-4 active:scale-[0.98] transition hover:border-accent animate-slide-up"
+            style={{ animationDelay: `${i * 0.08}s` }}>
+            <div className="text-3xl">{opt.emoji}</div>
+            <div className="text-left flex-1 font-btn font-bold text-sm">{opt.text}</div>
+            <div className="text-accent text-xl">→</div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -467,9 +557,24 @@ function MaintenanceScreen({ text }) {
     <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center bg-bg">
       <div className="text-7xl mb-8 animate-float">🚧</div>
       <h1 className="text-2xl font-btn font-bold mb-4 text-title">Ведутся работы</h1>
-      <p className="text-sm text-muted2 max-w-xs leading-relaxed">{text || 'Скоро вернёмся, заходите чуть позже ✨'}</p>
+      <p className="text-sm text-muted2 max-w-xs leading-relaxed font-btn">{text || 'Скоро вернёмся, заходите чуть позже ✨'}</p>
       <div className="mt-10 text-[10px] uppercase tracking-wider2 text-muted font-btn">Style Room</div>
     </div>
+  );
+}
+
+// ============ ЗАГЛУШКА В РАЗРАБОТКЕ ============
+function ComingSoonScreen({ onBack, title = 'В разработке', description = 'Эта функция скоро появится' }) {
+  return (
+    <main className="px-5 pt-6 pb-24 animate-fade-in">
+      <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
+      <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
+        <div className="text-7xl mb-6 animate-float">🚧</div>
+        <h1 className="text-2xl font-btn font-bold mb-3">{title}</h1>
+        <p className="text-sm text-muted max-w-xs leading-relaxed font-btn mb-6">{description}</p>
+        <div className="text-[10px] uppercase tracking-wider2 text-accent font-btn">Style Room · скоро</div>
+      </div>
+    </main>
   );
 }
 
@@ -601,7 +706,7 @@ function OwnTriesScreen({ user, onBack, onToast }) {
       const r = await fetch(`${BACKEND}/api/tryon-by-link`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', humanImg, wbLink: wbLink.trim() }) });
       const d = await r.json();
       if (d.success && d.resultUrl) { setResultImage(d.resultUrl); playReadySound(); haptic('medium'); }
-      else onToast(d.error || 'Что-то пошло не так');
+      else onToast(d.error || 'Не получилось. Попробуй другое фото');
     } catch { onToast('Нет связи'); }
     finally { setLoading(false); }
   };
@@ -644,93 +749,6 @@ function OwnTriesScreen({ user, onBack, onToast }) {
       {humanImg && <img src={humanImg} alt="" className="w-full max-h-72 object-contain rounded-2xl mb-4 border border-border1 animate-scale-in" />}
       <button onClick={run} disabled={(user?.own_tries || 0) <= 0} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-xs font-bold uppercase mt-4 font-btn">
         {(user?.own_tries || 0) <= 0 ? 'Купите примерки' : 'Запустить · 1 попытка'}
-      </button>
-    </main>
-  );
-}
-
-// ============ MULTI ============
-function MultiTryonScreen({ catalog, user, onBack, onToast }) {
-  const [picked, setPicked] = useState([]);
-  const [humanImg, setHumanImg] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState(null);
-  const fileRef = useRef(null);
-
-  const toggle = (item) => {
-    const isSelected = picked.some(x => x.id === item.id);
-    if (isSelected) { setPicked(prev => prev.filter(x => x.id !== item.id)); haptic('light'); return; }
-    if (picked.length >= 3) return onToast('Максимум 3 вещи');
-    if (picked.some(x => x.category === item.category)) return onToast('Можно только из разных категорий');
-    const hasSuit = picked.some(x => x.category === 'suit');
-    const hasTopBottom = picked.some(x => x.category === 'top' || x.category === 'bottom');
-    if (item.category === 'suit' && hasTopBottom) return onToast('Костюм не сочетается с верхом или низом');
-    if ((item.category === 'top' || item.category === 'bottom') && hasSuit) return onToast('Костюм не сочетается с верхом или низом');
-    haptic('light');
-    setPicked(prev => [...prev, item]);
-  };
-
-  const onPickFile = async (e) => { const f = e.target.files?.[0]; if (!f) return; try { setHumanImg(await compressImage(f, 720, 0.7)); } catch { onToast('Ошибка'); } };
-  const run = async () => {
-    if (picked.length < 2) return onToast('Выберите 2–3 вещи');
-    if (!humanImg) return onToast('Загрузите фото');
-    if ((user?.balance || 0) < picked.length) return onToast(`Нужно ${picked.length} попыток`);
-    setLoading(true);
-    try {
-      const r = await fetch(`${BACKEND}/api/tryon-multi`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', humanImg, items: picked.map(p => ({ id: p.id, name: p.name, image_url: p.image_url, category: p.category })) }) });
-      const d = await r.json();
-      if (d.success) { setResults(d.results); playReadySound(); }
-      else onToast(d.error || 'Не получилось');
-    } catch { onToast('Ошибка'); }
-    finally { setLoading(false); }
-  };
-
-  if (loading) return <LoadingAnimation />;
-  if (results) return (
-    <main className="px-5 pt-5 pb-24 animate-fade-in">
-      <div className="text-[10px] uppercase text-muted mb-3 font-btn">Результаты</div>
-      <div className="space-y-4">
-        {results.map((r, i) => (
-          <div key={i} className="bg-card border border-border1 rounded-2xl overflow-hidden animate-slide-up" style={{ animationDelay: `${i*0.1}s` }}>
-            {r.url ? <img src={r.url} alt={r.name} className="w-full" onError={(e) => { e.target.src = 'https://placehold.co/600x800/1A1412/D4B595?text=Фото'; }} /> : <div className="aspect-[3/4] flex items-center justify-center text-xs text-muted">Не удалось</div>}
-            <div className="p-3">
-              <div className="text-xs text-muted mb-2 font-btn">{r.name}</div>
-              {r.url && <button onClick={() => downloadImage(r.url, `style-room-${i+1}.jpg`)} className="w-full bg-accent text-bg text-center py-2.5 rounded-xl text-[10px] font-bold uppercase font-btn">📥 Скачать</button>}
-            </div>
-          </div>
-        ))}
-      </div>
-      <button onClick={() => { setResults(null); setPicked([]); setHumanImg(''); }} className="w-full mt-5 border border-border2 text-muted2 py-4 rounded-2xl text-sm font-btn">Ещё раз</button>
-    </main>
-  );
-
-  return (
-    <main className="px-5 pt-6 pb-24 animate-fade-in">
-      <button onClick={onBack} className="text-xs text-muted mb-5 font-btn">← Назад</button>
-      <h1 className="text-2xl font-btn font-bold mb-2">2–3 вещи</h1>
-      <p className="text-xs text-muted mb-5 font-btn">Разные категории. Костюм нельзя с верхом/низом.</p>
-      <div className="bg-card border border-border2 rounded-2xl p-4 mb-4 flex justify-between text-xs font-btn">
-        <span className="text-muted">Выбрано: <b className="text-title">{picked.length}</b> / 3</span>
-        <span className="text-muted">Спишется: <b className="text-accent">{picked.length}</b></span>
-      </div>
-      {!humanImg ? (
-        <button onClick={() => fileRef.current?.click()} className="w-full bg-card border border-dashed border-border2 rounded-2xl py-8 text-sm text-muted2 mb-4 flex flex-col items-center gap-2 font-btn">
-          <span className="text-2xl">📷</span><span>Загрузить фото</span>
-        </button>
-      ) : (
-        <div className="mb-4">
-          <img src={humanImg} alt="" className="w-full max-h-64 object-contain rounded-2xl border border-border1" />
-          <button onClick={() => fileRef.current?.click()} className="text-xs text-muted mt-2 font-btn">Заменить</button>
-        </div>
-      )}
-      <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        {catalog.slice(0, 30).map(item => (
-          <ProductCard key={item.id} item={item} selected={picked.some(x => x.id === item.id)} onToggle={toggle} />
-        ))}
-      </div>
-      <button onClick={run} disabled={picked.length < 2 || !humanImg || (user?.balance || 0) < picked.length} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-xs font-bold uppercase font-btn">
-        {picked.length < 2 ? 'Выберите минимум 2' : `Пример ${picked.length} вещи`}
       </button>
     </main>
   );
@@ -853,7 +871,7 @@ function LeaderboardScreen({ onBack, onPick, user, myRank }) {
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
-      <h1 className="text-2xl font-btn font-bold mb-4">👑 Лидеры (30 дней)</h1>
+      <h1 className="text-2xl font-btn font-bold mb-4">👑 Лидеры</h1>
 
       {myRank && myRank.rank && (
         <div className="bg-gradient-to-r from-accent/20 to-accent/5 border border-accent rounded-2xl p-4 mb-5 animate-scale-in">
@@ -874,7 +892,7 @@ function LeaderboardScreen({ onBack, onPick, user, myRank }) {
       </div>
       {loading && <div className="text-center py-16 text-muted text-sm font-btn">Загрузка…</div>}
       {!loading && tab === 'products' && (
-        products.length === 0 ? <EmptyState emoji="📊" title="Пока нет данных" text="Как только появятся примерки — здесь будут топы" /> :
+        products.length === 0 ? <EmptyState emoji="📊" title="Пока нет данных" text="Топы появятся после примерок" /> :
         <div className="grid grid-cols-2 gap-3">
           {products.map((p, i) => (
             <div key={p.id} className="relative animate-slide-up" style={{ animationDelay: `${i*0.05}s` }}>
@@ -891,7 +909,7 @@ function LeaderboardScreen({ onBack, onPick, user, myRank }) {
           {users.map((u, i) => {
             const isMe = u.tg_id === user?.tg_id;
             return (
-              <div key={u.tg_id} className={`rounded-2xl p-3 flex items-center gap-3 animate-slide-up ${isMe ? 'bg-accent/15 border-2 border-accent' : 'bg-card border border-border1'}`} style={{ animationDelay: `${i*0.05}s` }}>
+              <div key={u.tg_id} className={`rounded-2xl p-3 flex items-center gap-3 animate-slide-up ${isMe ? 'bg-accent/15 border-2 border-accent' : 'bg-card border border-border1'}`}>
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold font-btn ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-gray-300 text-black' : i === 2 ? 'bg-amber-600 text-white' : 'bg-bgSoft text-muted'}`}>#{i+1}</div>
                 <img src={u.photo_url || 'https://placehold.co/60x60/1A1412/D4B595?text=U'} alt="" className="w-10 h-10 rounded-full object-cover border border-border2" />
                 <div className="flex-1 min-w-0">
@@ -998,7 +1016,7 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
     setLast(null);
     const startedAt = Date.now();
     localStorage.setItem('admin_refresh_started', JSON.stringify({ category, startedAt }));
-    onToast(`🔄 Пополняю… можно уйти`);
+    onToast(`🔄 Пополняю…`);
     haptic('medium');
 
     fetch(`${BACKEND}/api/admin/refresh-catalog`, {
@@ -1050,7 +1068,7 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
       <div className="text-[10px] uppercase text-accent mb-1 font-btn">👑 Только для админа</div>
       <h1 className="text-2xl font-btn font-bold mb-2">Админка</h1>
-      <p className="text-xs text-muted mb-5 font-btn">Пополнение каталога и подчистка</p>
+      <p className="text-xs text-muted mb-5 font-btn">Пополнение и подчистка</p>
 
       <div className="grid grid-cols-2 gap-2 mb-6">
         <button onClick={() => setTab('refresh')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'refresh' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🔄 Пополнение</button>
@@ -1088,7 +1106,7 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
             <div className="rounded-2xl p-4 border border-accent bg-accent/10 mb-5 animate-pulse">
               <div className="flex items-center gap-3">
                 <span className="inline-block w-4 h-4 border-2 border-accent/40 border-t-accent rounded-full animate-spin" />
-                <div className="text-xs font-bold text-accent font-btn">Идёт пополнение «{loading === 'all' ? 'всё разом' : loading}»…</div>
+                <div className="text-xs font-bold text-accent font-btn">Идёт пополнение…</div>
               </div>
             </div>
           )}
@@ -1096,7 +1114,7 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
           {last && !loading && (
             <div className={`rounded-2xl p-4 border mb-5 ${last.success ? 'bg-card border-accentSoft' : 'bg-card border-red-500/40'}`}>
               <div className="text-xs font-bold mb-2 font-btn">
-                {last.success ? '✅ Готово' : '❌ Ошибка'} · <span className="text-muted font-normal">{last.category === 'all' ? 'всё разом' : last.category}</span>
+                {last.success ? '✅ Готово' : '❌ Ошибка'} · {last.category === 'all' ? 'всё разом' : last.category}
                 {last.elapsed && <span className="text-muted font-normal"> · {last.elapsed}с</span>}
               </div>
               {last.success ? (
@@ -1343,9 +1361,9 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
       <h1 className="text-2xl font-btn font-bold mb-6">Профиль</h1>
       <div className="bg-card border border-border1 rounded-3xl p-5 mb-4 flex items-center gap-4">
         <img src={user?.photo_url || 'https://placehold.co/80x80/1A1412/D4B595?text=U'} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-border2" />
-        <div className="flex-1">
-          <div className="text-sm font-medium font-btn">{user?.first_name || 'Гость'}</div>
-          <div className="text-xs text-muted font-btn">@{user?.username || 'user'}</div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium font-btn truncate">{user?.first_name || 'Гость'}</div>
+          <div className="text-xs text-muted font-btn truncate">@{user?.username || 'user'}</div>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {user?.streak_days > 0 && (
               <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-400/40 font-btn">
@@ -1383,7 +1401,7 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
         <button onClick={onOpenLeaderboard} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">👑 Лидеры</span><span className="text-muted">→</span></button>
         <button onClick={onOpenSubs} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">💎 Подписки</span><span className="text-muted">→</span></button>
         <button onClick={onOpenOwn} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">📦 Примерка по ссылке</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenMulti} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🎨 Мульти (2–3 вещи)</span><span className="text-muted">→</span></button>
+        <button onClick={onOpenMulti} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🎨 Мульти (2–3 вещи)</span><span className="text-[10px] text-accent">скоро</span></button>
         <button onClick={onOpenGift} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🎁 Подарить подруге</span><span className="text-muted">→</span></button>
         <button onClick={() => setIdeaOpen(true)} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">💡 Предложить идею</span><span className="text-muted">→</span></button>
         {user?.is_admin && (
@@ -1411,7 +1429,7 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
           <div className="bg-card border border-border2 rounded-3xl p-6 max-w-sm w-full animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <div className="text-[10px] uppercase text-accent mb-2 font-btn">💡 Идея</div>
             <h3 className="text-lg font-btn font-bold mb-3">Что хочешь предложить?</h3>
-            <textarea value={ideaText} onChange={(e) => setIdeaText(e.target.value)} placeholder="Опиши идею…" rows={5} maxLength={2000} className="w-full bg-bg border border-border1 rounded-2xl px-4 py-3 text-sm outline-none resize-none mb-3" />
+            <textarea value={ideaText} onChange={(e) => setIdeaText(e.target.value)} placeholder="Опиши идею…" rows={5} maxLength={2000} className="w-full bg-bg border border-border1 rounded-2xl px-4 py-3 text-sm outline-none resize-none mb-3 font-btn" />
             <button onClick={sendIdea} disabled={ideaLoading || !ideaText.trim()} className="w-full bg-accent text-bg py-3.5 rounded-2xl text-xs font-bold uppercase disabled:opacity-40 mb-2 font-btn">{ideaLoading ? '…' : 'Отправить'}</button>
             <button onClick={() => setIdeaOpen(false)} className="w-full text-xs text-muted py-2 font-btn">Отмена</button>
           </div>
@@ -1449,7 +1467,7 @@ function SearchScreen({ onPick, likedIds, onLike }) {
         if (d.success) setResults(d.items || []);
         else setError(d.error || 'Ошибка поиска');
       } catch (e) {
-        if (e.name !== 'AbortError') { setError('Не удалось найти. Проверь связь'); setResults([]); }
+        if (e.name !== 'AbortError') { setError('Не удалось найти'); setResults([]); }
       } finally { setLoading(false); }
     }, 300);
 
@@ -1604,14 +1622,14 @@ function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedI
         <div className="grid grid-cols-2 gap-3">{Array.from({length: 6}).map((_,i)=><div key={i} className="aspect-[3/4] shimmer rounded-2xl" />)}</div>
       ) : catalog.length === 0 ? (
         <EmptyState emoji="🛍" title={category === 'personal' ? 'Пока нечего показать' : 'Каталог пуст'}
-          text={category === 'personal' ? 'Посмотри несколько товаров — мы подберём похожие' : 'Заходи чуть позже — товары обновляются каждые 2 часа'} />
+          text={category === 'personal' ? 'Посмотри несколько товаров — мы подберём похожие' : 'Заходи чуть позже'} />
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {catalog.map(item => <ProductCard key={item.id} item={item} onPick={onPick} liked={likedIds.has(item.id)} onLike={onLike} />)}
         </div>
       )}
       <button onClick={shareRef} className="w-full mt-8 bg-bgSoft border border-border2 text-accent py-4 rounded-2xl text-xs font-medium uppercase tracking-wider2 flex items-center justify-center gap-2 active:scale-[0.98] transition font-btn">
-        <span>👥</span> Поделиться с подругой · +1
+        <span>👥</span> Поделиться с подругой
       </button>
     </main>
   );
@@ -1622,6 +1640,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [maintenance, setMaintenance] = useState({ on: false, text: '' });
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPersonalization, setShowPersonalization] = useState(false);
   const [oneTimeMsg, setOneTimeMsg] = useState(null);
   const [tab, setTab] = useState('catalog');
   const [screen, setScreen] = useState(null);
@@ -1660,10 +1679,11 @@ export default function App() {
         setUser(d.user);
         if (d.one_time_message) setOneTimeMsg(d.one_time_message);
         if (!d.user.onboarded && localStorage.getItem('gf_onboarded') !== '1') setShowOnboarding(true);
+        else if (!d.user.personalized) setShowPersonalization(true);
         if (d.daily_bonus > 0) { setWelcomeBonus(`🎁 +${d.daily_bonus} попытка за вход!`); setTimeout(() => setWelcomeBonus(null), 4000); }
         if (d.streak_bonus > 0) { setTimeout(() => { setWelcomeBonus(`🔥 Стрик 5 дней! +${d.streak_bonus} своих`); setTimeout(() => setWelcomeBonus(null), 5000); }, 5000); }
-      } else setUser({ tg_id: 0, first_name: 'Гость', username: '—', photo_url: '', balance: 0, own_tries: 0, onboarded: true, streak_days: 0, is_admin: false });
-    }).catch(() => setUser({ tg_id: 0, first_name: 'Гость', username: '—', photo_url: '', balance: 0, own_tries: 0, onboarded: true, streak_days: 0, is_admin: false }));
+      } else setUser({ tg_id: 0, first_name: 'Гость', username: '—', photo_url: '', balance: 0, own_tries: 0, onboarded: true, personalized: true, streak_days: 0, is_admin: false });
+    }).catch(() => setUser({ tg_id: 0, first_name: 'Гость', username: '—', photo_url: '', balance: 0, own_tries: 0, onboarded: true, personalized: true, streak_days: 0, is_admin: false }));
   }, []);
 
   useEffect(() => {
@@ -1686,7 +1706,15 @@ export default function App() {
   const finishOnboarding = async () => {
     localStorage.setItem('gf_onboarded', '1');
     setShowOnboarding(false);
+    setShowPersonalization(true);
     try { await fetch(`${BACKEND}/api/onboarded`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }) }); } catch {}
+  };
+
+  const finishPersonalization = () => {
+    setShowPersonalization(false);
+    setUser(u => u ? { ...u, personalized: true } : u);
+    loadCatalog('personal');
+    showToast('✨ Готово! Подбираем для тебя');
   };
 
   const loadCatalog = useCallback(async (cat) => {
@@ -1701,11 +1729,8 @@ export default function App() {
       }
       const r = await fetch(url, { headers: { 'x-init-data': window.Telegram?.WebApp?.initData || '' } });
       const d = await r.json();
-      if (d.success && d.items && d.items.length) {
-        setCatalog(d.items);
-      } else {
-        setCatalog([]);
-      }
+      if (d.success && d.items && d.items.length) setCatalog(d.items);
+      else setCatalog([]);
     } catch { setCatalog([]); } finally { setLoading(false); }
   }, [seed]);
   useEffect(() => { loadCatalog(category); }, [category, loadCatalog]);
@@ -1784,6 +1809,7 @@ export default function App() {
   if (!user) return <div className="min-h-screen flex items-center justify-center bg-bg"><div className="spinner" /></div>;
   if (maintenance.on && !user.is_admin) return <MaintenanceScreen text={maintenance.text} />;
   if (showOnboarding) return <Onboarding onDone={finishOnboarding} />;
+  if (showPersonalization) return <PersonalizationTest user={user} onDone={finishPersonalization} onToast={showToast} />;
 
   const isTryOn = tab === 'upload' || tab === 'loading' || tab === 'result';
 
@@ -1793,7 +1819,7 @@ export default function App() {
   if (screen === 'buyTries') return <><BuyTriesScreen onBack={() => setScreen(null)} onBuy={buyTries} onBuyOwn={buyOwnTries} user={user} />{nav}</>;
   if (screen === 'history') return <><HistoryScreen onBack={() => setScreen(null)} />{nav}</>;
   if (screen === 'own') return <><OwnTriesScreen user={user} onBack={() => setScreen(null)} onToast={showToast} />{nav}</>;
-  if (screen === 'multi') return <><MultiTryonScreen catalog={catalog} user={user} onBack={() => setScreen(null)} onToast={showToast} />{nav}</>;
+  if (screen === 'multi') return <><ComingSoonScreen onBack={() => setScreen(null)} title="Мульти-примерка в разработке" description="Скоро ты сможешь примерять сразу 2–3 вещи: топ + низ, платье + аксессуар и другие комбинации. Мы уже работаем над этим ✨" />{nav}</>;
   if (screen === 'favorites') return <><FavoritesScreen onBack={() => setScreen(null)} onPick={handleProductPick} onToast={showToast} />{nav}</>;
   if (screen === 'achievements') return <><AchievementsScreen onBack={() => setScreen(null)} />{nav}</>;
   if (screen === 'leaderboard') return <><LeaderboardScreen onBack={() => setScreen(null)} onPick={handleProductPick} user={user} myRank={myRank} />{nav}</>;
@@ -1805,29 +1831,33 @@ export default function App() {
     <div className="min-h-screen bg-bg text-title pb-24">
       {maintenance.on && user.is_admin && (
         <div className="sticky top-0 z-50 bg-yellow-500/90 text-black text-[10px] font-bold uppercase tracking-wider2 text-center py-1.5 font-btn">
-          🚧 ТЕХ РЕЖИМ · юзеры не видят приложение
+          🚧 ТЕХ РЕЖИМ
         </div>
       )}
       {!isTryOn && (
-        <header className={`sticky ${maintenance.on ? 'top-6' : 'top-0'} z-40 bg-bg/85 backdrop-blur-md border-b border-border1 px-5 py-3.5 flex items-center justify-between`}>
-          <button onClick={() => setTab('profile')} className="flex items-center gap-3 active:scale-95 transition">
-            <img src={user.photo_url || 'https://placehold.co/80x80/1A1412/D4B595?text=U'} alt="" className="w-9 h-9 rounded-full object-cover border border-border2" />
-            <div className="text-left min-w-0 max-w-[140px]">
-  <div className="text-xs font-medium font-btn truncate">{user.first_name || 'Гость'}</div>
-  <div className="text-[10px] text-muted font-btn truncate">@{user.username || 'user'}</div>
-</div>
+        <header className={`sticky ${maintenance.on ? 'top-6' : 'top-0'} z-40 bg-bg/85 backdrop-blur-md border-b border-border1 px-4 py-3 flex items-center justify-between gap-2`}>
+          <button onClick={() => setTab('profile')} className="flex items-center gap-2 active:scale-95 transition min-w-0 max-w-[130px] shrink">
+            <img src={user.photo_url || 'https://placehold.co/80x80/1A1412/D4B595?text=U'} alt="" className="w-9 h-9 rounded-full object-cover border border-border2 shrink-0" />
+            <div className="text-left min-w-0">
+              <div className="text-[11px] font-medium font-btn truncate">{user.first_name || 'Гость'}</div>
+              <div className="text-[10px] text-muted font-btn truncate">@{user.username || 'user'}</div>
+            </div>
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             {user.streak_days > 0 && (
-              <button onClick={() => setShowStreak(true)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-orange-500/15 border border-orange-400/40 active:scale-95 transition font-btn shrink-0">
+              <button onClick={() => setShowStreak(true)} className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-orange-500/15 border border-orange-400/40 active:scale-95 transition font-btn shrink-0">
                 <span className="text-[11px]">🔥</span>
-                <span className="text-xs font-bold text-orange-300">{user.streak_days}</span>
+                <span className="text-[11px] font-bold text-orange-300">{user.streak_days}</span>
               </button>
             )}
-            <button onClick={() => setScreen('buyTries')} className="px-3 py-1.5 rounded-full border border-border2 text-xs font-btn whitespace-nowrap shrink-0">
-  ✨ {user.balance ?? 0} <span className="text-accent font-bold">+</span>
-</button>
-            <button onClick={() => setScreen('subs')} className={`px-3 py-1.5 rounded-full text-xs font-bold active:scale-95 transition font-btn shrink-0 ...`}>
+            <button onClick={() => setScreen('buyTries')} className="flex items-center gap-1 px-2 py-1.5 rounded-full border border-border2 text-[11px] font-btn shrink-0">
+              <span className="text-accent">✨</span>
+              <span>{user.balance ?? 0}</span>
+              <span className="text-accent font-bold">+</span>
+            </button>
+            <button onClick={() => setScreen('subs')}
+              className={`px-2 py-1.5 rounded-full text-[11px] font-bold active:scale-95 transition font-btn shrink-0 ${user.sub_active ? 'text-bg shadow-soft animate-pulse-glow' : 'text-bg'}`}
+              style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}>
               💎
             </button>
           </div>
