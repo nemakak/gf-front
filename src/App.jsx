@@ -162,7 +162,7 @@ function fixDrive(u) {
 
 function wbUrl(wbId) { return `https://www.wildberries.ru/catalog/${wbId}/detail.aspx`; }
 
-const SHARE_TEXT = 'Смотри что померяла в @GFstyleroom !';
+const SHARE_TEXT = 'Смотри что померяла в @GFstyleroom_bot';
 
 function tgShare(url, text = SHARE_TEXT) {
   const u = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
