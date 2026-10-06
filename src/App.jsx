@@ -273,25 +273,20 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon 
         </div>
       </button>
       <div className="px-3 pb-3 flex items-center gap-2">
-        <a href={shopUrl} target="_blank" rel="noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="w-10 h-10 rounded-xl bg-bgSoft border border-border2 flex items-center justify-center text-base active:scale-95 transition shrink-0">
-          🛍
-        </a>
-        <button
-          onClick={() => { haptic('medium'); onTryon ? onTryon(item) : onPick(item); }}
-          className="flex-1 h-10 rounded-xl font-bold text-[11px] uppercase tracking-wider2 text-bg active:scale-[0.97] transition-all relative overflow-hidden group"
-          style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
-        >
-          <span className="relative z-10 flex items-center justify-center gap-1.5">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              <path d="m12 3 1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/>
-            </svg>
-            Примерить
-          </span>
-          <span className="absolute inset-0 -translate-x-full group-active:translate-x-0 transition-transform bg-white/10" />
-        </button>
-      </div>
+  <a href={shopUrl} target="_blank" rel="noreferrer"
+    onClick={(e) => e.stopPropagation()}
+    className="w-10 h-10 rounded-xl bg-bgSoft border border-border2 flex items-center justify-center text-base active:scale-95 transition shrink-0">
+    🛍
+  </a>
+  <button
+    onClick={() => { haptic('medium'); onTryon ? onTryon(item) : onPick(item); }}
+    className="flex-1 h-9 rounded-xl font-bold text-[11px] uppercase tracking-wider2 text-bg active:scale-[0.97] transition-all relative overflow-hidden group font-btn"
+    style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
+  >
+    <span className="relative z-10 flex items-center justify-center">Примерить</span>
+    <span className="absolute inset-0 -translate-x-full group-active:translate-x-0 transition-transform bg-white/10" />
+  </button>
+</div>
     </div>
   );
 }
