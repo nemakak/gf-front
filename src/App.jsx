@@ -1819,7 +1819,7 @@ export default function App() {
           </button>
           <div className="flex items-center gap-2">
             {user.streak_days > 0 && (
-              <button onClick={() => setShowStreak(true)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-orange-500/15 border border-orange-400/40 active:scale-95 transition font-btn">
+              <button onClick={() => setShowStreak(true)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-orange-500/15 border border-orange-400/40 active:scale-95 transition font-btn shrink-0">
                 <span className="text-[11px]">🔥</span>
                 <span className="text-xs font-bold text-orange-300">{user.streak_days}</span>
               </button>
