@@ -1385,19 +1385,19 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
         </button>
       </div>
 
-      <div className="space-y-2 mb-4">
-        <button onClick={onOpenHistory} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99]"><span className="text-sm">🕓 Мои примерки</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenFavorites} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99]"><span className="text-sm">❤️ Избранное</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenAchievements} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99]"><span className="text-sm">🏆 Достижения</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenLeaderboard} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99]"><span className="text-sm">👑 Лидеры</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenSubs} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99]"><span className="text-sm">💎 Подписки</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenOwn} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99]"><span className="text-sm">📦 Примерка по ссылке</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenMulti} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99]"><span className="text-sm">🎨 Мульти (2–3 вещи)</span><span className="text-muted">→</span></button>
-        <button onClick={onOpenGift} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99]"><span className="text-sm">🎁 Подарить подруге</span><span className="text-muted">→</span></button>
-        <button onClick={() => setIdeaOpen(true)} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99]"><span className="text-sm">💡 Предложить идею</span><span className="text-muted">→</span></button>
+            <div className="space-y-2 mb-4">
+        <button onClick={onOpenHistory} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🕓 Мои примерки</span><span className="text-muted">→</span></button>
+        <button onClick={onOpenFavorites} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">❤️ Избранное</span><span className="text-muted">→</span></button>
+        <button onClick={onOpenAchievements} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🏆 Достижения</span><span className="text-muted">→</span></button>
+        <button onClick={onOpenLeaderboard} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">👑 Лидеры</span><span className="text-muted">→</span></button>
+        <button onClick={onOpenSubs} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">💎 Подписки</span><span className="text-muted">→</span></button>
+        <button onClick={onOpenOwn} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">📦 Примерка по ссылке</span><span className="text-muted">→</span></button>
+        <button onClick={onOpenMulti} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🎨 Мульти (2–3 вещи)</span><span className="text-muted">→</span></button>
+        <button onClick={onOpenGift} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🎁 Подарить подруге</span><span className="text-muted">→</span></button>
+        <button onClick={() => setIdeaOpen(true)} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">💡 Предложить идею</span><span className="text-muted">→</span></button>
         {user?.is_admin && (
-          <button onClick={onOpenAdmin} className="w-full bg-gradient-to-r from-accent/20 to-accent/5 border border-accent rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99]">
-            <span className="text-sm font-bold text-accent">👑 Админка</span>
+          <button onClick={onOpenAdmin} className="w-full bg-gradient-to-r from-accent/20 to-accent/5 border border-accent rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn">
+            <span className="text-xs font-bold text-accent">👑 Админка</span>
             <span className="text-accent">→</span>
           </button>
         )}
