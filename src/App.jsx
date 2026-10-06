@@ -1916,25 +1916,31 @@ export default function App() {
             </div>
           </button>
           <div className="flex items-center gap-1.5 shrink-0">
-            {user.streak_days > 0 && (
-              <button onClick={() => setShowStreak(true)} className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-orange-500/15 border border-orange-400/40 active:scale-95 transition font-btn shrink-0">
-                <span className="text-[11px]">🔥</span>
-                <span className="text-[11px] font-bold text-orange-300">{user.streak_days}</span>
-              </button>
-            )}
-            <button onClick={() => setScreen('buyTries')} className="flex items-center gap-1 px-2 py-1.5 rounded-full border border-border2 text-[11px] font-btn shrink-0">
-              <span className="text-accent">✨</span>
-              <span>{user.balance ?? 0}</span>
-              <span className="text-accent font-bold">+</span>
-            </button>
-            <button
-  onClick={() => { setScreen('subs'); setTab('subs'); }}
-  className={`px-2 py-1.5 rounded-full text-[11px] font-bold active:scale-95 transition font-btn shrink-0 ${user.sub_active ? 'text-bg shadow-soft animate-pulse-glow' : 'text-bg'}`}
-  style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
->
-  💎
-</button>
-          </div>
+  {user.streak_days > 0 && (
+    <button
+      onClick={() => setShowStreak(true)}
+      className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-orange-500/15 border border-orange-400/40 active:scale-95 transition font-btn shrink-0"
+    >
+      <span className="text-[11px]">🔥</span>
+      <span className="text-[11px] font-bold text-orange-300">{user.streak_days}</span>
+    </button>
+  )}
+  <button
+    onClick={() => { setScreen('buyTries'); }}
+    className="flex items-center gap-1 px-2 py-1.5 rounded-full border border-border2 text-[11px] font-btn shrink-0"
+  >
+    <span className="text-accent">✨</span>
+    <span>{user.balance ?? 0}</span>
+    <span className="text-accent font-bold">+</span>
+  </button>
+  <button
+    onClick={() => { setScreen('subs'); setTab('subs'); }}
+    className={`px-2 py-1.5 rounded-full text-[11px] font-bold active:scale-95 transition font-btn shrink-0 ${user.sub_active ? 'text-bg shadow-soft animate-pulse-glow' : 'text-bg'}`}
+    style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
+  >
+    💎
+  </button>
+</div>
         </header>
       )}
 
