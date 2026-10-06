@@ -1617,7 +1617,7 @@ function StyleTestScreen({ onBack, onPick }) {
 // ============ КАТАЛОГ ============
 function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenMulti, onOpenSearch, shareRef, onOpenSubs }) {
   return (
-        <main className="px-5 pt-6 animate-fade-in">
+        <main className="px-5 pt-6 animate-fade-in overflow-x-hidden">
       {/* БАННЕР ПОДПИСКИ */}
       <button
         onClick={() => { haptic('medium'); onOpenSubs(); }}
