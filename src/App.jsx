@@ -2259,7 +2259,7 @@ const closeScreen = () => {
       {tab === 'search' && <SearchScreen onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike} />}
 
       {tab === 'profile' && <ProfileScreen user={user} myRank={myRank}
-        onOpenSubs={() => setScreen('subs')} onOpenBuyTries={() => setScreen('buyTries')}
+        onOpenSubs={() => { setPreviousTab('profile'); setScreen('subs'); setTab('subs'); }} onOpenBuyTries={() => setScreen('buyTries')}
         onOpenHistory={() => setScreen('history')} onOpenOwn={() => setScreen('own')}
         onOpenMulti={() => setScreen('multi')} onOpenAchievements={() => setScreen('achievements')}
         onOpenLeaderboard={() => setScreen('leaderboard')} onOpenFavorites={() => setScreen('favorites')}
