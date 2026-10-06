@@ -658,19 +658,16 @@ function SubscriptionsScreen({ onBack, onBuy }) {
 }
 
 // ============ BUY TRIES ============
-function BuyTriesScreen({ onBack, onBuy, onBuyOwn, user }) {
-  const [mode, setMode] = useState('regular');
+function BuyTriesScreen({ onBack, onBuy, user }) {
   const [count, setCount] = useState(5);
-  const price = mode === 'regular' ? 5 : 10;
+  const price = 5;
   const total = count * price;
+
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
       <h1 className="text-2xl font-btn font-bold mb-5">Попытки</h1>
-      <div className="grid grid-cols-2 gap-2 mb-5">
-        <button onClick={() => setMode('regular')} className={`py-3 rounded-2xl border text-xs font-medium font-btn ${mode === 'regular' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>✨ Из каталога · 5⭐️</button>
-        <button onClick={() => setMode('own')} className={`py-3 rounded-2xl border text-xs font-medium font-btn ${mode === 'own' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>📦 Свои · 10⭐️</button>
-      </div>
+
       <div className="bg-card border border-border1 rounded-3xl p-6 mb-5 text-center">
         <div className="flex items-center justify-center gap-5 mb-5">
           <button onClick={() => setCount(c => Math.max(1, c - 1))} className="w-12 h-12 rounded-full border border-border2 text-2xl text-accent font-light">−</button>
@@ -678,16 +675,32 @@ function BuyTriesScreen({ onBack, onBuy, onBuyOwn, user }) {
           <button onClick={() => setCount(c => Math.min(500, c + 1))} className="w-12 h-12 rounded-full border border-accentSoft text-2xl text-accent font-light">+</button>
         </div>
         <div className="flex gap-2 justify-center mb-6">
-          {[5, 10, 25, 50].map(n => <button key={n} onClick={() => setCount(n)} className={`px-3 py-1.5 rounded-full border text-xs font-semibold font-btn ${count === n ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>{n}</button>)}
+          {[5, 10, 25, 50].map(n => (
+            <button key={n} onClick={() => setCount(n)}
+              className={`px-3 py-1.5 rounded-full border text-xs font-semibold font-btn ${count === n ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>
+              {n}
+            </button>
+          ))}
         </div>
         <div className="text-[10px] uppercase text-muted mb-2 font-btn">Итого</div>
         <div className="text-4xl font-btn font-bold">{total}<span className="text-accent text-2xl ml-1">⭐️</span></div>
       </div>
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="bg-card border border-border1 rounded-2xl p-4"><div className="text-[10px] uppercase text-muted font-btn">Из каталога</div><div className="text-3xl font-btn font-bold text-accent mt-1">{user?.balance ?? 0}</div></div>
-        <div className="bg-card border border-border1 rounded-2xl p-4"><div className="text-[10px] uppercase text-muted font-btn">Своих</div><div className="text-3xl font-btn font-bold text-accent mt-1">{user?.own_tries ?? 0}</div></div>
+
+      <div className="bg-card border border-border1 rounded-2xl p-4 mb-5">
+        <div className="flex items-center justify-between">
+          <div className="text-[10px] uppercase text-muted font-btn">Сейчас у тебя</div>
+          <div className="flex items-center gap-2">
+            <span className="text-3xl font-btn font-bold text-accent">{user?.balance ?? 0}</span>
+            <span className="text-accent text-xl">✨</span>
+          </div>
+        </div>
       </div>
-      <button onClick={() => mode === 'regular' ? onBuy(count) : onBuyOwn(count)} className="w-full bg-accent text-bg py-4 rounded-2xl text-xs font-bold uppercase tracking-wider2 font-btn">Купить {count} за {total}⭐️</button>
+
+      <button onClick={() => onBuy(count)}
+        className="w-full bg-accent text-bg py-4 rounded-2xl text-xs font-bold uppercase tracking-wider2 font-btn">
+        Купить {count} за {total}⭐️
+      </button>
+
       <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
         className="block w-full mt-2 text-center border border-border2 text-muted2 py-3 rounded-2xl text-xs font-btn uppercase active:scale-95">
         💰 Купить звёзды
@@ -1415,12 +1428,8 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
           <div className="text-2xl font-btn font-bold">{user?.balance ?? 0}</div>
           <div className="text-[10px] uppercase text-muted mt-2 font-btn">Из каталога</div>
         </button>
-        <button onClick={onOpenOwn} className="bg-card border border-border1 rounded-2xl p-4 text-left active:scale-[0.98] transition">
-          <div className="text-2xl mb-1">📦</div>
-          <div className="text-2xl font-btn font-bold">{user?.own_tries ?? 0}</div>
-          <div className="text-[10px] uppercase text-muted mt-2 font-btn">Своих</div>
-        </button>
-      </div>
+    
+     </div>
 
       <div className="space-y-2 mb-4">
         <button onClick={onOpenHistory} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🕓 Мои примерки</span><span className="text-muted">→</span></button>
@@ -1906,7 +1915,7 @@ const closeScreen = () => {
 }} />;
 
   if (screen === 'subs') return <><SubscriptionsScreen onBack={closeScreen} onBuy={buySubscription} />{nav}</>;
-  if (screen === 'buyTries') return <><BuyTriesScreen onBack={() => setScreen(null)} onBuy={buyTries} onBuyOwn={buyOwnTries} user={user} />{nav}</>;
+  if (screen === 'buyTries') return <><BuyTriesScreen onBack={() => setScreen(null)} onBuy={buyTries} user={user} />{nav}</>;
   if (screen === 'history') return <><HistoryScreen onBack={() => setScreen(null)} />{nav}</>;
   if (screen === 'own') return <><ComingSoonScreen onBack={() => setScreen(null)} title="Примерка своих товаров" description="Скоро ты сможешь загрузить любую вещь по ссылке с Wildberries и примерить её на себя. Мы уже работаем над этим ✨" />{nav}</>;
   if (screen === 'multi') return <><ComingSoonScreen onBack={() => setScreen(null)} title="Мульти-примерка в разработке" description="Скоро ты сможешь примерять сразу 2–3 вещи: топ + низ, платье + аксессуар и другие комбинации. Мы уже работаем над этим ✨" />{nav}</>;
