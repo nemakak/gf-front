@@ -1545,17 +1545,25 @@ function StyleTestScreen({ onBack, onPick }) {
 function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenTest, onOpenOwn, onOpenMulti, shareRef }) {
   return (
     <main className="px-5 pt-6 animate-fade-in">
-      <div className="flex items-end justify-between mb-6">
+      <div className="flex items-end justify-between mb-4">
   <div>
     <div className="text-[10px] uppercase text-muted mb-1">Коллекция</div>
     <h1 className="font-serif text-3xl">Гардероб</h1>
   </div>
-  <div className="flex gap-2">
-    <button onClick={onOpenTest} className="px-3 py-2 rounded-full bg-accent/20 border border-accent/40 text-accent text-xs font-bold active:scale-95">🎨 Тест</button>
-    <button onClick={onOpenOwn} className="px-3 py-2 rounded-full bg-card border border-border2 text-xs active:scale-95">📦</button>
-    <button onClick={onOpenMulti} className="px-3 py-2 rounded-full bg-card border border-border2 text-xs active:scale-95">🎨 2–3</button>
-  </div>
+  <button onClick={onOpenMulti} className="px-3 py-2 rounded-full bg-card border border-border2 text-xs active:scale-95 font-btn">🎨 2–3</button>
 </div>
+
+{/* Большая кнопка поиска */}
+<button
+  onClick={onOpenSearch}
+  className="w-full mb-4 h-12 rounded-2xl bg-card border border-border1 flex items-center px-4 gap-3 active:scale-[0.98] transition"
+>
+  <svg className="w-4 h-4 text-muted shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <circle cx="11" cy="11" r="7" />
+    <path d="m21 21-4.35-4.35" />
+  </svg>
+  <span className="text-sm text-muted font-btn">Найти вещь…</span>
+</button>
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 -mx-5 px-5">
         {CATEGORIES.map(c => {
           const active = category === c.key;
