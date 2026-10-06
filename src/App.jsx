@@ -563,7 +563,15 @@ function BuyTriesScreen({ onBack, onBuy, onBuyOwn, user }) {
         <div className="bg-card border border-border1 rounded-2xl p-4"><div className="text-[10px] uppercase text-muted">Из каталога</div><div className="text-3xl font-sans font-bold text-accent mt-1">{user?.balance ?? 0}</div></div>
         <div className="bg-card border border-border1 rounded-2xl p-4"><div className="text-[10px] uppercase text-muted">Своих</div><div className="text-3xl font-sans font-bold text-accent mt-1">{user?.own_tries ?? 0}</div></div>
       </div>
-      <button onClick={() => mode === 'regular' ? onBuy(count) : onBuyOwn(count)} className="w-full bg-accent text-bg py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2">Купить {count} за {total}⭐️</button>
+      <button onClick={() => mode === 'regular' ? onBuy(count) : onBuyOwn(count)} className="w-full bg-accent text-bg py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2 font-btn">Купить {count} за {total}⭐️</button>
+<a
+  href="https://buynstars.com/?ref=5wsgoi6fjrn2"
+  target="_blank"
+  rel="noreferrer"
+  className="block w-full mt-2 text-center border border-border2 text-muted2 py-3 rounded-2xl text-xs font-btn uppercase active:scale-95"
+>
+  💰 Купить звёзды
+</a>
     </main>
   );
 }
@@ -1869,11 +1877,12 @@ export default function App() {
       )}
 
       {tab === 'catalog' && (
-        <CatalogScreen catalog={catalog} loading={loading} category={category} setCategory={setCategory}
-          onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike}
-          onOpenTest={() => setScreen('test')} onOpenOwn={() => setScreen('own')} onOpenMulti={() => setScreen('multi')}
-          shareRef={shareRef} />
-      )}
+  <CatalogScreen catalog={catalog} loading={loading} category={category} setCategory={setCategory}
+    onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike}
+    onOpenMulti={() => setScreen('multi')}
+    onOpenSearch={() => setTab('search')}
+    shareRef={shareRef} />
+)}
 
       {tab === 'search' && <SearchScreen onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike} />}
 
