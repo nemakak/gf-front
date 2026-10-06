@@ -1951,12 +1951,13 @@ const closeScreen = () => {
     <span>{user.balance ?? 0}</span>
     <span className="text-accent font-bold">+</span>
   </button>
-  <button onClick={() => { setPreviousTab(tab); setScreen('subs'); setTab('subs'); }} ...>
-    className={`px-2 py-1.5 rounded-full text-[11px] font-bold active:scale-95 transition font-btn shrink-0 ${user.sub_active ? 'text-bg shadow-soft animate-pulse-glow' : 'text-bg'}`}
-    style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
-  >
-    💎
-  </button>
+  <button
+  onClick={() => { setPreviousTab(tab); setScreen('subs'); setTab('subs'); }}
+  className={`px-2 py-1.5 rounded-full text-[11px] font-bold active:scale-95 transition font-btn shrink-0 ${user.sub_active ? 'text-bg shadow-soft animate-pulse-glow' : 'text-bg'}`}
+  style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
+>
+  💎
+</button>
 </div>
         </header>
       )}
