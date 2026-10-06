@@ -237,20 +237,29 @@ function LikeButton({ liked, onToggle, size = 'md' }) {
 }
 
 // ============ PRODUCT CARD ============
+// ============ PRODUCT CARD ============
 function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon }) {
   const title = item.description || item.name || 'Товар';
   const shopUrl = wbUrl(item.wb_id);
+  const priceText = item.price ? `≈ ${item.price.replace(/^≈\s*/, '')}` : null;
+
   return (
     <div className={`group relative bg-card border rounded-2xl overflow-hidden transition-all ${selected ? 'border-accent shadow-soft' : 'border-border1 hover:border-accentSoft'}`}>
       <button onClick={() => { haptic('light'); onToggle ? onToggle(item) : onPick(item); }} className="block w-full text-left active:scale-[0.98] transition">
         <div className="relative aspect-[3/4] overflow-hidden">
           <ProductImage src={item.image_url} fallback={item.fallback_url} alt={title} className="w-full h-full group-hover:scale-105 transition-transform duration-500" />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
-          <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-bg/80 backdrop-blur border border-border2 text-[9px] uppercase tracking-wider2 text-accentSoft">
+
+          {/* Затемнение снизу — плотнее и выше */}
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/85 via-black/40 to-transparent pointer-events-none" />
+
+          {/* Категория */}
+          <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-bg/85 backdrop-blur border border-border2 text-[9px] uppercase tracking-wider2 text-accentSoft font-btn">
             {CATEGORIES.find(c => c.key === item.category)?.label || 'Одежда'}
           </div>
+
+          {/* Плюс/галочка при выборе ИЛИ лайк */}
           {onToggle ? (
-            <div className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center border ${selected ? 'bg-accent text-bg border-accent' : 'bg-bg/80 border-border2 text-title'}`}>
+            <div className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center border ${selected ? 'bg-accent text-bg border-accent' : 'bg-bg/85 border-border2 text-title'}`}>
               {selected ? '✓' : '+'}
             </div>
           ) : (
@@ -260,28 +269,42 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon 
               </div>
             )
           )}
-          <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1">
-            <span className="text-xs font-bold text-white">
-              {item.price ? `≈ ${item.price.replace(/^≈\s*/, '')}` : '— ₽'}
-            </span>
+
+          {/* Цена — с тенью, ярче, читаемо на любом фоне */}
+          <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between pointer-events-none">
+            {priceText ? (
+              <span className="text-[13px] font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] font-btn">
+                {priceText}
+              </span>
+            ) : (
+              <span className="text-[11px] font-medium text-white/70 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] font-btn">
+                Цена на WB →
+              </span>
+            )}
           </div>
         </div>
+
+        {/* Название — обычный шрифт, читаемый */}
         <div className="p-3 pb-2">
           <div className="font-sans font-medium text-[13px] leading-snug line-clamp-2 h-[36px] text-title">{title}</div>
         </div>
       </button>
+
+      {/* Кнопки: WB + Примерить */}
       <div className="px-3 pb-3 flex items-center gap-2">
         <a href={shopUrl} target="_blank" rel="noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="w-10 h-9 rounded-xl bg-bgSoft border border-border2 flex items-center justify-center text-base active:scale-95 transition shrink-0">
+          className="shrink-0 w-9 h-9 rounded-xl bg-bgSoft border border-border2 flex items-center justify-center text-base active:scale-95 transition">
           🛍
         </a>
         <button
           onClick={() => { haptic('medium'); onTryon ? onTryon(item) : onPick(item); }}
-          className="flex-1 h-9 rounded-xl font-bold text-[11px] uppercase tracking-wider2 text-bg active:scale-[0.97] transition-all relative overflow-hidden group font-btn"
+          className="flex-1 h-9 rounded-xl text-bg active:scale-[0.97] transition-all relative overflow-hidden group"
           style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
         >
-          <span className="relative z-10 flex items-center justify-center">Примерить</span>
+          <span className="relative z-10 flex items-center justify-center h-full w-full text-[10px] font-bold uppercase tracking-[0.06em] font-btn leading-none">
+            Примерить
+          </span>
           <span className="absolute inset-0 -translate-x-full group-active:translate-x-0 transition-transform bg-white/10" />
         </button>
       </div>
