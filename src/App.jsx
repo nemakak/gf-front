@@ -1598,25 +1598,34 @@ function StyleTestScreen({ onBack, onPick }) {
 // ============ КАТАЛОГ ============
 function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenMulti, onOpenSearch, shareRef }) {
   return (
-    <main className="px-5 pt-6 animate-fade-in">
-      <div className="flex items-end justify-between mb-4">
-        <div>
-          <div className="text-[10px] uppercase text-muted mb-1 font-btn">Коллекция</div>
-          <h1 className="text-2xl font-btn font-bold">Гардероб</h1>
+        <main className="px-5 pt-6 animate-fade-in">
+      {/* БАННЕР ПОДПИСКИ */}
+      <button
+        onClick={() => { haptic('medium'); onOpenSubs(); }}
+        className="w-full mb-5 rounded-2xl overflow-hidden relative animate-slide-up active:scale-[0.99] transition-transform"
+        style={{
+          background: 'linear-gradient(135deg, #E91E63 0%, #C2185B 50%, #880E4F 100%)',
+          boxShadow: '0 8px 30px rgba(233, 30, 99, 0.4)'
+        }}
+      >
+        <div className="flex items-center gap-3 px-4 py-3.5">
+          <div className="text-3xl animate-pulse">🎁</div>
+          <div className="flex-1 text-left">
+            <div className="text-[10px] uppercase tracking-wider2 text-white/70 font-btn mb-0.5">
+              Ограниченное предложение
+            </div>
+            <div className="text-sm font-btn font-bold text-white">
+              СЕКРЕТНАЯ подписка · 10⭐️
+            </div>
+          </div>
+          <div className="text-white text-2xl">→</div>
         </div>
-        <button onClick={onOpenMulti} className="px-3 py-2 rounded-full bg-card border border-border2 text-xs active:scale-95 font-btn">🎨 2–3</button>
-      </div>
-
-      <button onClick={onOpenSearch}
-        className="w-full mb-4 h-12 rounded-2xl bg-card border border-border1 flex items-center px-4 gap-3 active:scale-[0.98] transition">
-        <svg className="w-4 h-4 text-muted shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <circle cx="11" cy="11" r="7" />
-          <path d="m21 21-4.35-4.35" />
-        </svg>
-        <span className="text-sm text-muted font-btn">Найти вещь…</span>
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)', animation: 'btnShine 3s infinite' }} />
       </button>
 
-      <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 -mx-5 px-5">
+      <div className="flex items-end justify-between mb-4">
+        {/* ... остальной код CatalogScreen без изменений ... */}
         {CATEGORIES.map(c => {
           const active = category === c.key;
           return (
