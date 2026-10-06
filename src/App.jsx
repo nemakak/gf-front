@@ -1680,7 +1680,8 @@ export default function App() {
   const [showPersonalization, setShowPersonalization] = useState(false);
   const [oneTimeMsg, setOneTimeMsg] = useState(null);
   const [tab, setTab] = useState('catalog');
-  const [screen, setScreen] = useState(null);
+const [screen, setScreen] = useState(null);
+const [previousTab, setPreviousTab] = useState('catalog');
   const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState('personal');
@@ -1697,7 +1698,15 @@ export default function App() {
   const seed = useMemo(() => Math.random().toString(36).slice(2, 10), []);
 
   const showToast = (m) => { setToast(m); setTimeout(() => setToast(''), 2500); };
+  const openScreen = (name) => {
+  setPreviousTab(tab);
+  setScreen(name);
+};
 
+const closeScreen = () => {
+  setScreen(null);
+  setTab(previousTab);
+};
   useEffect(() => {
     fetch(`${BACKEND}/api/settings`).then(r => r.json()).then(d => { if (d.maintenance) setMaintenance({ on: true, text: d.maintenance_text || '' }); }).catch(() => {});
     const t = setInterval(() => { fetch(`${BACKEND}/api/settings`).then(r => r.json()).then(d => setMaintenance({ on: d.maintenance, text: d.maintenance_text || '' })).catch(() => {}); }, 60000);
@@ -1893,7 +1902,7 @@ export default function App() {
   const nav = <BottomNav active={tab} onChange={(k) => {
   setScreen(null);
   setTab(k);
-  if (k === 'subs') setScreen('subs');
+  if (k === 'subs') openScreen('subs');
 }} />;
 
   if (screen === 'subs') return <><SubscriptionsScreen onBack={() => setScreen(null)} onBuy={buySubscription} />{nav}</>;
