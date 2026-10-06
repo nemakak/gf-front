@@ -1905,7 +1905,7 @@ const closeScreen = () => {
   if (k === 'subs') openScreen('subs');
 }} />;
 
-  if (screen === 'subs') return <><SubscriptionsScreen onBack={() => setScreen(null)} onBuy={buySubscription} />{nav}</>;
+  if (screen === 'subs') return <><SubscriptionsScreen onBack={closeScreen} onBuy={buySubscription} />{nav}</>;
   if (screen === 'buyTries') return <><BuyTriesScreen onBack={() => setScreen(null)} onBuy={buyTries} onBuyOwn={buyOwnTries} user={user} />{nav}</>;
   if (screen === 'history') return <><HistoryScreen onBack={() => setScreen(null)} />{nav}</>;
   if (screen === 'own') return <><ComingSoonScreen onBack={() => setScreen(null)} title="Примерка своих товаров" description="Скоро ты сможешь загрузить любую вещь по ссылке с Wildberries и примерить её на себя. Мы уже работаем над этим ✨" />{nav}</>;
@@ -1951,8 +1951,7 @@ const closeScreen = () => {
     <span>{user.balance ?? 0}</span>
     <span className="text-accent font-bold">+</span>
   </button>
-  <button
-    onClick={() => { setScreen('subs'); setTab('subs'); }}
+  <button onClick={() => { setPreviousTab(tab); setScreen('subs'); setTab('subs'); }} ...>
     className={`px-2 py-1.5 rounded-full text-[11px] font-bold active:scale-95 transition font-btn shrink-0 ${user.sub_active ? 'text-bg shadow-soft animate-pulse-glow' : 'text-bg'}`}
     style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
   >
@@ -1982,7 +1981,7 @@ const closeScreen = () => {
   onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike}
   onOpenMulti={() => setScreen('multi')}
   onOpenSearch={() => setTab('search')}
-  onOpenSubs={() => { setScreen('subs'); setTab('subs'); }}
+  onOpenSubs={() => { setPreviousTab('profile'); setScreen('subs'); setTab('subs'); }}
   shareRef={shareRef} />
       )}
 
