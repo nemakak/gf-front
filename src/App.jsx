@@ -695,9 +695,18 @@ function OwnTriesScreen({ user, onBack, onToast }) {
   const fileRef = useRef(null);
 
   const onPickFile = async (e) => {
-    const f = e.target.files?.[0]; if (!f) return;
-    try { setHumanImg(await compressImage(f, 720, 0.7)); } catch { onToast('Ошибка фото'); }
-  };
+  const f = e.target.files?.[0]; if (!f) return;
+  try {
+    // сбрасываем старое фото — анимация «уход»
+    setHumanImg('');
+    showToast('Обрабатываю фото…');
+    const compressed = await compressImage(f, 720, 0.7);
+    // пауза для плавности
+    await new Promise(r => setTimeout(r, 150));
+    setHumanImg(compressed);
+    showToast('Фото загружено ✓');
+  } catch { showToast('Ошибка'); }
+};
   const run = async () => {
     if (!humanImg) return onToast('Загрузите фото');
     if (!wbLink.trim()) return onToast('Вставьте ссылку WB');
@@ -1914,7 +1923,7 @@ export default function App() {
             <span className="text-[10px] text-muted/70 mt-1 px-4 text-center">Хорошее освещение · полный рост · без фильтров</span>
           </button>
           <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
-          {humanImg && <img src={humanImg} alt="" className="w-full max-h-72 object-contain rounded-2xl mb-4 animate-scale-in" />}
+          {humanImg && <img src={humanImg} alt="" className="w-full max-h-72 object-contain rounded-2xl mb-4 animate-fade-in" style={{ animationDuration: '0.6s' }} />}
           <button onClick={runTryOn} disabled={!humanImg} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-xs font-bold uppercase mt-4 font-btn">
             Запустить примерку
           </button>
