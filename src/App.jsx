@@ -1803,16 +1803,56 @@ export default function App() {
   };
 
   const runTryOn = async () => {
-    if (!selected) return showToast('Выберите товар');
-    if (!humanImg) return showToast('Загрузите фото');
-    haptic('medium'); setTab('loading');
+  if (!selected) return showToast('Выберите товар');
+  if (!humanImg) return showToast('Загрузите фото');
+  haptic('medium');
+  setTab('loading');
+
+  const attempt = async (tryNum) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 сек
     try {
-      const r = await fetch(`${BACKEND}/api/tryon`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', humanImg, garmentUrl: selected.image_url, itemId: selected.id, category: selected.category }) });
+      const r = await fetch(`${BACKEND}/api/tryon`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', humanImg, garmentUrl: selected.image_url, itemId: selected.id, category: selected.category }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
       const d = await r.json();
-      if (d.success && d.resultUrl) { setResultImage(d.resultUrl); setUser(u => u ? { ...u, balance: Math.max(0, (u.balance || 0) - 1) } : u); setTab('result'); playReadySound(); haptic('medium'); }
-      else { showToast(d.error || 'Не получилось'); setTab('catalog'); }
-    } catch { showToast('Нет связи'); setTab('catalog'); }
+      return d;
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e.name === 'AbortError') throw new Error('timeout');
+      throw e;
+    }
   };
+
+  try {
+    let d = await attempt(1);
+    if (!d.success && /timeout/i.test(d.error || '')) {
+      showToast('⏳ Генерация дольше обычного, пробую ещё раз…');
+      d = await attempt(2);
+    }
+    if (d.success && d.resultUrl) {
+      setResultImage(d.resultUrl);
+      setUser(u => u ? { ...u, balance: Math.max(0, (u.balance || 0) - 1) } : u);
+      setTab('result');
+      playReadySound();
+      haptic('medium');
+    } else {
+      showToast(d.error || 'Не получилось. Попробуй другое фото');
+      setTab('catalog');
+    }
+  } catch (e) {
+    if (e.message === 'timeout') {
+      showToast('⏱ Генерация занимает слишком много времени. Попробуй позже');
+    } else {
+      showToast('Нет связи');
+    }
+    setTab('catalog');
+  }
+};
 
   const resetTryOn = () => { setTab('catalog'); setSelected(null); setResultImage(null); setHumanImg(''); };
 
