@@ -237,7 +237,6 @@ function LikeButton({ liked, onToggle, size = 'md' }) {
 }
 
 // ============ PRODUCT CARD ============
-// ============ PRODUCT CARD ============
 function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon }) {
   const title = item.description || item.name || 'Товар';
   const shopUrl = wbUrl(item.wb_id);
@@ -249,15 +248,12 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon 
         <div className="relative aspect-[3/4] overflow-hidden">
           <ProductImage src={item.image_url} fallback={item.fallback_url} alt={title} className="w-full h-full group-hover:scale-105 transition-transform duration-500" />
 
-          {/* Затемнение снизу — плотнее и выше */}
           <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/85 via-black/40 to-transparent pointer-events-none" />
 
-          {/* Категория */}
           <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-bg/85 backdrop-blur border border-border2 text-[9px] uppercase tracking-wider2 text-accentSoft font-btn">
             {CATEGORIES.find(c => c.key === item.category)?.label || 'Одежда'}
           </div>
 
-          {/* Плюс/галочка при выборе ИЛИ лайк */}
           {onToggle ? (
             <div className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center border ${selected ? 'bg-accent text-bg border-accent' : 'bg-bg/85 border-border2 text-title'}`}>
               {selected ? '✓' : '+'}
@@ -270,7 +266,6 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon 
             )
           )}
 
-          {/* Цена — с тенью, ярче, читаемо на любом фоне */}
           <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between pointer-events-none">
             {priceText ? (
               <span className="text-[13px] font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] font-btn">
@@ -284,13 +279,11 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon 
           </div>
         </div>
 
-        {/* Название — обычный шрифт, читаемый */}
         <div className="p-3 pb-2">
           <div className="font-sans font-medium text-[13px] leading-snug line-clamp-2 h-[36px] text-title">{title}</div>
         </div>
       </button>
 
-      {/* Кнопки: WB + Примерить */}
       <div className="px-3 pb-3 flex items-center gap-2">
         <a href={shopUrl} target="_blank" rel="noreferrer"
           onClick={(e) => e.stopPropagation()}
@@ -335,8 +328,8 @@ function BeforeAfter({ before, after }) {
       <div className="absolute top-0 bottom-0 w-0.5 bg-white/80 pointer-events-none" style={{ left: `${pos}%` }}>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white shadow-lg flex items-center justify-center text-black text-sm font-bold">⇆</div>
       </div>
-      <div className="absolute top-3 left-3 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-white text-[9px] uppercase tracking-wider2 pointer-events-none">До</div>
-      <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-white text-[9px] uppercase tracking-wider2 pointer-events-none">После</div>
+      <div className="absolute top-3 left-3 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-white text-[9px] uppercase tracking-wider2 pointer-events-none font-btn">До</div>
+      <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-white text-[9px] uppercase tracking-wider2 pointer-events-none font-btn">После</div>
     </div>
   );
 }
@@ -357,8 +350,8 @@ function LoadingAnimation() {
           <div className="text-5xl animate-float">✨</div>
         </div>
       </div>
-      <div className="font-serif text-2xl mb-3">Подбираем образ</div>
-      <div className="text-sm text-muted transition-opacity duration-500">{HINTS[hintIdx]}</div>
+      <div className="text-xl font-btn font-bold mb-3">Подбираем образ</div>
+      <div className="text-sm text-muted transition-opacity duration-500 font-btn">{HINTS[hintIdx]}</div>
       <div className="flex gap-1.5 mt-6">
         {[0,1,2].map(i => (
           <div key={i} className="w-2 h-2 rounded-full bg-accent animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
@@ -372,9 +365,9 @@ function EmptyState({ emoji, title, text, cta, onCta }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-8 text-center animate-fade-in">
       <div className="text-6xl mb-5 animate-float">{emoji}</div>
-      <div className="font-serif text-xl text-title mb-2">{title}</div>
+      <div className="text-lg font-btn font-bold text-title mb-2">{title}</div>
       <div className="text-xs text-muted max-w-xs mb-6 leading-relaxed">{text}</div>
-      {cta && <button onClick={onCta} className="px-6 py-3 rounded-2xl bg-accent text-bg text-xs font-bold uppercase tracking-wider2 active:scale-[0.98]">{cta}</button>}
+      {cta && <button onClick={onCta} className="px-6 py-3 rounded-2xl bg-accent text-bg text-xs font-bold uppercase tracking-wider2 active:scale-[0.98] font-btn">{cta}</button>}
     </div>
   );
 }
@@ -389,27 +382,27 @@ function StreakSheet({ streak, onClose }) {
         <div className="w-12 h-1 bg-border2 rounded-full mx-auto mb-5" />
         <div className="text-center mb-5">
           <div className="text-5xl mb-2">🔥</div>
-          <div className="font-serif text-2xl mb-1">Стрик {streak} {streak === 1 ? 'день' : streak < 5 ? 'дня' : 'дней'}</div>
-          <div className="text-xs text-muted">Заходи каждый день и получай награды</div>
+          <div className="text-xl font-btn font-bold mb-1">Стрик {streak} {streak === 1 ? 'день' : streak < 5 ? 'дня' : 'дней'}</div>
+          <div className="text-xs text-muted font-btn">Заходи каждый день и получай награды</div>
         </div>
         <div className="space-y-2 mb-5">
           {[1,2,3,4,5].map(day => {
             const isPast = day < current, isCurrent = day === current, isBonus = day === 5;
             return (
               <div key={day} className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${isCurrent ? 'bg-accent/15 border-accent shadow-soft' : isPast ? 'bg-bgSoft border-border1 opacity-60' : 'bg-bgSoft border-border1'}`}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${isCurrent ? 'bg-accent text-bg' : 'bg-bg border border-border2 text-muted'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm font-btn ${isCurrent ? 'bg-accent text-bg' : 'bg-bg border border-border2 text-muted'}`}>
                   {isPast ? '✓' : `Д${day}`}
                 </div>
                 <div className="flex-1">
-                  <div className={`text-sm font-medium ${isCurrent ? 'text-accent' : 'text-title'}`}>{isBonus ? '🎁 Большой бонус' : `День ${day}`}</div>
-                  <div className="text-[10px] text-muted">{isBonus ? '+3 примерки своих товаров' : '+1 обычная примерка'}</div>
+                  <div className={`text-xs font-medium font-btn ${isCurrent ? 'text-accent' : 'text-title'}`}>{isBonus ? '🎁 Большой бонус' : `День ${day}`}</div>
+                  <div className="text-[10px] text-muted font-btn">{isBonus ? '+3 примерки своих товаров' : '+1 обычная примерка'}</div>
                 </div>
-                {isCurrent && <span className="text-[9px] uppercase tracking-wider2 text-accent font-bold">Сегодня</span>}
+                {isCurrent && <span className="text-[9px] uppercase tracking-wider2 text-accent font-bold font-btn">Сегодня</span>}
               </div>
             );
           })}
         </div>
-        <button onClick={onClose} className="w-full bg-accent text-bg py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider2">Понятно</button>
+        <button onClick={onClose} className="w-full bg-accent text-bg py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider2 font-btn">Понятно</button>
       </div>
     </div>
   );
@@ -432,13 +425,13 @@ function Onboarding({ onDone }) {
       </div>
       <div key={i} className="flex-1 flex flex-col items-center justify-center text-center animate-slide-up">
         <div className="text-7xl mb-8 animate-float">{SLIDES[i].emoji}</div>
-        <h2 className="font-serif text-3xl mb-4">{SLIDES[i].title}</h2>
+        <h2 className="text-2xl font-btn font-bold mb-4">{SLIDES[i].title}</h2>
         <p className="text-sm text-muted2 max-w-xs leading-relaxed">{SLIDES[i].text}</p>
       </div>
-      <button onClick={() => { haptic('medium'); last ? onDone() : setI(i + 1); }} className="w-full bg-accent text-bg py-4 rounded-2xl text-sm font-medium uppercase">
+      <button onClick={() => { haptic('medium'); last ? onDone() : setI(i + 1); }} className="w-full bg-accent text-bg py-4 rounded-2xl text-sm font-medium uppercase font-btn">
         {last ? 'Начать ✨' : 'Продолжить'}
       </button>
-      {!last && <button onClick={onDone} className="mt-4 text-xs text-muted">Пропустить</button>}
+      {!last && <button onClick={onDone} className="mt-4 text-xs text-muted font-btn">Пропустить</button>}
     </div>
   );
 }
@@ -473,9 +466,9 @@ function MaintenanceScreen({ text }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center bg-bg">
       <div className="text-7xl mb-8 animate-float">🚧</div>
-      <h1 className="font-serif text-3xl mb-4 text-title">Ведутся работы</h1>
+      <h1 className="text-2xl font-btn font-bold mb-4 text-title">Ведутся работы</h1>
       <p className="text-sm text-muted2 max-w-xs leading-relaxed">{text || 'Скоро вернёмся, заходите чуть позже ✨'}</p>
-      <div className="mt-10 text-[10px] uppercase tracking-wider2 text-muted">Style Room</div>
+      <div className="mt-10 text-[10px] uppercase tracking-wider2 text-muted font-btn">Style Room</div>
     </div>
   );
 }
@@ -486,12 +479,11 @@ function SubscriptionsScreen({ onBack, onBuy }) {
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <div className="flex items-center gap-3 mb-6">
-  <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted">←</button>
-  <div>
-    <div className="text-[10px] uppercase text-muted font-btn">Style Room</div>
-    <div className="text-2xl font-btn">Подписки</div>
-  </div>
-</div>
+        <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted">←</button>
+        <div>
+          <div className="text-[10px] uppercase text-muted font-btn">Style Room</div>
+          <div className="text-2xl font-btn font-bold">Подписки</div>
+        </div>
       </div>
       <div className="space-y-4">
         {SUBS.map(sub => {
@@ -508,9 +500,9 @@ function SubscriptionsScreen({ onBack, onBuy }) {
                     {sub.emoji}
                   </div>
                   <div>
-                    <div className="text-[10px] uppercase mb-0.5" style={{ color: sub.accent }}>{sub.subtitle}</div>
-                    <div className="font-serif text-lg">{sub.name}</div>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="text-[10px] uppercase mb-0.5 font-btn" style={{ color: sub.accent }}>{sub.subtitle}</div>
+                    <div className="text-base font-btn font-bold">{sub.name}</div>
+                    <div className="flex items-center gap-2 mt-1 font-btn">
                       {sub.priceOld > 0 && <span className="text-xs text-muted line-through">{sub.priceOld}⭐️</span>}
                       <span className="text-base font-bold" style={{ color: sub.accent }}>{sub.priceNew}⭐️</span>
                     </div>
@@ -522,7 +514,7 @@ function SubscriptionsScreen({ onBack, onBuy }) {
                 <div className="overflow-hidden" style={{ maxHeight: isOpen ? 500 : 0 }}>
                   <div className="border-t border-border1 px-5 py-4">
                     <ul className="space-y-3 mb-5">
-                      {sub.features.map((f, i) => <li key={i} className="flex items-start gap-3 text-xs"><span>{f.icon}</span><span>{f.text}</span></li>)}
+                      {sub.features.map((f, i) => <li key={i} className="flex items-start gap-3 text-xs font-btn"><span>{f.icon}</span><span>{f.text}</span></li>)}
                     </ul>
                     <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2" style={{ background: sub.accent }}>Оформить за {sub.priceNew}⭐️</button>
                     <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
@@ -534,7 +526,7 @@ function SubscriptionsScreen({ onBack, onBuy }) {
               )}
               {isSecret && (
                 <div className="border-t border-border1 px-5 py-4">
-                  <div className="text-xs text-muted mb-4 italic">Секретное предложение. Внутри — сюрприз 🎁</div>
+                  <div className="text-xs text-muted mb-4 italic font-btn">Секретное предложение. Внутри — сюрприз 🎁</div>
                   <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2" style={{ background: sub.accent }}>Оформить за {sub.priceNew}⭐️</button>
                   <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
                     className="block w-full text-center border border-border2 text-muted2 py-3 rounded-2xl text-[11px] font-btn uppercase active:scale-95">
@@ -559,28 +551,28 @@ function BuyTriesScreen({ onBack, onBuy, onBuyOwn, user }) {
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
-      <h1 className="font-serif text-2xl mb-5">Попытки</h1>
+      <h1 className="text-2xl font-btn font-bold mb-5">Попытки</h1>
       <div className="grid grid-cols-2 gap-2 mb-5">
-        <button onClick={() => setMode('regular')} className={`py-3 rounded-2xl border text-xs font-medium ${mode === 'regular' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>✨ Из каталога · 5⭐️</button>
-        <button onClick={() => setMode('own')} className={`py-3 rounded-2xl border text-xs font-medium ${mode === 'own' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>📦 Свои · 10⭐️</button>
+        <button onClick={() => setMode('regular')} className={`py-3 rounded-2xl border text-xs font-medium font-btn ${mode === 'regular' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>✨ Из каталога · 5⭐️</button>
+        <button onClick={() => setMode('own')} className={`py-3 rounded-2xl border text-xs font-medium font-btn ${mode === 'own' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>📦 Свои · 10⭐️</button>
       </div>
       <div className="bg-card border border-border1 rounded-3xl p-6 mb-5 text-center">
         <div className="flex items-center justify-center gap-5 mb-5">
           <button onClick={() => setCount(c => Math.max(1, c - 1))} className="w-12 h-12 rounded-full border border-border2 text-2xl text-accent font-light">−</button>
-          <div className="text-6xl font-sans font-bold text-title min-w-[120px]">{count}</div>
+          <div className="text-6xl font-btn font-bold text-title min-w-[120px]">{count}</div>
           <button onClick={() => setCount(c => Math.min(500, c + 1))} className="w-12 h-12 rounded-full border border-accentSoft text-2xl text-accent font-light">+</button>
         </div>
         <div className="flex gap-2 justify-center mb-6">
-          {[5, 10, 25, 50].map(n => <button key={n} onClick={() => setCount(n)} className={`px-3 py-1.5 rounded-full border text-xs font-semibold ${count === n ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>{n}</button>)}
+          {[5, 10, 25, 50].map(n => <button key={n} onClick={() => setCount(n)} className={`px-3 py-1.5 rounded-full border text-xs font-semibold font-btn ${count === n ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>{n}</button>)}
         </div>
-        <div className="text-[10px] uppercase text-muted mb-2">Итого</div>
-        <div className="text-4xl font-sans font-bold">{total}<span className="text-accent text-2xl ml-1">⭐️</span></div>
+        <div className="text-[10px] uppercase text-muted mb-2 font-btn">Итого</div>
+        <div className="text-4xl font-btn font-bold">{total}<span className="text-accent text-2xl ml-1">⭐️</span></div>
       </div>
       <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="bg-card border border-border1 rounded-2xl p-4"><div className="text-[10px] uppercase text-muted">Из каталога</div><div className="text-3xl font-sans font-bold text-accent mt-1">{user?.balance ?? 0}</div></div>
-        <div className="bg-card border border-border1 rounded-2xl p-4"><div className="text-[10px] uppercase text-muted">Своих</div><div className="text-3xl font-sans font-bold text-accent mt-1">{user?.own_tries ?? 0}</div></div>
+        <div className="bg-card border border-border1 rounded-2xl p-4"><div className="text-[10px] uppercase text-muted font-btn">Из каталога</div><div className="text-3xl font-btn font-bold text-accent mt-1">{user?.balance ?? 0}</div></div>
+        <div className="bg-card border border-border1 rounded-2xl p-4"><div className="text-[10px] uppercase text-muted font-btn">Своих</div><div className="text-3xl font-btn font-bold text-accent mt-1">{user?.own_tries ?? 0}</div></div>
       </div>
-      <button onClick={() => mode === 'regular' ? onBuy(count) : onBuyOwn(count)} className="w-full bg-accent text-bg py-4 rounded-2xl text-sm font-medium uppercase tracking-wider2 font-btn">Купить {count} за {total}⭐️</button>
+      <button onClick={() => mode === 'regular' ? onBuy(count) : onBuyOwn(count)} className="w-full bg-accent text-bg py-4 rounded-2xl text-xs font-bold uppercase tracking-wider2 font-btn">Купить {count} за {total}⭐️</button>
       <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
         className="block w-full mt-2 text-center border border-border2 text-muted2 py-3 rounded-2xl text-xs font-btn uppercase active:scale-95">
         💰 Купить звёзды
@@ -617,40 +609,40 @@ function OwnTriesScreen({ user, onBack, onToast }) {
   if (loading) return <LoadingAnimation />;
   if (resultImage) return (
     <main className="px-5 pt-5 animate-fade-in">
-      <div className="text-[10px] uppercase text-muted mb-3">Результат</div>
+      <div className="text-[10px] uppercase text-muted mb-3 font-btn">Результат</div>
       <img src={resultImage} alt="result" className="w-full rounded-2xl border border-border1 mb-5" onError={(e) => { e.target.src = 'https://placehold.co/600x800/1A1412/D4B595?text=Фото'; }} />
       <div className="grid grid-cols-2 gap-3 mb-3">
-        <button onClick={() => downloadImage(resultImage, 'style-room-own.jpg')} className="w-full bg-accent text-bg py-4 rounded-2xl text-xs font-bold uppercase">📥 Скачать</button>
-        <button onClick={() => tgShare(resultImage)} className="w-full border border-accentSoft text-accent py-4 rounded-2xl text-xs font-bold uppercase">📤 Поделиться</button>
+        <button onClick={() => downloadImage(resultImage, 'style-room-own.jpg')} className="w-full bg-accent text-bg py-4 rounded-2xl text-xs font-bold uppercase font-btn">📥 Скачать</button>
+        <button onClick={() => tgShare(resultImage)} className="w-full border border-accentSoft text-accent py-4 rounded-2xl text-xs font-bold uppercase font-btn">📤 Поделиться</button>
       </div>
-      <button onClick={() => { setResultImage(null); setHumanImg(''); setWbLink(''); }} className="w-full border border-border2 text-muted2 py-3 rounded-2xl text-sm mb-2">Ещё раз</button>
-      <button onClick={onBack} className="w-full text-xs text-muted py-3">← Назад</button>
+      <button onClick={() => { setResultImage(null); setHumanImg(''); setWbLink(''); }} className="w-full border border-border2 text-muted2 py-3 rounded-2xl text-sm font-btn mb-2">Ещё раз</button>
+      <button onClick={onBack} className="w-full text-xs text-muted py-3 font-btn">← Назад</button>
     </main>
   );
 
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
-      <button onClick={onBack} className="text-xs text-muted mb-5">← Назад</button>
-      <h1 className="font-serif text-3xl mb-2">Свои товары</h1>
-      <p className="text-xs text-muted mb-5">Вставь ссылку WB — примерим</p>
+      <button onClick={onBack} className="text-xs text-muted mb-5 font-btn">← Назад</button>
+      <h1 className="text-2xl font-btn font-bold mb-2">Свои товары</h1>
+      <p className="text-xs text-muted mb-5 font-btn">Вставь ссылку WB — примерим</p>
       <div className="bg-card border border-border2 rounded-2xl p-4 mb-4">
         <div className="flex items-center justify-between">
-          <span className="text-sm">Своих примерок</span>
-          <span className="text-lg font-sans font-bold text-accent">{user?.own_tries ?? 0}</span>
+          <span className="text-sm font-btn">Своих примерок</span>
+          <span className="text-lg font-btn font-bold text-accent">{user?.own_tries ?? 0}</span>
         </div>
       </div>
       <label className="block mb-4">
-        <div className="text-[10px] uppercase text-muted mb-2">🔗 Ссылка WB</div>
+        <div className="text-[10px] uppercase text-muted mb-2 font-btn">🔗 Ссылка WB</div>
         <input value={wbLink} onChange={(e) => setWbLink(e.target.value)} placeholder="https://www.wildberries.ru/catalog/..." className="w-full bg-card border border-border1 rounded-xl px-4 py-3 text-sm outline-none focus:border-accentSoft" />
       </label>
-      <button onClick={() => fileRef.current?.click()} className="w-full bg-card border border-dashed border-border2 rounded-2xl py-8 text-sm text-muted2 mb-3 flex flex-col items-center gap-2">
+      <button onClick={() => fileRef.current?.click()} className="w-full bg-card border border-dashed border-border2 rounded-2xl py-8 text-sm text-muted2 mb-3 flex flex-col items-center gap-2 font-btn">
         <span className="text-2xl">{humanImg ? '✓' : '📷'}</span>
         <span>{humanImg ? 'Фото загружено' : 'Загрузить фото'}</span>
-        <span className="text-[10px] text-muted/70 mt-1">Хорошее освещение · полный рост · без фильтров</span>
+        <span className="text-[10px] text-muted/70 mt-1">Хорошее освещение · полный рост</span>
       </button>
       <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
       {humanImg && <img src={humanImg} alt="" className="w-full max-h-72 object-contain rounded-2xl mb-4 border border-border1 animate-scale-in" />}
-      <button onClick={run} disabled={(user?.own_tries || 0) <= 0} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-sm font-bold uppercase mt-4">
+      <button onClick={run} disabled={(user?.own_tries || 0) <= 0} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-xs font-bold uppercase mt-4 font-btn">
         {(user?.own_tries || 0) <= 0 ? 'Купите примерки' : 'Запустить · 1 попытка'}
       </button>
     </main>
@@ -696,53 +688,48 @@ function MultiTryonScreen({ catalog, user, onBack, onToast }) {
   if (loading) return <LoadingAnimation />;
   if (results) return (
     <main className="px-5 pt-5 pb-24 animate-fade-in">
-      <div className="text-[10px] uppercase text-muted mb-3">Результаты</div>
+      <div className="text-[10px] uppercase text-muted mb-3 font-btn">Результаты</div>
       <div className="space-y-4">
         {results.map((r, i) => (
           <div key={i} className="bg-card border border-border1 rounded-2xl overflow-hidden animate-slide-up" style={{ animationDelay: `${i*0.1}s` }}>
             {r.url ? <img src={r.url} alt={r.name} className="w-full" onError={(e) => { e.target.src = 'https://placehold.co/600x800/1A1412/D4B595?text=Фото'; }} /> : <div className="aspect-[3/4] flex items-center justify-center text-xs text-muted">Не удалось</div>}
             <div className="p-3">
-              <div className="text-xs text-muted mb-2">{r.name}</div>
-              {r.url && <button onClick={() => downloadImage(r.url, `style-room-${i+1}.jpg`)} className="w-full bg-accent text-bg text-center py-2.5 rounded-xl text-[10px] font-bold uppercase">📥 Скачать</button>}
+              <div className="text-xs text-muted mb-2 font-btn">{r.name}</div>
+              {r.url && <button onClick={() => downloadImage(r.url, `style-room-${i+1}.jpg`)} className="w-full bg-accent text-bg text-center py-2.5 rounded-xl text-[10px] font-bold uppercase font-btn">📥 Скачать</button>}
             </div>
           </div>
         ))}
       </div>
-      <button onClick={() => { setResults(null); setPicked([]); setHumanImg(''); }} className="w-full mt-5 border border-border2 text-muted2 py-4 rounded-2xl text-sm">Ещё раз</button>
+      <button onClick={() => { setResults(null); setPicked([]); setHumanImg(''); }} className="w-full mt-5 border border-border2 text-muted2 py-4 rounded-2xl text-sm font-btn">Ещё раз</button>
     </main>
   );
 
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
-      <button onClick={onBack} className="text-xs text-muted mb-5">← Назад</button>
-      <h1 className="font-serif text-3xl mb-2">2–3 вещи</h1>
-      <p className="text-xs text-muted mb-5">Только разные категории. Костюм нельзя с верхом/низом.</p>
-      <div className="bg-card border border-border2 rounded-2xl p-4 mb-4 flex justify-between text-xs">
+      <button onClick={onBack} className="text-xs text-muted mb-5 font-btn">← Назад</button>
+      <h1 className="text-2xl font-btn font-bold mb-2">2–3 вещи</h1>
+      <p className="text-xs text-muted mb-5 font-btn">Разные категории. Костюм нельзя с верхом/низом.</p>
+      <div className="bg-card border border-border2 rounded-2xl p-4 mb-4 flex justify-between text-xs font-btn">
         <span className="text-muted">Выбрано: <b className="text-title">{picked.length}</b> / 3</span>
         <span className="text-muted">Спишется: <b className="text-accent">{picked.length}</b></span>
       </div>
       {!humanImg ? (
-        <button onClick={() => fileRef.current?.click()} className="w-full bg-card border border-dashed border-border2 rounded-2xl py-8 text-sm text-muted2 mb-4 flex flex-col items-center gap-2">
+        <button onClick={() => fileRef.current?.click()} className="w-full bg-card border border-dashed border-border2 rounded-2xl py-8 text-sm text-muted2 mb-4 flex flex-col items-center gap-2 font-btn">
           <span className="text-2xl">📷</span><span>Загрузить фото</span>
         </button>
       ) : (
         <div className="mb-4">
           <img src={humanImg} alt="" className="w-full max-h-64 object-contain rounded-2xl border border-border1" />
-          <button onClick={() => fileRef.current?.click()} className="text-xs text-muted mt-2">Заменить</button>
+          <button onClick={() => fileRef.current?.click()} className="text-xs text-muted mt-2 font-btn">Заменить</button>
         </div>
       )}
       <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
       <div className="grid grid-cols-2 gap-3 mb-5">
         {catalog.slice(0, 30).map(item => (
-          <ProductCard
-            key={item.id}
-            item={item}
-            selected={picked.some(x => x.id === item.id)}
-            onToggle={toggle}
-          />
+          <ProductCard key={item.id} item={item} selected={picked.some(x => x.id === item.id)} onToggle={toggle} />
         ))}
       </div>
-      <button onClick={run} disabled={picked.length < 2 || !humanImg || (user?.balance || 0) < picked.length} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-sm font-bold uppercase">
+      <button onClick={run} disabled={picked.length < 2 || !humanImg || (user?.balance || 0) < picked.length} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-xs font-bold uppercase font-btn">
         {picked.length < 2 ? 'Выберите минимум 2' : `Пример ${picked.length} вещи`}
       </button>
     </main>
@@ -760,8 +747,8 @@ function HistoryScreen({ onBack }) {
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
-      <h1 className="font-serif text-2xl mb-5">Мои примерки</h1>
-      {loading && <div className="text-center py-16 text-muted text-sm">Загрузка…</div>}
+      <h1 className="text-2xl font-btn font-bold mb-5">Мои примерки</h1>
+      {loading && <div className="text-center py-16 text-muted text-sm font-btn">Загрузка…</div>}
       {!loading && items.length === 0 && <EmptyState emoji="👗" title="Пока пусто" text="Сделай первую примерку — она появится здесь" />}
       <div className="grid grid-cols-2 gap-3">
         {items.map(it => (
@@ -772,8 +759,8 @@ function HistoryScreen({ onBack }) {
             <div className="p-2.5">
               <div className="text-[10px] text-muted line-clamp-2 h-[26px] mb-2">{it.product_name || 'Товар'}</div>
               <div className="grid grid-cols-3 gap-1">
-                <button onClick={() => downloadImage(it.result_url, `style-room-${it.id}.jpg`)} className="bg-accent text-bg text-[10px] py-2 rounded-xl font-bold active:scale-95 transition" title="Скачать">📥</button>
-                <button onClick={() => tgShare(it.result_url)} className="bg-bgSoft border border-border2 text-accent text-[10px] py-2 rounded-xl active:scale-95 transition" title="Поделиться">📤</button>
+                <button onClick={() => downloadImage(it.result_url, `style-room-${it.id}.jpg`)} className="bg-accent text-bg text-[10px] py-2 rounded-xl font-bold active:scale-95 transition">📥</button>
+                <button onClick={() => tgShare(it.result_url)} className="bg-bgSoft border border-border2 text-accent text-[10px] py-2 rounded-xl active:scale-95 transition">📤</button>
                 {it.product_wb_id ? <a href={wbUrl(it.product_wb_id)} target="_blank" rel="noreferrer" className="bg-bgSoft border border-border2 text-accent text-[10px] py-2 rounded-xl text-center">🛍</a> : <div />}
               </div>
             </div>
@@ -802,18 +789,18 @@ function FavoritesScreen({ onBack, onPick, onToast }) {
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
-      <h1 className="font-serif text-2xl mb-5">❤️ Избранное</h1>
+      <h1 className="text-2xl font-btn font-bold mb-5">❤️ Избранное</h1>
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-5 -mx-5 px-5">
         {CATEGORIES.filter(c => c.key !== 'personal').map(c => {
           const active = cat === c.key;
           return (
-            <button key={c.key} onClick={() => setCat(c.key)} className={`whitespace-nowrap text-xs px-3.5 py-2 rounded-full border flex items-center gap-1.5 ${active ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted2'}`}>
+            <button key={c.key} onClick={() => setCat(c.key)} className={`whitespace-nowrap text-xs px-3.5 py-2 rounded-full border flex items-center gap-1.5 font-btn ${active ? 'bg-accent text-bg border-accent font-bold' : 'border-border2 text-muted2'}`}>
               <span>{c.emoji}</span>{c.label}
             </button>
           );
         })}
       </div>
-      {loading && <div className="text-center py-16 text-muted text-sm">Загрузка…</div>}
+      {loading && <div className="text-center py-16 text-muted text-sm font-btn">Загрузка…</div>}
       {!loading && items.length === 0 && <EmptyState emoji="💔" title="Пока пусто" text="Нажимай ❤️ на товары — они появятся здесь" />}
       <div className="grid grid-cols-2 gap-3">
         {items.map(item => <ProductCard key={item.id} item={item} onPick={onPick} liked={true} onLike={unlike} />)}
@@ -834,16 +821,16 @@ function AchievementsScreen({ onBack }) {
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
-      <h1 className="font-serif text-2xl mb-1">🏆 Достижения</h1>
-      <p className="text-xs text-muted mb-5">Открыто {earned} из {items.length}</p>
-      {loading && <div className="text-center py-16 text-muted text-sm">Загрузка…</div>}
+      <h1 className="text-2xl font-btn font-bold mb-1">🏆 Достижения</h1>
+      <p className="text-xs text-muted mb-5 font-btn">Открыто {earned} из {items.length}</p>
+      {loading && <div className="text-center py-16 text-muted text-sm font-btn">Загрузка…</div>}
       <div className="grid grid-cols-2 gap-3">
         {items.map(a => (
           <div key={a.code} className={`rounded-2xl border p-4 text-center transition-all ${a.earned ? 'bg-card border-accentSoft shadow-soft' : 'bg-bgSoft border-border1 opacity-50'}`}>
             <div className={`text-4xl mb-2 ${a.earned ? 'animate-float' : 'grayscale'}`}>{a.emoji}</div>
-            <div className="text-xs font-bold text-title mb-1">{a.name}</div>
-            <div className="text-[10px] text-muted leading-snug">{a.desc}</div>
-            {a.earned && <div className="text-[9px] text-accent uppercase tracking-wider2 mt-2">✓ Открыто</div>}
+            <div className="text-xs font-bold text-title mb-1 font-btn">{a.name}</div>
+            <div className="text-[10px] text-muted leading-snug font-btn">{a.desc}</div>
+            {a.earned && <div className="text-[9px] text-accent uppercase tracking-wider2 mt-2 font-btn">✓ Открыто</div>}
           </div>
         ))}
       </div>
@@ -866,15 +853,15 @@ function LeaderboardScreen({ onBack, onPick, user, myRank }) {
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
-      <h1 className="font-serif text-2xl mb-4">👑 Лидеры (30 дней)</h1>
+      <h1 className="text-2xl font-btn font-bold mb-4">👑 Лидеры (30 дней)</h1>
 
       {myRank && myRank.rank && (
         <div className="bg-gradient-to-r from-accent/20 to-accent/5 border border-accent rounded-2xl p-4 mb-5 animate-scale-in">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-accent text-bg flex items-center justify-center text-lg font-bold">#{myRank.rank}</div>
+            <div className="w-12 h-12 rounded-full bg-accent text-bg flex items-center justify-center text-lg font-bold font-btn">#{myRank.rank}</div>
             <div className="flex-1">
-              <div className="text-sm font-bold text-accent">Твоё место</div>
-              <div className="text-[11px] text-muted">{myRank.my_count} примерок · из {myRank.total} юзеров</div>
+              <div className="text-xs font-bold text-accent font-btn">Твоё место</div>
+              <div className="text-[11px] text-muted font-btn">{myRank.my_count} примерок · из {myRank.total}</div>
             </div>
             <div className="text-2xl">🌟</div>
           </div>
@@ -882,18 +869,18 @@ function LeaderboardScreen({ onBack, onPick, user, myRank }) {
       )}
 
       <div className="grid grid-cols-2 gap-2 mb-5">
-        <button onClick={() => setTab('products')} className={`py-3 rounded-2xl border text-xs font-medium ${tab === 'products' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🔥 Товары</button>
-        <button onClick={() => setTab('users')} className={`py-3 rounded-2xl border text-xs font-medium ${tab === 'users' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>👥 Юзеры</button>
+        <button onClick={() => setTab('products')} className={`py-3 rounded-2xl border text-xs font-bold font-btn ${tab === 'products' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🔥 Товары</button>
+        <button onClick={() => setTab('users')} className={`py-3 rounded-2xl border text-xs font-bold font-btn ${tab === 'users' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>👥 Юзеры</button>
       </div>
-      {loading && <div className="text-center py-16 text-muted text-sm">Загрузка…</div>}
+      {loading && <div className="text-center py-16 text-muted text-sm font-btn">Загрузка…</div>}
       {!loading && tab === 'products' && (
         products.length === 0 ? <EmptyState emoji="📊" title="Пока нет данных" text="Как только появятся примерки — здесь будут топы" /> :
         <div className="grid grid-cols-2 gap-3">
           {products.map((p, i) => (
             <div key={p.id} className="relative animate-slide-up" style={{ animationDelay: `${i*0.05}s` }}>
-              <div className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-accent text-bg flex items-center justify-center text-xs font-bold">#{i+1}</div>
+              <div className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-accent text-bg flex items-center justify-center text-xs font-bold font-btn">#{i+1}</div>
               <ProductCard item={p} onPick={onPick} />
-              <div className="absolute bottom-[70px] right-3 text-[10px] text-accent font-bold">🔥 {p.tryons}</div>
+              <div className="absolute bottom-[70px] right-3 text-[10px] text-accent font-bold font-btn">🔥 {p.tryons}</div>
             </div>
           ))}
         </div>
@@ -905,14 +892,14 @@ function LeaderboardScreen({ onBack, onPick, user, myRank }) {
             const isMe = u.tg_id === user?.tg_id;
             return (
               <div key={u.tg_id} className={`rounded-2xl p-3 flex items-center gap-3 animate-slide-up ${isMe ? 'bg-accent/15 border-2 border-accent' : 'bg-card border border-border1'}`} style={{ animationDelay: `${i*0.05}s` }}>
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-gray-300 text-black' : i === 2 ? 'bg-amber-600 text-white' : 'bg-bgSoft text-muted'}`}>#{i+1}</div>
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold font-btn ${i === 0 ? 'bg-yellow-400 text-black' : i === 1 ? 'bg-gray-300 text-black' : i === 2 ? 'bg-amber-600 text-white' : 'bg-bgSoft text-muted'}`}>#{i+1}</div>
                 <img src={u.photo_url || 'https://placehold.co/60x60/1A1412/D4B595?text=U'} alt="" className="w-10 h-10 rounded-full object-cover border border-border2" />
                 <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-medium truncate ${isMe ? 'text-accent' : ''}`}>{u.first_name || '—'} {isMe && '· ты'}</div>
+                  <div className={`text-sm font-medium truncate font-btn ${isMe ? 'text-accent' : ''}`}>{u.first_name || '—'} {isMe && '· ты'}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-sans font-bold text-accent">{u.tryons}</div>
-                  <div className="text-[9px] uppercase text-muted">примерок</div>
+                  <div className="text-lg font-btn font-bold text-accent">{u.tryons}</div>
+                  <div className="text-[9px] uppercase text-muted font-btn">примерок</div>
                 </div>
               </div>
             );
@@ -953,20 +940,20 @@ function GiftScreen({ onBack, onToast, user }) {
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
-      <h1 className="font-serif text-2xl mb-2">🎁 Подарить подруге</h1>
-      <p className="text-xs text-muted mb-5">Купи примерки и отправь ссылку — она их активирует</p>
+      <h1 className="text-2xl font-btn font-bold mb-2">🎁 Подарить подруге</h1>
+      <p className="text-xs text-muted mb-5 font-btn">Купи примерки и отправь ссылку</p>
       {!giftUrl ? (
         <>
           <div className="bg-card border border-border1 rounded-3xl p-6 mb-5 text-center">
             <div className="flex items-center justify-center gap-5 mb-5">
               <button onClick={() => setCount(c => Math.max(1, c - 1))} className="w-12 h-12 rounded-full border border-border2 text-2xl text-accent font-light">−</button>
-              <div className="text-5xl font-sans font-bold min-w-[100px]">{count}</div>
+              <div className="text-5xl font-btn font-bold min-w-[100px]">{count}</div>
               <button onClick={() => setCount(c => Math.min(50, c + 1))} className="w-12 h-12 rounded-full border border-accentSoft text-2xl text-accent font-light">+</button>
             </div>
-            <div className="text-[10px] uppercase text-muted mb-1">Итого</div>
-            <div className="text-3xl font-sans font-bold">{total}<span className="text-accent text-xl ml-1">⭐️</span></div>
+            <div className="text-[10px] uppercase text-muted mb-1 font-btn">Итого</div>
+            <div className="text-3xl font-btn font-bold">{total}<span className="text-accent text-xl ml-1">⭐️</span></div>
           </div>
-          <button onClick={create} disabled={loading} className="btn-shine w-full text-bg py-4 rounded-2xl text-sm font-bold uppercase disabled:opacity-40 font-btn">
+          <button onClick={create} disabled={loading} className="btn-shine w-full text-bg py-4 rounded-2xl text-xs font-bold uppercase disabled:opacity-40 font-btn">
             {loading ? 'Создаю…' : `Оплатить ${total}⭐️`}
           </button>
           <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
@@ -977,11 +964,11 @@ function GiftScreen({ onBack, onToast, user }) {
       ) : (
         <div className="bg-card border border-accentSoft rounded-3xl p-6 text-center animate-bounce-in">
           <div className="text-5xl mb-4">🎉</div>
-          <div className="font-serif text-xl mb-2">Подарок готов!</div>
-          <div className="text-xs text-muted mb-5">Отправь ссылку подруге</div>
+          <div className="text-xl font-btn font-bold mb-2">Подарок готов!</div>
+          <div className="text-xs text-muted mb-5 font-btn">Отправь ссылку подруге</div>
           <div className="bg-bg border border-border1 rounded-2xl p-3 mb-4 break-all text-[10px] text-muted">{giftUrl}</div>
-          <button onClick={shareGift} className="btn-shine w-full text-bg py-4 rounded-2xl text-sm font-bold uppercase">📤 Поделиться</button>
-          <button onClick={() => setGiftUrl('')} className="w-full mt-3 text-xs text-muted py-2">Создать ещё один</button>
+          <button onClick={shareGift} className="btn-shine w-full text-bg py-4 rounded-2xl text-xs font-bold uppercase font-btn">📤 Поделиться</button>
+          <button onClick={() => setGiftUrl('')} className="w-full mt-3 text-xs text-muted py-2 font-btn">Создать ещё один</button>
         </div>
       )}
     </main>
@@ -1061,13 +1048,13 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
-      <div className="text-[10px] uppercase text-accent mb-1">👑 Только для админа</div>
-      <h1 className="font-serif text-3xl mb-2">Админка</h1>
-      <p className="text-xs text-muted mb-5">Пополнение каталога и подчистка товаров.</p>
+      <div className="text-[10px] uppercase text-accent mb-1 font-btn">👑 Только для админа</div>
+      <h1 className="text-2xl font-btn font-bold mb-2">Админка</h1>
+      <p className="text-xs text-muted mb-5 font-btn">Пополнение каталога и подчистка</p>
 
       <div className="grid grid-cols-2 gap-2 mb-6">
-        <button onClick={() => setTab('refresh')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 ${tab === 'refresh' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🔄 Пополнение</button>
-        <button onClick={() => setTab('cleanup')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 ${tab === 'cleanup' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🧹 Подчистка</button>
+        <button onClick={() => setTab('refresh')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'refresh' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🔄 Пополнение</button>
+        <button onClick={() => setTab('cleanup')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'cleanup' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🧹 Подчистка</button>
       </div>
 
       {tab === 'refresh' && (
@@ -1075,22 +1062,22 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
           <button
             onClick={() => refresh('all')}
             disabled={!!loading}
-            className="w-full bg-accent text-bg py-5 rounded-3xl text-sm font-bold uppercase tracking-wider2 mb-2 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 font-btn"
+            className="w-full bg-accent text-bg py-5 rounded-3xl text-xs font-bold uppercase tracking-wider2 mb-2 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 font-btn"
           >
             {loading === 'all'
               ? <><span className="inline-block w-4 h-4 border-2 border-bg/40 border-t-bg rounded-full animate-spin" /> Пополняю…</>
               : <>🚀 Пополнить всё разом</>}
           </button>
-          <p className="text-[10px] text-muted text-center mb-5">Можно уйти в другой раздел — пополнение продолжится.</p>
+          <p className="text-[10px] text-muted text-center mb-5 font-btn">Можно уйти — пополнение продолжится</p>
 
-          <div className="text-[10px] uppercase text-muted mb-3">Отдельные разделы</div>
+          <div className="text-[10px] uppercase text-muted mb-3 font-btn">Отдельные разделы</div>
           <div className="grid grid-cols-2 gap-3 mb-5">
             {CATS.map(c => (
               <button key={c.key} onClick={() => refresh(c.key)} disabled={!!loading}
                 className="bg-card border border-border1 rounded-2xl p-4 text-left active:scale-[0.98] disabled:opacity-50 transition">
                 <div className="text-3xl mb-2">{c.emoji}</div>
-                <div className="text-sm font-medium mb-1 text-title">{c.label}</div>
-                <div className="text-[10px] text-accent font-semibold">
+                <div className="text-xs font-bold mb-1 text-title font-btn">{c.label}</div>
+                <div className="text-[10px] text-accent font-semibold font-btn">
                   {loading === c.key ? '⏳ Загрузка…' : '🔄 Пополнить'}
                 </div>
               </button>
@@ -1101,25 +1088,25 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
             <div className="rounded-2xl p-4 border border-accent bg-accent/10 mb-5 animate-pulse">
               <div className="flex items-center gap-3">
                 <span className="inline-block w-4 h-4 border-2 border-accent/40 border-t-accent rounded-full animate-spin" />
-                <div className="text-xs font-bold text-accent">Идёт пополнение «{loading === 'all' ? 'всё разом' : loading}»…</div>
+                <div className="text-xs font-bold text-accent font-btn">Идёт пополнение «{loading === 'all' ? 'всё разом' : loading}»…</div>
               </div>
             </div>
           )}
 
           {last && !loading && (
             <div className={`rounded-2xl p-4 border mb-5 ${last.success ? 'bg-card border-accentSoft' : 'bg-card border-red-500/40'}`}>
-              <div className="text-xs font-bold mb-2">
+              <div className="text-xs font-bold mb-2 font-btn">
                 {last.success ? '✅ Готово' : '❌ Ошибка'} · <span className="text-muted font-normal">{last.category === 'all' ? 'всё разом' : last.category}</span>
                 {last.elapsed && <span className="text-muted font-normal"> · {last.elapsed}с</span>}
               </div>
               {last.success ? (
-                <div className="text-[11px] text-muted2 space-y-0.5">
+                <div className="text-[11px] text-muted2 space-y-0.5 font-btn">
                   <div>➕ Новых: <b className="text-accent">{last.added || 0}</b></div>
                   <div>🔄 Обновлено: <b>{last.updated || 0}</b></div>
                   <div>⊘ Пропущено: <b>{last.failed || 0}</b></div>
                 </div>
               ) : (
-                <div className="text-[11px] text-muted2 leading-relaxed break-words">{last.reason || 'Не удалось'}</div>
+                <div className="text-[11px] text-muted2 leading-relaxed break-words font-btn">{last.reason || 'Не удалось'}</div>
               )}
             </div>
           )}
@@ -1246,8 +1233,8 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
     <div>
       <div className="bg-card border border-border2 rounded-2xl p-3 mb-3 flex items-center gap-2">
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск по названию…"
-          className="flex-1 bg-bg border border-border1 rounded-xl px-3 py-2.5 text-xs outline-none focus:border-accentSoft" />
-        <button onClick={load} className="px-3 py-2.5 rounded-xl border border-border2 text-xs">🔄</button>
+          className="flex-1 bg-bg border border-border1 rounded-xl px-3 py-2.5 text-xs outline-none focus:border-accentSoft font-btn" />
+        <button onClick={load} className="px-3 py-2.5 rounded-xl border border-border2 text-xs font-btn">🔄</button>
       </div>
 
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 -mx-5 px-5">
@@ -1255,7 +1242,7 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
           const active = filter === c.key;
           return (
             <button key={c.key} onClick={() => setFilter(c.key)}
-              className={`whitespace-nowrap text-xs px-3 py-2 rounded-full border flex items-center gap-1.5 ${active ? 'bg-accent text-bg border-accent font-bold' : 'border-border2 text-muted2'}`}>
+              className={`whitespace-nowrap text-xs px-3 py-2 rounded-full border flex items-center gap-1.5 font-btn ${active ? 'bg-accent text-bg border-accent font-bold' : 'border-border2 text-muted2'}`}>
               <span>{c.emoji}</span>{c.label}
             </button>
           );
@@ -1265,20 +1252,20 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
       {filter !== 'all' && (
         <div className="grid grid-cols-2 gap-2 mb-4">
           <button onClick={() => clearCategory('hide')} disabled={busy === 'category'}
-            className="bg-card border border-orange-500/40 text-orange-300 py-3 rounded-2xl text-[10px] font-bold uppercase active:scale-[0.98] disabled:opacity-50">
-            🙈 Скрыть весь раздел
+            className="bg-card border border-orange-500/40 text-orange-300 py-3 rounded-2xl text-[10px] font-bold uppercase active:scale-[0.98] disabled:opacity-50 font-btn">
+            🙈 Скрыть раздел
           </button>
           <button onClick={() => clearCategory('delete')} disabled={busy === 'category'}
-            className="bg-card border border-red-500/40 text-red-400 py-3 rounded-2xl text-[10px] font-bold uppercase active:scale-[0.98] disabled:opacity-50">
-            🗑 Удалить весь раздел
+            className="bg-card border border-red-500/40 text-red-400 py-3 rounded-2xl text-[10px] font-bold uppercase active:scale-[0.98] disabled:opacity-50 font-btn">
+            🗑 Удалить раздел
           </button>
         </div>
       )}
 
-      <div className="text-[10px] text-muted mb-3">Товаров: <b className="text-title">{filtered.length}</b></div>
+      <div className="text-[10px] text-muted mb-3 font-btn">Товаров: <b className="text-title">{filtered.length}</b></div>
 
-      {loading && <div className="text-center py-12 text-muted text-sm">Загрузка…</div>}
-      {!loading && filtered.length === 0 && <div className="text-center py-12 text-muted text-sm">Пусто</div>}
+      {loading && <div className="text-center py-12 text-muted text-sm font-btn">Загрузка…</div>}
+      {!loading && filtered.length === 0 && <div className="text-center py-12 text-muted text-sm font-btn">Пусто</div>}
 
       <div className="space-y-2">
         {filtered.map(item => (
@@ -1288,30 +1275,30 @@ function AdminCleanup({ onToast, onCatalogRefreshed }) {
             </div>
             <div className="flex-1 min-w-0 py-2.5 pr-2.5">
               <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-[9px] uppercase text-accentSoft">{CATS.find(c => c.key === item.category)?.label || item.category}</span>
+                <span className="text-[9px] uppercase text-accentSoft font-btn">{CATS.find(c => c.key === item.category)?.label || item.category}</span>
                 {item.is_pinned && <span className="text-[9px] text-yellow-400">📌</span>}
-                {!item.is_active && <span className="text-[9px] text-red-400">СКРЫТ</span>}
+                {!item.is_active && <span className="text-[9px] text-red-400 font-btn">СКРЫТ</span>}
               </div>
               <div className="text-[11px] text-title line-clamp-2 leading-snug mb-1">{item.name}</div>
-              <div className="text-[10px] text-muted mb-1.5">{item.price || '—'} · WB {item.wb_id}</div>
+              <div className="text-[10px] text-muted mb-1.5 font-btn">{item.price || '—'} · WB {item.wb_id}</div>
               <div className="flex flex-wrap gap-1">
                 <button onClick={() => act(item.is_pinned ? 'unpin' : 'pin', item.id, item.wb_id)} disabled={busy === item.id}
-                  className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 disabled:opacity-40">
+                  className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 disabled:opacity-40 font-btn">
                   {item.is_pinned ? '📌 Убрать' : '📌 Пин'}
                 </button>
                 {item.is_active ? (
                   <button onClick={() => act('hide', item.id, item.wb_id)} disabled={busy === item.id}
-                    className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 disabled:opacity-40">🙈 Скрыть</button>
+                    className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 disabled:opacity-40 font-btn">🙈 Скрыть</button>
                 ) : (
                   <button onClick={() => act('unhide', item.id, item.wb_id)} disabled={busy === item.id}
-                    className="text-[9px] px-2 py-1 rounded-lg border border-accentSoft text-accent disabled:opacity-40">👁 Вернуть</button>
+                    className="text-[9px] px-2 py-1 rounded-lg border border-accentSoft text-accent disabled:opacity-40 font-btn">👁 Вернуть</button>
                 )}
                 <button onClick={() => rename(item)} disabled={busy === item.id}
-                  className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 disabled:opacity-40">✏️ Имя</button>
+                  className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 disabled:opacity-40 font-btn">✏️ Имя</button>
                 <a href={wbUrl(item.wb_id)} target="_blank" rel="noreferrer"
-                  className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2">🛍 WB</a>
+                  className="text-[9px] px-2 py-1 rounded-lg border border-border2 text-muted2 font-btn">🛍 WB</a>
                 <button onClick={() => { if (confirm('Удалить товар насовсем?')) act('delete', item.id, item.wb_id); }} disabled={busy === item.id}
-                  className="text-[9px] px-2 py-1 rounded-lg border border-red-500/40 text-red-400 disabled:opacity-40">🗑 Удалить</button>
+                  className="text-[9px] px-2 py-1 rounded-lg border border-red-500/40 text-red-400 disabled:opacity-40 font-btn">🗑 Удалить</button>
               </div>
             </div>
           </div>
@@ -1353,21 +1340,21 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
 
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
-      <h1 className="font-serif text-3xl mb-6">Профиль</h1>
+      <h1 className="text-2xl font-btn font-bold mb-6">Профиль</h1>
       <div className="bg-card border border-border1 rounded-3xl p-5 mb-4 flex items-center gap-4">
         <img src={user?.photo_url || 'https://placehold.co/80x80/1A1412/D4B595?text=U'} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-border2" />
         <div className="flex-1">
-          <div className="text-base font-medium">{user?.first_name || 'Гость'}</div>
-          <div className="text-xs text-muted">@{user?.username || 'user'}</div>
+          <div className="text-sm font-medium font-btn">{user?.first_name || 'Гость'}</div>
+          <div className="text-xs text-muted font-btn">@{user?.username || 'user'}</div>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {user?.streak_days > 0 && (
-              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-400/40">
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-400/40 font-btn">
                 <span className="text-[10px]">🔥</span>
                 <span className="text-[10px] text-orange-300 font-bold">{user.streak_days} дн.</span>
               </div>
             )}
             {myRank?.rank && (
-              <button onClick={onOpenLeaderboard} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 border border-accent/40 active:scale-95 transition">
+              <button onClick={onOpenLeaderboard} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 border border-accent/40 active:scale-95 transition font-btn">
                 <span className="text-[10px]">👑</span>
                 <span className="text-[10px] text-accent font-bold">#{myRank.rank} из {myRank.total}</span>
               </button>
@@ -1379,17 +1366,17 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
       <div className="grid grid-cols-2 gap-3 mb-4">
         <button onClick={onOpenBuyTries} className="bg-card border border-border1 rounded-2xl p-4 text-left active:scale-[0.98] transition">
           <div className="text-2xl mb-1">👗</div>
-          <div className="text-3xl font-sans font-bold">{user?.balance ?? 0}</div>
-          <div className="text-[10px] uppercase text-muted mt-2">Из каталога</div>
+          <div className="text-2xl font-btn font-bold">{user?.balance ?? 0}</div>
+          <div className="text-[10px] uppercase text-muted mt-2 font-btn">Из каталога</div>
         </button>
         <button onClick={onOpenOwn} className="bg-card border border-border1 rounded-2xl p-4 text-left active:scale-[0.98] transition">
           <div className="text-2xl mb-1">📦</div>
-          <div className="text-3xl font-sans font-bold">{user?.own_tries ?? 0}</div>
-          <div className="text-[10px] uppercase text-muted mt-2">Своих</div>
+          <div className="text-2xl font-btn font-bold">{user?.own_tries ?? 0}</div>
+          <div className="text-[10px] uppercase text-muted mt-2 font-btn">Своих</div>
         </button>
       </div>
 
-            <div className="space-y-2 mb-4">
+      <div className="space-y-2 mb-4">
         <button onClick={onOpenHistory} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🕓 Мои примерки</span><span className="text-muted">→</span></button>
         <button onClick={onOpenFavorites} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">❤️ Избранное</span><span className="text-muted">→</span></button>
         <button onClick={onOpenAchievements} className="w-full bg-card border border-border1 rounded-2xl px-4 py-4 flex items-center justify-between active:scale-[0.99] font-btn"><span className="text-xs">🏆 Достижения</span><span className="text-muted">→</span></button>
@@ -1409,23 +1396,24 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
 
       {!promoOpen ? (
         <button onClick={() => setPromoOpen(true)} className="w-full bg-bgSoft border border-accentSoft text-accent rounded-2xl px-4 py-4 font-btn text-xs">🎁 Ввести промокод</button>
+      ) : (
         <div className="bg-card border border-accentSoft rounded-2xl p-4 animate-scale-in">
           <div className="flex gap-2">
-            <input value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())} placeholder="ВВЕДИ КОД" disabled={promoLoading} className="flex-1 bg-bg border border-border1 rounded-xl px-3 py-3 text-sm uppercase outline-none" />
-            <button onClick={redeemPromo} disabled={promoLoading || !promoCode.trim()} className="px-4 py-3 rounded-xl bg-accent text-bg text-xs font-bold disabled:opacity-40">{promoLoading ? '…' : 'OK'}</button>
+            <input value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())} placeholder="ВВЕДИ КОД" disabled={promoLoading} className="flex-1 bg-bg border border-border1 rounded-xl px-3 py-3 text-sm uppercase outline-none font-btn" />
+            <button onClick={redeemPromo} disabled={promoLoading || !promoCode.trim()} className="px-4 py-3 rounded-xl bg-accent text-bg text-xs font-bold disabled:opacity-40 font-btn">{promoLoading ? '…' : 'OK'}</button>
           </div>
-          <button onClick={() => { setPromoOpen(false); setPromoCode(''); }} className="text-[10px] text-muted mt-3">Отмена</button>
+          <button onClick={() => { setPromoOpen(false); setPromoCode(''); }} className="text-[10px] text-muted mt-3 font-btn">Отмена</button>
         </div>
       )}
 
       {ideaOpen && (
         <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-5 animate-fade-in" onClick={() => setIdeaOpen(false)}>
           <div className="bg-card border border-border2 rounded-3xl p-6 max-w-sm w-full animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <div className="text-[10px] uppercase text-accent mb-2">💡 Идея</div>
-            <h3 className="font-serif text-xl mb-3">Что хочешь предложить?</h3>
+            <div className="text-[10px] uppercase text-accent mb-2 font-btn">💡 Идея</div>
+            <h3 className="text-lg font-btn font-bold mb-3">Что хочешь предложить?</h3>
             <textarea value={ideaText} onChange={(e) => setIdeaText(e.target.value)} placeholder="Опиши идею…" rows={5} maxLength={2000} className="w-full bg-bg border border-border1 rounded-2xl px-4 py-3 text-sm outline-none resize-none mb-3" />
-            <button onClick={sendIdea} disabled={ideaLoading || !ideaText.trim()} className="w-full bg-accent text-bg py-3.5 rounded-2xl text-xs font-bold uppercase disabled:opacity-40 mb-2">{ideaLoading ? '…' : 'Отправить'}</button>
-            <button onClick={() => setIdeaOpen(false)} className="w-full text-xs text-muted py-2">Отмена</button>
+            <button onClick={sendIdea} disabled={ideaLoading || !ideaText.trim()} className="w-full bg-accent text-bg py-3.5 rounded-2xl text-xs font-bold uppercase disabled:opacity-40 mb-2 font-btn">{ideaLoading ? '…' : 'Отправить'}</button>
+            <button onClick={() => setIdeaOpen(false)} className="w-full text-xs text-muted py-2 font-btn">Отмена</button>
           </div>
         </div>
       )}
@@ -1470,14 +1458,14 @@ function SearchScreen({ onPick, likedIds, onLike }) {
 
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
-      <h1 className="font-serif text-3xl mb-5">Поиск</h1>
+      <h1 className="text-2xl font-btn font-bold mb-5">Поиск</h1>
 
       <div className="relative mb-5">
         <input ref={inputRef} type="text" value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); hideKeyboard(); } }}
           placeholder="Пальто, костюм, платье…"
-          className="w-full bg-card border border-border1 rounded-2xl pl-11 pr-12 py-3.5 text-sm outline-none focus:border-accentSoft" />
+          className="w-full bg-card border border-border1 rounded-2xl pl-11 pr-12 py-3.5 text-sm outline-none focus:border-accentSoft font-btn" />
         <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" />
         </svg>
@@ -1490,7 +1478,7 @@ function SearchScreen({ onPick, likedIds, onLike }) {
       {!q.trim() && <EmptyState emoji="🔍" title="Что ищем?" text="Введи название: пальто, костюм, джинсы…" />}
 
       {loading && (
-        <div className="flex items-center justify-center gap-3 py-16 text-muted text-sm">
+        <div className="flex items-center justify-center gap-3 py-16 text-muted text-sm font-btn">
           <span className="inline-block w-4 h-4 border-2 border-muted/30 border-t-accent rounded-full animate-spin" />
           Ищу…
         </div>
@@ -1504,7 +1492,7 @@ function SearchScreen({ onPick, likedIds, onLike }) {
 
       {!loading && results.length > 0 && (
         <>
-          <div className="text-[10px] uppercase text-muted mb-3">Найдено: <b className="text-title">{results.length}</b></div>
+          <div className="text-[10px] uppercase text-muted mb-3 font-btn">Найдено: <b className="text-title">{results.length}</b></div>
           <div className="grid grid-cols-2 gap-3">
             {results.map(item => <ProductCard key={item.id} item={item} onPick={onPick} liked={likedIds.has(item.id)} onLike={onLike} />)}
           </div>
@@ -1546,8 +1534,8 @@ function StyleTestScreen({ onBack, onPick }) {
         <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
         <div className="text-center mb-6 animate-bounce-in">
           <div className="text-5xl mb-3">🎉</div>
-          <h1 className="font-serif text-2xl mb-2">Твой стиль найден!</h1>
-          <p className="text-xs text-muted">Мы подобрали вещи специально для тебя</p>
+          <h1 className="text-2xl font-btn font-bold mb-2">Твой стиль найден!</h1>
+          <p className="text-xs text-muted font-btn">Мы подобрали вещи для тебя</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {products.slice(0, 12).map(item => <ProductCard key={item.id} item={item} onPick={onPick} />)}
@@ -1563,15 +1551,15 @@ function StyleTestScreen({ onBack, onPick }) {
       <div className="flex gap-1.5 mb-6">
         {STYLE_QUESTIONS.map((_, i) => <div key={i} className={`h-1 flex-1 rounded-full ${i <= step ? 'bg-accent' : 'bg-border2'} transition-all`} />)}
       </div>
-      <div className="text-[10px] uppercase tracking-wider2 text-accent mb-2">Тест на стиль · {step + 1} из {STYLE_QUESTIONS.length}</div>
-      <h1 className="font-serif text-3xl mb-8">{q.q}</h1>
+      <div className="text-[10px] uppercase tracking-wider2 text-accent mb-2 font-btn">Тест · {step + 1} из {STYLE_QUESTIONS.length}</div>
+      <h1 className="text-2xl font-btn font-bold mb-8">{q.q}</h1>
       <div className="space-y-3 flex-1">
         {q.options.map((opt, i) => (
           <button key={i} onClick={() => answer(opt)}
             className="w-full bg-card border border-border1 rounded-2xl p-4 flex items-center gap-4 active:scale-[0.98] transition hover:border-accent animate-slide-up"
             style={{ animationDelay: `${i * 0.1}s` }}>
             <div className="text-4xl">{opt.emoji}</div>
-            <div className="text-left flex-1 font-medium">{opt.text}</div>
+            <div className="text-left flex-1 font-medium font-btn text-sm">{opt.text}</div>
             <div className="text-accent text-xl">→</div>
           </button>
         ))}
@@ -1586,8 +1574,8 @@ function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedI
     <main className="px-5 pt-6 animate-fade-in">
       <div className="flex items-end justify-between mb-4">
         <div>
-          <div className="text-[10px] uppercase text-muted mb-1">Коллекция</div>
-          <h1 className="font-serif text-3xl">Гардероб</h1>
+          <div className="text-[10px] uppercase text-muted mb-1 font-btn">Коллекция</div>
+          <h1 className="text-2xl font-btn font-bold">Гардероб</h1>
         </div>
         <button onClick={onOpenMulti} className="px-3 py-2 rounded-full bg-card border border-border2 text-xs active:scale-95 font-btn">🎨 2–3</button>
       </div>
@@ -1606,7 +1594,7 @@ function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedI
           const active = category === c.key;
           return (
             <button key={c.key} onClick={() => { haptic('light'); setCategory(c.key); }}
-              className={`whitespace-nowrap text-xs px-3.5 py-2 rounded-full border flex items-center gap-1.5 transition-all ${active ? 'bg-accent text-bg border-accent font-bold shadow-soft' : 'border-border2 text-muted2'}`}>
+              className={`whitespace-nowrap text-xs px-3.5 py-2 rounded-full border flex items-center gap-1.5 transition-all font-btn ${active ? 'bg-accent text-bg border-accent font-bold shadow-soft' : 'border-border2 text-muted2'}`}>
               <span>{c.emoji}</span>{c.label}
             </button>
           );
@@ -1816,7 +1804,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-bg text-title pb-24">
       {maintenance.on && user.is_admin && (
-        <div className="sticky top-0 z-50 bg-yellow-500/90 text-black text-[10px] font-bold uppercase tracking-wider2 text-center py-1.5">
+        <div className="sticky top-0 z-50 bg-yellow-500/90 text-black text-[10px] font-bold uppercase tracking-wider2 text-center py-1.5 font-btn">
           🚧 ТЕХ РЕЖИМ · юзеры не видят приложение
         </div>
       )}
@@ -1825,28 +1813,28 @@ export default function App() {
           <button onClick={() => setTab('profile')} className="flex items-center gap-3 active:scale-95 transition">
             <img src={user.photo_url || 'https://placehold.co/80x80/1A1412/D4B595?text=U'} alt="" className="w-9 h-9 rounded-full object-cover border border-border2" />
             <div className="text-left">
-              <div className="text-sm font-medium">{user.first_name || 'Гость'}</div>
-              <div className="text-[11px] text-muted">@{user.username || 'user'}</div>
+              <div className="text-xs font-medium font-btn">{user.first_name || 'Гость'}</div>
+              <div className="text-[10px] text-muted font-btn">@{user.username || 'user'}</div>
             </div>
           </button>
           <div className="flex items-center gap-2">
             {user.streak_days > 0 && (
-              <button onClick={() => setShowStreak(true)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-orange-500/15 border border-orange-400/40 active:scale-95 transition">
+              <button onClick={() => setShowStreak(true)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-orange-500/15 border border-orange-400/40 active:scale-95 transition font-btn">
                 <span className="text-[11px]">🔥</span>
                 <span className="text-xs font-bold text-orange-300">{user.streak_days}</span>
               </button>
             )}
-            <button onClick={() => setScreen('buyTries')} className="px-3 py-1.5 rounded-full border border-border2 text-xs">✨ {user.balance ?? 0} <span className="text-accent font-bold">+</span></button>
+            <button onClick={() => setScreen('buyTries')} className="px-3 py-1.5 rounded-full border border-border2 text-xs font-btn">✨ {user.balance ?? 0} <span className="text-accent font-bold">+</span></button>
             <button onClick={() => setScreen('subs')}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold active:scale-95 transition ${user.sub_active ? 'bg-accent text-bg shadow-soft animate-pulse-glow' : 'bg-accent text-bg'}`}>
+              className={`px-3 py-1.5 rounded-full text-xs font-bold active:scale-95 transition font-btn ${user.sub_active ? 'bg-accent text-bg shadow-soft animate-pulse-glow' : 'bg-accent text-bg'}`}>
               💎
             </button>
           </div>
         </header>
       )}
 
-      {toast && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-card border border-border2 text-xs px-4 py-2.5 rounded-full shadow-soft animate-slide-up">{toast}</div>}
-      {welcomeBonus && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-accent text-bg text-xs px-4 py-2.5 rounded-full font-bold shadow-soft animate-slide-up">{welcomeBonus}</div>}
+      {toast && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-card border border-border2 text-xs px-4 py-2.5 rounded-full shadow-soft animate-slide-up font-btn">{toast}</div>}
+      {welcomeBonus && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-accent text-bg text-xs px-4 py-2.5 rounded-full font-bold shadow-soft animate-slide-up font-btn">{welcomeBonus}</div>}
 
       {showStreak && <StreakSheet streak={user.streak_days} onClose={() => setShowStreak(false)} />}
 
@@ -1854,8 +1842,8 @@ export default function App() {
         <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-5 animate-fade-in" onClick={() => setOneTimeMsg(null)}>
           <div className="bg-card border border-accent rounded-3xl p-7 max-w-sm w-full text-center animate-bounce-in" onClick={(e) => e.stopPropagation()}>
             <div className="text-4xl mb-4">📣</div>
-            <div className="text-sm text-title leading-relaxed mb-6">{oneTimeMsg}</div>
-            <button onClick={() => setOneTimeMsg(null)} className="w-full bg-accent text-bg py-3.5 rounded-2xl text-xs font-bold uppercase">Понятно</button>
+            <div className="text-sm text-title leading-relaxed mb-6 font-btn">{oneTimeMsg}</div>
+            <button onClick={() => setOneTimeMsg(null)} className="w-full bg-accent text-bg py-3.5 rounded-2xl text-xs font-bold uppercase font-btn">Понятно</button>
           </div>
         </div>
       )}
@@ -1879,24 +1867,24 @@ export default function App() {
 
       {tab === 'upload' && selected && (
         <main className="px-5 pt-5 animate-fade-in">
-          <button onClick={() => setTab('catalog')} className="text-xs text-muted mb-5">← Назад</button>
+          <button onClick={() => setTab('catalog')} className="text-xs text-muted mb-5 font-btn">← Назад</button>
           <div className="bg-card border border-border1 rounded-2xl overflow-hidden mb-6">
             <div className="aspect-[4/3]"><ProductImage src={selected.image_url} fallback={selected.fallback_url} alt={selected.name} className="w-full h-full" /></div>
             <div className="p-4">
-              <div className="text-[10px] uppercase text-accentSoft mb-1">{CATEGORIES.find(x => x.key === selected.category)?.label}</div>
-              <div className="font-sans font-medium text-base leading-snug">{selected.description || selected.name}</div>
-              {selected.price && <div className="text-xs text-muted mt-1.5">≈ {selected.price.replace(/^≈\s*/, '')}</div>}
-              <a href={wbUrl(selected.wb_id)} target="_blank" rel="noreferrer" className="block text-xs text-accent mt-3">🛍 Открыть на Wildberries →</a>
+              <div className="text-[10px] uppercase text-accentSoft mb-1 font-btn">{CATEGORIES.find(x => x.key === selected.category)?.label}</div>
+              <div className="font-sans font-medium text-sm leading-snug">{selected.description || selected.name}</div>
+              {selected.price && <div className="text-xs text-muted mt-1.5 font-btn">≈ {selected.price.replace(/^≈\s*/, '')}</div>}
+              <a href={wbUrl(selected.wb_id)} target="_blank" rel="noreferrer" className="block text-xs text-accent mt-3 font-btn">🛍 Открыть на WB →</a>
             </div>
           </div>
-          <button onClick={() => fileRef.current?.click()} className="w-full bg-card border border-dashed border-border2 rounded-2xl py-8 text-sm text-muted2 mb-3 flex flex-col items-center gap-2 active:scale-[0.99] transition">
+          <button onClick={() => fileRef.current?.click()} className="w-full bg-card border border-dashed border-border2 rounded-2xl py-8 text-sm text-muted2 mb-3 flex flex-col items-center gap-2 active:scale-[0.99] transition font-btn">
             <span className="text-2xl">{humanImg ? '✓' : '📷'}</span>
             <span>{humanImg ? 'Фото загружено' : 'Загрузить фото'}</span>
             <span className="text-[10px] text-muted/70 mt-1 px-4 text-center">Хорошее освещение · полный рост · без фильтров</span>
           </button>
           <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
           {humanImg && <img src={humanImg} alt="" className="w-full max-h-72 object-contain rounded-2xl mb-4 animate-scale-in" />}
-          <button onClick={runTryOn} disabled={!humanImg} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-sm font-bold uppercase mt-4 font-btn">
+          <button onClick={runTryOn} disabled={!humanImg} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-xs font-bold uppercase mt-4 font-btn">
             Запустить примерку
           </button>
         </main>
@@ -1906,7 +1894,7 @@ export default function App() {
 
       {tab === 'result' && (
         <main className="px-5 pt-5 animate-fade-in">
-          <div className="text-[10px] uppercase text-muted mb-3">Результат</div>
+          <div className="text-[10px] uppercase text-muted mb-3 font-btn">Результат</div>
           {resultImage && humanImg && <div className="mb-5 animate-scale-in"><BeforeAfter before={humanImg} after={resultImage} /></div>}
           {resultImage ? (
             <>
@@ -1914,10 +1902,10 @@ export default function App() {
                 <button onClick={() => downloadImage(resultImage, `style-room-${selected?.wb_id || 'result'}.jpg`)} className="w-full bg-accent text-bg py-4 rounded-2xl text-xs font-bold uppercase font-btn">📥 Скачать</button>
                 <button onClick={() => tgShare(resultImage)} className="w-full border border-accentSoft text-accent py-4 rounded-2xl text-xs font-bold uppercase font-btn">📤 Поделиться</button>
               </div>
-              <a href={wbUrl(selected?.wb_id)} target="_blank" rel="noreferrer" className="block w-full border border-border2 text-muted2 text-center py-3 rounded-2xl text-xs uppercase mb-3">🛍 Открыть на WB</a>
+              <a href={wbUrl(selected?.wb_id)} target="_blank" rel="noreferrer" className="block w-full border border-border2 text-muted2 text-center py-3 rounded-2xl text-xs uppercase mb-3 font-btn">🛍 Открыть на WB</a>
             </>
           ) : <EmptyState emoji="😕" title="Не получилось" text="Попробуй другое фото или товар" />}
-          <button onClick={resetTryOn} className="w-full border border-border2 text-muted2 py-4 rounded-2xl text-sm">Вернуться</button>
+          <button onClick={resetTryOn} className="w-full border border-border2 text-muted2 py-4 rounded-2xl text-sm font-btn">Вернуться</button>
         </main>
       )}
 
