@@ -1484,7 +1484,7 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
       )}
     </main>
   );
-
+}
 // ============ SEARCH ============
 function SearchScreen({ onPick, likedIds, onLike }) {
   const [q, setQ] = useState('');
