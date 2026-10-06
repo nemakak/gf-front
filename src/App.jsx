@@ -262,8 +262,10 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon 
           )}
           {item.price && (
             <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1">
-              <span className="text-xs font-bold text-white">≈ {item.price.replace(/^≈\s*/, '')}</span>
-            </div>
+  <span className="text-xs font-bold text-white">
+    {item.price ? `≈ ${item.price.replace(/^≈\s*/, '')}` : '— ₽'}
+  </span>
+</div>
           )}
         </div>
         <div className="p-3 pb-2">
