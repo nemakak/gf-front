@@ -1404,8 +1404,7 @@ function ProfileScreen({ user, myRank, onOpenSubs, onOpenBuyTries, onOpenHistory
       </div>
 
       {!promoOpen ? (
-        <button onClick={() => setPromoOpen(true)} className="w-full bg-bgSoft border border-accentSoft text-accent rounded-2xl px-4 py-4">🎁 Ввести промокод</button>
-      ) : (
+        <button onClick={() => setPromoOpen(true)} className="w-full bg-bgSoft border border-accentSoft text-accent rounded-2xl px-4 py-4 font-btn text-xs">🎁 Ввести промокод</button>
         <div className="bg-card border border-accentSoft rounded-2xl p-4 animate-scale-in">
           <div className="flex gap-2">
             <input value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())} placeholder="ВВЕДИ КОД" disabled={promoLoading} className="flex-1 bg-bg border border-border1 rounded-xl px-3 py-3 text-sm uppercase outline-none" />
