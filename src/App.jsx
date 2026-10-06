@@ -16,6 +16,8 @@ const CATEGORIES = [
 ];
 
 const SUBS = [
+  { id: 'secret', emoji: '🎁', name: 'СЕКРЕТНАЯ', subtitle: 'Ограниченное предложение', priceOld: 0, priceNew: 10, accent: '#E91E63',
+    features: [] },
   { id: 'pro',    emoji: '💎', name: 'PRО',    subtitle: 'Максимум',        priceOld: 999, priceNew: 599, accent: '#D4B595',
     features: [
       { icon: '👗', text: '50 обычных примерок' },
@@ -34,10 +36,7 @@ const SUBS = [
       { icon: '👗', text: '10 обычных примерок' },
       { icon: '💬', text: '1 консультация стилиста' },
     ]},
-  { id: 'secret', emoji: '🎁', name: 'СЕКРЕТНАЯ', subtitle: 'Спецпредложение', priceOld: 0, priceNew: 10, accent: '#E91E63',
-    features: [] },
 ];
-
 const HINTS = ['Подбираем образ…', 'Почти готово ✨', 'Примеряем на тебя…', 'Ещё чуть-чуть', 'Смотрим, как сидит'];
 
 // ============ ОНБОРДИНГ-ТЕСТ ============
@@ -1871,7 +1870,11 @@ export default function App() {
 
   const isTryOn = tab === 'upload' || tab === 'loading' || tab === 'result';
 
-  const nav = <BottomNav active={tab} onChange={(k) => { setScreen(null); setTab(k); if (k === 'subs') setScreen('subs'); }} />;
+  const nav = <BottomNav active={tab} onChange={(k) => {
+  setScreen(null);
+  setTab(k);
+  if (k === 'subs') setScreen('subs');
+}} />;
 
   if (screen === 'subs') return <><SubscriptionsScreen onBack={() => setScreen(null)} onBuy={buySubscription} />{nav}</>;
   if (screen === 'buyTries') return <><BuyTriesScreen onBack={() => setScreen(null)} onBuy={buyTries} onBuyOwn={buyOwnTries} user={user} />{nav}</>;
@@ -1913,7 +1916,7 @@ export default function App() {
               <span>{user.balance ?? 0}</span>
               <span className="text-accent font-bold">+</span>
             </button>
-            <button onClick={() => setScreen('subs')}
+            <button onClick={() => { setScreen('subs'); setTab('subs'); }} ...>💎</button>
               className={`px-2 py-1.5 rounded-full text-[11px] font-bold active:scale-95 transition font-btn shrink-0 ${user.sub_active ? 'text-bg shadow-soft animate-pulse-glow' : 'text-bg'}`}
               style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}>
               💎
@@ -1942,7 +1945,7 @@ export default function App() {
   onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike}
   onOpenMulti={() => setScreen('multi')}
   onOpenSearch={() => setTab('search')}
-  onOpenSubs={() => setScreen('subs')}
+  onOpenSubs={() => { setScreen('subs'); setTab('subs'); }}
   shareRef={shareRef} />
       )}
 
