@@ -1812,10 +1812,10 @@ export default function App() {
         <header className={`sticky ${maintenance.on ? 'top-6' : 'top-0'} z-40 bg-bg/85 backdrop-blur-md border-b border-border1 px-5 py-3.5 flex items-center justify-between`}>
           <button onClick={() => setTab('profile')} className="flex items-center gap-3 active:scale-95 transition">
             <img src={user.photo_url || 'https://placehold.co/80x80/1A1412/D4B595?text=U'} alt="" className="w-9 h-9 rounded-full object-cover border border-border2" />
-            <div className="text-left">
-              <div className="text-xs font-medium font-btn">{user.first_name || 'Гость'}</div>
-              <div className="text-[10px] text-muted font-btn">@{user.username || 'user'}</div>
-            </div>
+            <div className="text-left min-w-0 max-w-[140px]">
+  <div className="text-xs font-medium font-btn truncate">{user.first_name || 'Гость'}</div>
+  <div className="text-[10px] text-muted font-btn truncate">@{user.username || 'user'}</div>
+</div>
           </button>
           <div className="flex items-center gap-2">
             {user.streak_days > 0 && (
