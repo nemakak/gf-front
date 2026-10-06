@@ -446,7 +446,7 @@ function Onboarding({ onDone }) {
 // ============ BOTTOM NAV ============
 function BottomNav({ active, onChange }) {
   const items = [
-    { key: 'catalog', label: 'Разделы',  emoji: '🗂' },
+    { key: 'catalog', label: 'Каталог',  emoji: '👗' },
     { key: 'search',  label: 'Поиск',    emoji: '🔍' },
     { key: 'subs',    label: 'Подписка', emoji: '💎' },
     { key: 'profile', label: 'Профиль',  emoji: '👤' },
@@ -460,7 +460,7 @@ function BottomNav({ active, onChange }) {
           return (
             <button key={it.key} onClick={() => { haptic('light'); onChange(it.key); }} className="flex flex-col items-center gap-1 py-2 px-3">
               <span className={`text-lg ${isActive ? 'opacity-100 scale-110' : 'opacity-50'} transition-transform`}>{it.emoji}</span>
-              <span className={`text-[9px] uppercase ${isActive ? 'text-accent font-bold' : 'text-muted'}`}>{it.label}</span>
+              <span className={`text-[9px] uppercase font-btn ${isActive ? 'text-accent font-bold' : 'text-muted'}`}>{it.label}</span>
             </button>
           );
         })}
