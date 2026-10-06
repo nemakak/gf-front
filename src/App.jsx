@@ -1546,16 +1546,16 @@ function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedI
   return (
     <main className="px-5 pt-6 animate-fade-in">
       <div className="flex items-end justify-between mb-6">
-        <div>
-          <div className="text-[10px] uppercase text-muted mb-1">Коллекция</div>
-          <h1 className="font-serif text-3xl">Гардероб</h1>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={onOpenTest} className="px-3 py-2 rounded-full bg-accent/20 border border-accent/40 text-accent text-xs font-bold active:scale-95">🎨 Тест</button>
-          <button onClick={onOpenOwn} className="px-3 py-2 rounded-full bg-card border border-border2 text-xs active:scale-95">📦</button>
-          <button onClick={onOpenMulti} className="px-3 py-2 rounded-full bg-card border border-border2 text-xs active:scale-95">🎨 2–3</button>
-        </div>
-      </div>
+  <div>
+    <div className="text-[10px] uppercase text-muted mb-1">Коллекция</div>
+    <h1 className="font-serif text-3xl">Гардероб</h1>
+  </div>
+  <div className="flex gap-2">
+    <button onClick={onOpenTest} className="px-3 py-2 rounded-full bg-accent/20 border border-accent/40 text-accent text-xs font-bold active:scale-95">🎨 Тест</button>
+    <button onClick={onOpenOwn} className="px-3 py-2 rounded-full bg-card border border-border2 text-xs active:scale-95">📦</button>
+    <button onClick={onOpenMulti} className="px-3 py-2 rounded-full bg-card border border-border2 text-xs active:scale-95">🎨 2–3</button>
+  </div>
+</div>
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 -mx-5 px-5">
         {CATEGORIES.map(c => {
           const active = category === c.key;
