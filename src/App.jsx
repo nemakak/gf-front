@@ -1596,7 +1596,7 @@ function StyleTestScreen({ onBack, onPick }) {
 }
 
 // ============ КАТАЛОГ ============
-function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenMulti, onOpenSearch, shareRef }) {
+function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenMulti, onOpenSearch, shareRef, onOpenSubs }) {
   return (
         <main className="px-5 pt-6 animate-fade-in">
       {/* БАННЕР ПОДПИСКИ */}
@@ -1899,10 +1899,11 @@ export default function App() {
 
       {tab === 'catalog' && (
         <CatalogScreen catalog={catalog} loading={loading} category={category} setCategory={setCategory}
-          onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike}
-          onOpenMulti={() => setScreen('multi')}
-          onOpenSearch={() => setTab('search')}
-          shareRef={shareRef} />
+  onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike}
+  onOpenMulti={() => setScreen('multi')}
+  onOpenSearch={() => setTab('search')}
+  onOpenSubs={() => setScreen('subs')}
+  shareRef={shareRef} />
       )}
 
       {tab === 'search' && <SearchScreen onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike} />}
