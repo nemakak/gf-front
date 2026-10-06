@@ -629,15 +629,37 @@ function MultiTryonScreen({ catalog, user, onBack, onToast }) {
   const fileRef = useRef(null);
 
   const toggle = (item) => {
-    const found = picked.find(x => x.id === item.id);
-    if (found) { setPicked(picked.filter(x => x.id !== item.id)); return; }
-    if (picked.length >= 3) return onToast('Максимум 3 вещи');
-    const sameCat = picked.find(x => x.category === item.category);
-    if (sameCat) return onToast('Можно только из разных категорий');
-    if (item.category === 'suit' && picked.find(x => x.category === 'top' || x.category === 'bottom')) return onToast('Костюм не сочетается с верхом или низом');
-    if ((item.category === 'top' || item.category === 'bottom') && picked.find(x => x.category === 'suit')) return onToast('Костюм не сочетается с верхом или низом');
-    setPicked([...picked, item]);
-  };
+  // уже выбрано — убираем
+  const isSelected = picked.some(x => x.id === item.id);
+  if (isSelected) {
+    setPicked(prev => prev.filter(x => x.id !== item.id));
+    haptic('light');
+    return;
+  }
+  // лимит
+  if (picked.length >= 3) {
+    onToast('Максимум 3 вещи');
+    return;
+  }
+  // одна и та же категория
+  if (picked.some(x => x.category === item.category)) {
+    onToast('Можно только из разных категорий');
+    return;
+  }
+  // костюм + верх/низ
+  const hasSuit = picked.some(x => x.category === 'suit');
+  const hasTopBottom = picked.some(x => x.category === 'top' || x.category === 'bottom');
+  if (item.category === 'suit' && hasTopBottom) {
+    onToast('Костюм не сочетается с верхом или низом');
+    return;
+  }
+  if ((item.category === 'top' || item.category === 'bottom') && hasSuit) {
+    onToast('Костюм не сочетается с верхом или низом');
+    return;
+  }
+  haptic('light');
+  setPicked(prev => [...prev, item]);
+};
   const onPickFile = async (e) => { const f = e.target.files?.[0]; if (!f) return; try { setHumanImg(await compressImage(f, 720, 0.7)); } catch { onToast('Ошибка'); } };
   const run = async () => {
     if (picked.length < 2) return onToast('Выберите 2–3 вещи');
@@ -692,9 +714,16 @@ function MultiTryonScreen({ catalog, user, onBack, onToast }) {
         </div>
       )}
       <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        {catalog.slice(0, 30).map(item => <ProductCard key={item.id} item={item} selected={!!picked.find(x => x.id === item.id)} onToggle={toggle} />)}
-      </div>
+     <div className="grid grid-cols-2 gap-3 mb-5">
+  {catalog.slice(0, 30).map(item => (
+    <ProductCard
+      key={item.id}
+      item={item}
+      selected={picked.some(x => x.id === item.id)}
+      onToggle={toggle}
+    />
+  ))}
+</div>
       <button onClick={run} disabled={picked.length < 2 || !humanImg || (user?.balance || 0) < picked.length} className="btn-shine w-full disabled:opacity-30 text-bg py-4 rounded-2xl text-sm font-bold uppercase">
         {picked.length < 2 ? 'Выберите минимум 2' : `Пример ${picked.length} вещи`}
       </button>
