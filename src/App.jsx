@@ -795,7 +795,7 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, 
                           Поштучно: <span className="text-muted line-through">{saving.byPiece}⭐️</span>
                         </div>
                         <div className="text-[11px] text-title font-btn">
-                          Экономия: <span className="text-green-400 font-bold">{saving.saving}⭐️ (−{saving.percent}%)</span>
+                          Экономия: <span className="text-green-400 font-bold">{saving.saving}⭐️</span>
                         </div>
                       </div>
                     )}
