@@ -1901,17 +1901,31 @@ function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedI
         </button>
       )}
 
-      <div className="flex items-end justify-between mb-4">
-        {/* ... остальной код CatalogScreen без изменений ... */}
-        {CATEGORIES.map(c => {
-          const active = category === c.key;
-          return (
-            <button key={c.key} onClick={() => { haptic('light'); setCategory(c.key); }}
-              className={`whitespace-nowrap text-xs px-3.5 py-2 rounded-full border flex items-center gap-1.5 transition-all font-btn ${active ? 'bg-accent text-bg border-accent font-bold shadow-soft' : 'border-border2 text-muted2'}`}>
-              <span>{c.emoji}</span>{c.label}
-            </button>
-          );
-        })}
+            <div className="flex items-end justify-between mb-4">
+        <div>
+          <div className="text-[10px] uppercase text-muted mb-1 font-btn">Коллекция</div>
+          <h1 className="text-2xl font-btn font-bold">Гардероб</h1>
+        </div>
+      </div>
+
+      <div className="relative -mx-5 mb-6">
+        <div
+          className="flex gap-2 overflow-x-auto no-scrollbar px-5 pb-1"
+          style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {CATEGORIES.map(c => {
+            const active = category === c.key;
+            return (
+              <button
+                key={c.key}
+                onClick={() => { haptic('light'); setCategory(c.key); }}
+                className={`shrink-0 whitespace-nowrap text-xs px-3.5 py-2 rounded-full border flex items-center gap-1.5 transition-all font-btn ${active ? 'bg-accent text-bg border-accent font-bold shadow-soft' : 'border-border2 text-muted2'}`}
+              >
+                <span>{c.emoji}</span>{c.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
       {loading ? (
         <div className="grid grid-cols-2 gap-3">{Array.from({length: 6}).map((_,i)=><div key={i} className="aspect-[3/4] shimmer rounded-2xl" />)}</div>
