@@ -2425,7 +2425,9 @@ const [previousTab, setPreviousTab] = useState('catalog');
   const [toast, setToast] = useState('');
   const [welcomeBonus, setWelcomeBonus] = useState(null);
   const [showStreak, setShowStreak] = useState(false);
-  const [myRank, setMyRank] = useState(null); 
+  const [myRank, setMyRank] = useState(null);
+    const [streakSeconds, setStreakSeconds] = useState(0);
+  const [streakJustCompleted, setStreakJustCompleted] = useState(false);
   const [banner, setBanner] = useState(null);
 const [subs, setSubs] = useState([]);
 const [triesPrice, setTriesPrice] = useState(10);
@@ -2480,6 +2482,56 @@ const closeScreen = () => {
     if (!user?.tg_id) return;
     fetch(`${BACKEND}/api/my-rank`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }) })
       .then(r => r.json()).then(d => { if (d.success) setMyRank(d); }).catch(() => {});
+  }, [user?.tg_id]);
+    // Тик таймера серии — каждые 30 сек, пока приложение открыто
+  useEffect(() => {
+    if (!user?.tg_id) return;
+    if (user.streak_days >= 0 && streakSeconds >= 600) return; // уже прошёл сегодня
+
+    let isActive = true;
+    let interval = null;
+
+    const tick = async () => {
+      if (!isActive) return;
+      if (document.hidden) return; // вкладка/приложение свёрнуто
+      try {
+        const r = await fetch(`${BACKEND}/api/streak/tick`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            initData: window.Telegram?.WebApp?.initData || '',
+            seconds: 30,
+          }),
+        });
+        const d = await r.json();
+        if (d.success && isActive) {
+          setStreakSeconds(d.seconds_today || 0);
+          if (d.just_completed) {
+            setStreakJustCompleted(true);
+            // Обновляем юзера — там изменился streak_days
+            setUser(u => u ? { ...u, streak_days: d.streak_days } : u);
+          }
+        }
+      } catch {}
+    };
+
+    // Первый тик сразу
+    tick();
+
+    // Дальше каждые 30 сек
+    interval = setInterval(tick, 30000);
+
+    // Возобновляем при возврате в приложение
+    const onVisible = () => {
+      if (!document.hidden) tick();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      isActive = false;
+      if (interval) clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [user?.tg_id]);
 
   const toggleLike = async (productId) => {
@@ -2672,13 +2724,35 @@ const closeScreen = () => {
             </div>
           </button>
           <div className="flex items-center gap-1.5 shrink-0">
-  {user.streak_days > 0 && (
+    {/* Кнопка серии: показывает ТАЙМЕР пока идёт, СЕРИЮ после */}
+  {user.streak_days >= 0 && (
     <button
       onClick={() => setShowStreak(true)}
-      className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-orange-500/15 border border-orange-400/40 active:scale-95 transition font-btn shrink-0"
+      className={`relative flex items-center gap-1 px-2 py-1.5 rounded-full border active:scale-95 transition font-btn shrink-0 ${
+        streakSeconds >= 600
+          ? 'bg-orange-500/15 border-orange-400/40'
+          : 'bg-card border-border2 opacity-70'
+      }`}
     >
-      <span className="text-[11px]">🔥</span>
-      <span className="text-[11px] font-bold text-orange-300">{user.streak_days}</span>
+      {streakSeconds >= 600 ? (
+        <>
+          <span className="text-[11px]">🔥</span>
+          <span className="text-[11px] font-bold text-orange-300">{user.streak_days}</span>
+        </>
+      ) : (
+        <>
+          <span className="text-[11px] opacity-60">⏱</span>
+          <span className="text-[11px] font-bold text-muted">
+            {String(Math.floor((600 - streakSeconds) / 60)).padStart(2, '0')}:
+            {String((600 - streakSeconds) % 60).padStart(2, '0')}
+          </span>
+          {/* Прогресс-бар внизу кнопки */}
+          <span
+            className="absolute bottom-0 left-0 h-[2px] bg-accent rounded-full transition-all duration-500"
+            style={{ width: `${(streakSeconds / 600) * 100}%` }}
+          />
+        </>
+      )}
     </button>
   )}
   <button
