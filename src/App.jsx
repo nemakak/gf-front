@@ -1571,7 +1571,6 @@ function AdminSubscriptions({ onToast }) {
 // ============ ADMIN BANNER ============
 function AdminBanner({ onToast }) {
   const [banner, setBanner] = useState(null);
-  const [subs, setSubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -2230,6 +2229,7 @@ const [previousTab, setPreviousTab] = useState('catalog');
   const [myRank, setMyRank] = useState(null); 
   const [banner, setBanner] = useState(null);
 const [subs, setSubs] = useState([]);
+const [triesPrice, setTriesPrice] = useState(10);
 const fileRef = useRef(null);
 
   const seed = useMemo(() => Math.random().toString(36).slice(2, 10), []);
