@@ -692,8 +692,8 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, 
               <div className="flex-1">
                 <div className="text-xl font-btn font-bold text-white">{mySub.name}</div>
                 <div className="text-xs text-white/80 font-btn">
-                  Действует до {formatDate(mySub.expires_at)}
-                </div>
+  💎 Подписка на месяц · до {formatDate(mySub.expires_at)}
+</div>
               </div>
             </div>
 
@@ -776,7 +776,7 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, 
                     <div className="text-base font-btn font-bold">{sub.name}</div>
                     <div className="flex items-center gap-2 mt-1 font-btn">
                       {sub.price_old > 0 && <span className="text-xs text-muted line-through">{sub.price_old}⭐️</span>}
-                      <span className="text-base font-bold" style={{ color: sub.accent }}>{sub.price}⭐️</span>
+                      <span className="text-base font-bold" style={{ color: sub.accent }}>   {sub.price}⭐️{sub.duration_days > 0 ? <span className="text-[11px] text-muted font-normal ml-0.5">/мес</span> : null} </span>
                     </div>
                   </div>
                 </div>
@@ -818,7 +818,7 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, 
                       onClick={() => handleBuy(sub)}
                       className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2"
                       style={{ background: sub.accent }}>
-                      {isActive ? `💎 Продлить за ${sub.price}⭐️` : `Оформить за ${sub.price}⭐️`}
+                      {isActive   ? `💎 Продлить за ${sub.price}⭐️${sub.duration_days > 0 ? '/мес' : ''}`   : `Оформить за ${sub.price}⭐️${sub.duration_days > 0 ? '/мес' : ''}` }
                     </button>
 
                     <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
