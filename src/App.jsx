@@ -2484,53 +2484,83 @@ const closeScreen = () => {
       .then(r => r.json()).then(d => { if (d.success) setMyRank(d); }).catch(() => {});
   }, [user?.tg_id]);
     // Тик таймера серии — каждые 30 сек, пока приложение открыто
+   // Тик таймера серии — плавно каждую секунду, отправка на бэк раз в 30 сек
   useEffect(() => {
     if (!user?.tg_id) return;
-    if (user.streak_days >= 0 && streakSeconds >= 600) return; // уже прошёл сегодня
+    if (streakSeconds >= 600) return;
 
     let isActive = true;
-    let interval = null;
+    let localSeconds = streakSeconds;
+    let unsentSeconds = 0;
 
-    const tick = async () => {
+    // Локальный тик — каждую секунду
+    const localInterval = setInterval(() => {
+      if (document.hidden) return; // пауза если свёрнуто
       if (!isActive) return;
-      if (document.hidden) return; // вкладка/приложение свёрнуто
+      localSeconds = Math.min(600, localSeconds + 1);
+      unsentSeconds += 1;
+      setStreakSeconds(localSeconds);
+
+      // Дошли до 600 — сразу отправляем и останавливаем
+      if (localSeconds >= 600) {
+        clearInterval(localInterval);
+      }
+    }, 1000);
+
+    // Отправка на бэк — раз в 30 сек
+    const sendInterval = setInterval(async () => {
+      if (!isActive || document.hidden) return;
+      if (unsentSeconds <= 0) return;
+      const toSend = unsentSeconds;
+      unsentSeconds = 0;
       try {
         const r = await fetch(`${BACKEND}/api/streak/tick`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             initData: window.Telegram?.WebApp?.initData || '',
-            seconds: 30,
+            seconds: toSend,
           }),
         });
         const d = await r.json();
         if (d.success && isActive) {
-          setStreakSeconds(d.seconds_today || 0);
           if (d.just_completed) {
             setStreakJustCompleted(true);
-            // Обновляем юзера — там изменился streak_days
             setUser(u => u ? { ...u, streak_days: d.streak_days } : u);
           }
         }
       } catch {}
-    };
+    }, 30000);
 
-    // Первый тик сразу
-    tick();
-
-    // Дальше каждые 30 сек
-    interval = setInterval(tick, 30000);
-
-    // Возобновляем при возврате в приложение
-    const onVisible = () => {
-      if (!document.hidden) tick();
-    };
-    document.addEventListener('visibilitychange', onVisible);
+    // Первая отправка через 2 сек
+    setTimeout(async () => {
+      if (!isActive || document.hidden) return;
+      const toSend = unsentSeconds || 1;
+      unsentSeconds = 0;
+      try {
+        const r = await fetch(`${BACKEND}/api/streak/tick`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            initData: window.Telegram?.WebApp?.initData || '',
+            seconds: toSend,
+          }),
+        });
+        const d = await r.json();
+        if (d.success && isActive) {
+          // Синхронизируем если на бэке больше
+          if (d.seconds_today > localSeconds) {
+            localSeconds = d.seconds_today;
+            setStreakSeconds(localSeconds);
+          }
+        }
+      } catch {}
+    }, 2000);
 
     return () => {
       isActive = false;
-      if (interval) clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVisible);
+      clearInterval(localInterval);
+      clearInterval(sendInterval);
     };
   }, [user?.tg_id]);
 
