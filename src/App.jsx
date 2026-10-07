@@ -605,8 +605,66 @@ function ComingSoonScreen({ onBack, title = 'В разработке', descripti
 }
 
 // ============ SUBSCRIPTIONS ============
-function SubscriptionsScreen({ onBack, onBuy, subs = [] }) {
+function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, onSubscriptionChange }) {
   const [expanded, setExpanded] = useState('secret');
+  const [mySub, setMySub] = useState(null);
+  const [loadingMy, setLoadingMy] = useState(true);
+  const [confirmModal, setConfirmModal] = useState(null); // { sub, warning }
+
+  // Загружаем текущую подписку юзера
+  useEffect(() => {
+    fetch(`${BACKEND}/api/my-subscription`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d.success) setMySub(d.subscription); })
+      .catch(() => {})
+      .finally(() => setLoadingMy(false));
+  }, []);
+
+  // Форматирование даты: "6 ноября 2025"
+  const formatDate = (isoStr) => {
+    if (!isoStr) return '';
+    const d = new Date(isoStr);
+    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  };
+
+  // Считаем выгоду: сколько было бы поштучно vs цена подписки
+  const calcSaving = (sub) => {
+    if (!sub.tries || sub.tries === 0) return null;
+    const byPiece = sub.tries * triesPrice;
+    const saving = byPiece - sub.price;
+    const percent = Math.round((saving / byPiece) * 100);
+    return { byPiece, saving, percent };
+  };
+
+  // Клик по подписке
+  const handleBuy = (sub) => {
+    // Если есть активная подписка и это НЕ она — показываем предупреждение
+    if (mySub && mySub.id !== sub.id && mySub.tries_left > 0) {
+      setConfirmModal({
+        sub,
+        warning: {
+          oldName: mySub.name,
+          oldEmoji: mySub.emoji,
+          oldTries: mySub.tries_left,
+        },
+      });
+      return;
+    }
+    onBuy(sub.id);
+  };
+
+  const confirmBuy = () => {
+    if (!confirmModal) return;
+    const subId = confirmModal.sub.id;
+    setConfirmModal(null);
+    onBuy(subId);
+  };
+
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <div className="flex items-center gap-3 mb-6">
@@ -616,13 +674,89 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [] }) {
           <div className="text-2xl font-btn font-bold">Подписки</div>
         </div>
       </div>
+
+      {/* ============ БЛОК «ВЫ СЕЙЧАС НА...» ============ */}
+      {!loadingMy && mySub && (
+        <div className="mb-6 rounded-3xl overflow-hidden animate-slide-up"
+          style={{
+            background: `linear-gradient(135deg, ${mySub.accent || '#D4B595'} 20%, #1A1412 100%)`,
+            border: `1px solid ${mySub.accent || '#D4B595'}`,
+            boxShadow: `0 8px 30px ${(mySub.accent || '#D4B595')}30`,
+          }}>
+          <div className="p-5">
+            <div className="text-[10px] uppercase tracking-wider2 text-white/70 font-btn mb-2">
+              ✅ Вы сейчас на подписке
+            </div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-4xl">{mySub.emoji}</div>
+              <div className="flex-1">
+                <div className="text-xl font-btn font-bold text-white">{mySub.name}</div>
+                <div className="text-xs text-white/80 font-btn">
+                  Действует до {formatDate(mySub.expires_at)}
+                </div>
+              </div>
+            </div>
+
+            {/* Прогресс-бар */}
+            <div className="mb-3">
+              <div className="flex justify-between text-[11px] text-white/90 font-btn mb-1.5">
+                <span>Примерок осталось</span>
+                <span className="font-bold">{mySub.tries_left} / {mySub.tries_total}</span>
+              </div>
+              <div className="h-2 rounded-full bg-black/40 overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${mySub.tries_total > 0 ? (mySub.tries_left / mySub.tries_total) * 100 : 0}%`,
+                    background: mySub.accent || '#D4B595',
+                  }} />
+              </div>
+            </div>
+
+            {/* Дни */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-black/30 rounded-xl px-3 py-2">
+                <div className="text-[9px] uppercase text-white/60 font-btn">Осталось</div>
+                <div className="text-sm font-btn font-bold text-white">{mySub.days_left} дн.</div>
+              </div>
+              <div className="bg-black/30 rounded-xl px-3 py-2">
+                <div className="text-[9px] uppercase text-white/60 font-btn">Примерок</div>
+                <div className="text-sm font-btn font-bold text-white">{mySub.tries_left}</div>
+              </div>
+            </div>
+
+            {/* Плашка заканчивается */}
+            {mySub.days_left <= 3 && mySub.days_left > 0 && (
+              <div className="mt-3 rounded-xl bg-red-500/20 border border-red-500/40 p-3 flex items-start gap-2">
+                <span className="text-base">⏰</span>
+                <div className="flex-1">
+                  <div className="text-[11px] font-btn font-bold text-red-300">
+                    Заканчивается через {mySub.days_left} {mySub.days_left === 1 ? 'день' : 'дня'}
+                  </div>
+                  <div className="text-[10px] text-white/70 font-btn mt-0.5">
+                    Продли подписку, чтобы сохранить доступ
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ============ СПИСОК ПОДПИСОК ============ */}
       <div className="space-y-4">
         {subs.map(sub => {
           const isOpen = expanded === sub.id;
           const isSecret = sub.id === 'secret';
+          const isActive = mySub && mySub.id === sub.id;
+          const saving = calcSaving(sub);
+
           return (
-            <div key={sub.id} className="bg-card rounded-3xl overflow-hidden transition-all duration-300"
-              style={{ border: `1px solid ${isOpen ? sub.accent : '#2a1f1a'}`, boxShadow: isOpen ? `0 0 30px ${sub.accent}20` : 'none' }}>
+            <div key={sub.id}
+              className={`bg-card rounded-3xl overflow-hidden transition-all duration-300 ${isActive ? 'ring-2 ring-accent' : ''}`}
+              style={{
+                border: `1px solid ${isOpen ? sub.accent : '#2a1f1a'}`,
+                boxShadow: isOpen ? `0 0 30px ${sub.accent}20` : 'none',
+              }}>
               <button onClick={() => { haptic('light'); setExpanded(isOpen ? null : sub.id); }}
                 className="w-full flex items-center justify-between px-5 py-5 text-left">
                 <div className="flex items-center gap-4">
@@ -631,28 +765,62 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [] }) {
                     {sub.emoji}
                   </div>
                   <div>
-                    <div className="text-[10px] uppercase mb-0.5 font-btn" style={{ color: sub.accent }}>{sub.subtitle}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-[10px] uppercase mb-0.5 font-btn" style={{ color: sub.accent }}>{sub.subtitle}</div>
+                      {isActive && (
+                        <div className="text-[9px] uppercase tracking-wider2 bg-accent text-bg px-1.5 py-0.5 rounded font-btn font-bold">
+                          Активна
+                        </div>
+                      )}
+                    </div>
                     <div className="text-base font-btn font-bold">{sub.name}</div>
                     <div className="flex items-center gap-2 mt-1 font-btn">
                       {sub.price_old > 0 && <span className="text-xs text-muted line-through">{sub.price_old}⭐️</span>}
-<span className="text-base font-bold" style={{ color: sub.accent }}>{sub.price}⭐️</span>
+                      <span className="text-base font-bold" style={{ color: sub.accent }}>{sub.price}⭐️</span>
                     </div>
                   </div>
                 </div>
                 {!isSecret && <span className="text-lg" style={{ color: sub.accent, transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }}>⌄</span>}
               </button>
+
               {!isSecret && (
-                <div className="overflow-hidden" style={{ maxHeight: isOpen ? 500 : 0 }}>
+                <div className="overflow-hidden" style={{ maxHeight: isOpen ? 600 : 0 }}>
                   <div className="border-t border-border1 px-5 py-4">
-                    <ul className="space-y-3 mb-5">
-  {(Array.isArray(sub.features) ? sub.features : []).map((f, i) => (
-    <li key={i} className="flex items-start gap-3 text-xs font-btn">
-      <span>{f.icon}</span>
-      <span>{f.text}</span>
-    </li>
-  ))}
-</ul>
-                    <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2" style={{ background: sub.accent }}>Оформить за {sub.price}⭐️</button>
+                    {/* Выгода */}
+                    {saving && saving.saving > 0 && (
+                      <div className="mb-4 rounded-xl bg-green-500/10 border border-green-500/30 px-3 py-2.5">
+                        <div className="text-[10px] uppercase text-green-400 font-btn font-bold mb-1">
+                          💰 Выгода
+                        </div>
+                        <div className="text-[11px] text-title font-btn">
+                          Поштучно: <span className="text-muted line-through">{saving.byPiece}⭐️</span>
+                        </div>
+                        <div className="text-[11px] text-title font-btn">
+                          Экономия: <span className="text-green-400 font-bold">{saving.saving}⭐️ (−{saving.percent}%)</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Фичи */}
+                    {sub.features && sub.features.length > 0 && (
+                      <ul className="space-y-3 mb-5">
+                        {(Array.isArray(sub.features) ? sub.features : []).map((f, i) => (
+                          <li key={i} className="flex items-start gap-3 text-xs font-btn">
+                            <span>{f.icon}</span>
+                            <span>{f.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {/* Кнопка */}
+                    <button
+                      onClick={() => handleBuy(sub)}
+                      className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2"
+                      style={{ background: sub.accent }}>
+                      {isActive ? `💎 Продлить за ${sub.price}⭐️` : `Оформить за ${sub.price}⭐️`}
+                    </button>
+
                     <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
                       className="block w-full text-center border border-border2 text-muted2 py-3 rounded-2xl text-[11px] font-btn uppercase active:scale-95">
                       💰 Купить звёзды
@@ -660,10 +828,15 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [] }) {
                   </div>
                 </div>
               )}
+
               {isSecret && (
                 <div className="border-t border-border1 px-5 py-4">
                   <div className="text-xs text-muted mb-4 italic font-btn">Секретное предложение. Внутри — сюрприз 🎁</div>
-                  <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2" style={{ background: sub.accent }}>Оформить за {sub.price}⭐️</button>
+                  <button onClick={() => handleBuy(sub)}
+                    className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2"
+                    style={{ background: sub.accent }}>
+                    Оформить за {sub.price}⭐️
+                  </button>
                   <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
                     className="block w-full text-center border border-border2 text-muted2 py-3 rounded-2xl text-[11px] font-btn uppercase active:scale-95">
                     💰 Купить звёзды
@@ -674,6 +847,33 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [] }) {
           );
         })}
       </div>
+
+      {/* ============ МОДАЛКА ПОДТВЕРЖДЕНИЯ ============ */}
+      {confirmModal && (
+        <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-5 animate-fade-in" onClick={() => setConfirmModal(null)}>
+          <div className="bg-card border border-border2 rounded-3xl p-6 max-w-sm w-full animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-5">
+              <div className="text-4xl mb-3">⚠️</div>
+              <div className="text-lg font-btn font-bold mb-2">Перейти на {confirmModal.sub.name}?</div>
+              <div className="text-xs text-muted leading-relaxed font-btn">
+                У вас активна подписка <b className="text-accent">{confirmModal.warning.oldEmoji} {confirmModal.warning.oldName}</b> с{' '}
+                <b className="text-accent">{confirmModal.warning.oldTries} примерками</b>.
+                <br /><br />
+                При переходе на <b>{confirmModal.sub.name}</b> неиспользованные примерки сгорят.
+              </div>
+            </div>
+            <button onClick={confirmBuy}
+              className="w-full py-3.5 rounded-2xl text-xs font-bold uppercase text-bg font-btn mb-2"
+              style={{ background: confirmModal.sub.accent }}>
+              Продолжить
+            </button>
+            <button onClick={() => setConfirmModal(null)}
+              className="w-full py-3 rounded-2xl text-xs font-btn text-muted border border-border2">
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -2444,7 +2644,7 @@ const closeScreen = () => {
   if (k === 'subs') openScreen('subs');
 }} />;
 
-  if (screen === 'subs') return <><SubscriptionsScreen onBack={closeScreen} onBuy={buySubscription} subs={subs} />{nav}</>;
+  if (screen === 'subs') return <><SubscriptionsScreen onBack={closeScreen} onBuy={buySubscription} subs={subs} user={user} triesPrice={triesPrice} />{nav}</>;
   if (screen === 'buyTries') return <><BuyTriesScreen onBack={() => setScreen(null)} onBuy={buyTries} user={user} />{nav}</>;
   if (screen === 'history') return <><HistoryScreen onBack={() => setScreen(null)} />{nav}</>;
   if (screen === 'own') return <><ComingSoonScreen onBack={() => setScreen(null)} title="Примерка своих товаров" description="Скоро ты сможешь загрузить любую вещь по ссылке с Wildberries и примерить её на себя. Мы уже работаем над этим ✨" />{nav}</>;
