@@ -605,7 +605,7 @@ function ComingSoonScreen({ onBack, title = 'В разработке', descripti
 }
 
 // ============ SUBSCRIPTIONS ============
-function SubscriptionsScreen({ onBack, onBuy }) {
+function SubscriptionsScreen({ onBack, onBuy, subs = [] }) {
   const [expanded, setExpanded] = useState('secret');
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
@@ -617,7 +617,7 @@ function SubscriptionsScreen({ onBack, onBuy }) {
         </div>
       </div>
       <div className="space-y-4">
-        {SUBS.map(sub => {
+        {subs.map(sub => {
           const isOpen = expanded === sub.id;
           const isSecret = sub.id === 'secret';
           return (
@@ -2256,6 +2256,7 @@ const closeScreen = () => {
       if (d.success) {
         setUser(d.user);
         fetch(`${BACKEND}/api/banner`).then(r => r.json()).then(b => { if (b.success && b.banner) setBanner(b.banner); }).catch(() => {});
+        fetch(`${BACKEND}/api/subscriptions`).then(r => r.json()).then(s => { if (s.success && s.items) setSubs(s.items); }).catch(() => {});
         if (d.one_time_message) setOneTimeMsg(d.one_time_message);
         if (!d.user.onboarded && localStorage.getItem('gf_onboarded') !== '1') setShowOnboarding(true);
         else if (!d.user.personalized) setShowPersonalization(true);
@@ -2438,7 +2439,7 @@ const closeScreen = () => {
   if (k === 'subs') openScreen('subs');
 }} />;
 
-  if (screen === 'subs') return <><SubscriptionsScreen onBack={closeScreen} onBuy={buySubscription} />{nav}</>;
+  if (screen === 'subs') return <><SubscriptionsScreen onBack={closeScreen} onBuy={buySubscription} subs={subs} />{nav}</>;
   if (screen === 'buyTries') return <><BuyTriesScreen onBack={() => setScreen(null)} onBuy={buyTries} user={user} />{nav}</>;
   if (screen === 'history') return <><HistoryScreen onBack={() => setScreen(null)} />{nav}</>;
   if (screen === 'own') return <><ComingSoonScreen onBack={() => setScreen(null)} title="Примерка своих товаров" description="Скоро ты сможешь загрузить любую вещь по ссылке с Wildberries и примерить её на себя. Мы уже работаем над этим ✨" />{nav}</>;
