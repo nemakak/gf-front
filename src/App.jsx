@@ -415,7 +415,18 @@ function EmptyState({ emoji, title, text, cta, onCta }) {
 
 // ============ СТРИК ============
 function StreakSheet({ streak, onClose }) {
+  const [rewards, setRewards] = useState([]);
+  const [loading, setLoading] = useState(true);
   const current = ((streak - 1) % 5) + 1;
+
+  useEffect(() => {
+    fetch(`${BACKEND}/api/streak-rewards`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setRewards(d.rewards || []); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" />
@@ -427,21 +438,34 @@ function StreakSheet({ streak, onClose }) {
           <div className="text-xs text-muted font-btn">Заходи каждый день и получай награды</div>
         </div>
         <div className="space-y-2 mb-5">
-          {[1,2,3,4,5].map(day => {
-            const isPast = day < current, isCurrent = day === current, isBonus = day === 5;
-            return (
-              <div key={day} className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${isCurrent ? 'bg-accent/15 border-accent shadow-soft' : isPast ? 'bg-bgSoft border-border1 opacity-60' : 'bg-bgSoft border-border1'}`}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm font-btn ${isCurrent ? 'bg-accent text-bg' : 'bg-bg border border-border2 text-muted'}`}>
-                  {isPast ? '✓' : `Д${day}`}
+          {loading ? (
+            <div className="text-center py-6 text-muted text-xs font-btn">Загрузка…</div>
+          ) : (
+            [1,2,3,4,5].map(day => {
+              const r = rewards.find(x => x.day === day) || { enabled: true, tries: 0, text: '' };
+              const isPast = day < current;
+              const isCurrent = day === current;
+              const disabled = !r.enabled;
+
+              return (
+                <div key={day}
+                  className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${disabled ? 'opacity-40' : ''} ${isCurrent ? 'bg-accent/15 border-accent shadow-soft' : isPast ? 'bg-bgSoft border-border1 opacity-60' : 'bg-bgSoft border-border1'}`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm font-btn ${isCurrent ? 'bg-accent text-bg' : 'bg-bg border border-border2 text-muted'}`}>
+                    {isPast ? '✓' : `Д${day}`}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-xs font-medium font-btn ${isCurrent ? 'text-accent' : 'text-title'}`}>
+                      {r.text || `День ${day}`}
+                    </div>
+                    <div className="text-[10px] text-muted font-btn">
+                      {disabled ? 'Отключено' : r.tries > 0 ? `+${r.tries} примерок` : 'Без награды'}
+                    </div>
+                  </div>
+                  {isCurrent && <span className="text-[9px] uppercase tracking-wider2 text-accent font-bold font-btn">Сегодня</span>}
                 </div>
-                <div className="flex-1">
-                  <div className={`text-xs font-medium font-btn ${isCurrent ? 'text-accent' : 'text-title'}`}>{isBonus ? '🎁 Большой бонус' : `День ${day}`}</div>
-                  <div className="text-[10px] text-muted font-btn">{isBonus ? '+3 примерки своих товаров' : '+1 обычная примерка'}</div>
-                </div>
-                {isCurrent && <span className="text-[9px] uppercase tracking-wider2 text-accent font-bold font-btn">Сегодня</span>}
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
         <button onClick={onClose} className="w-full bg-accent text-bg py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider2 font-btn">Понятно</button>
       </div>
