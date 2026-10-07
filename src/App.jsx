@@ -634,8 +634,8 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [] }) {
                     <div className="text-[10px] uppercase mb-0.5 font-btn" style={{ color: sub.accent }}>{sub.subtitle}</div>
                     <div className="text-base font-btn font-bold">{sub.name}</div>
                     <div className="flex items-center gap-2 mt-1 font-btn">
-                      {sub.priceOld > 0 && <span className="text-xs text-muted line-through">{sub.priceOld}⭐️</span>}
-                      <span className="text-base font-bold" style={{ color: sub.accent }}>{sub.priceNew}⭐️</span>
+                      {sub.price_old > 0 && <span className="text-xs text-muted line-through">{sub.price_old}⭐️</span>}
+<span className="text-base font-bold" style={{ color: sub.accent }}>{sub.price}⭐️</span>
                     </div>
                   </div>
                 </div>
@@ -652,7 +652,7 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [] }) {
     </li>
   ))}
 </ul>
-                    <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2" style={{ background: sub.accent }}>Оформить за {sub.priceNew}⭐️</button>
+                    <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2" style={{ background: sub.accent }}>Оформить за {sub.price}⭐️</button>
                     <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
                       className="block w-full text-center border border-border2 text-muted2 py-3 rounded-2xl text-[11px] font-btn uppercase active:scale-95">
                       💰 Купить звёзды
@@ -663,7 +663,7 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [] }) {
               {isSecret && (
                 <div className="border-t border-border1 px-5 py-4">
                   <div className="text-xs text-muted mb-4 italic font-btn">Секретное предложение. Внутри — сюрприз 🎁</div>
-                  <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2" style={{ background: sub.accent }}>Оформить за {sub.priceNew}⭐️</button>
+                  <button onClick={() => onBuy(sub.id)} className="w-full py-4 rounded-2xl text-xs font-bold uppercase text-bg active:scale-[0.98] transition font-btn mb-2" style={{ background: sub.accent }}>Оформить за {sub.price}⭐️</button>
                   <a href={BUY_STARS_URL} target="_blank" rel="noreferrer"
                     className="block w-full text-center border border-border2 text-muted2 py-3 rounded-2xl text-[11px] font-btn uppercase active:scale-95">
                     💰 Купить звёзды
@@ -2240,6 +2240,11 @@ const [previousTab, setPreviousTab] = useState('catalog');
   setScreen(name);
 };
 
+const closeScreen = () => {
+  setScreen(null);
+  setTab(previousTab);
+};
+  
 const closeScreen = () => {
   setScreen(null);
   setTab(previousTab);
