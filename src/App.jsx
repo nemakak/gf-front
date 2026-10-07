@@ -1149,11 +1149,12 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
       <h1 className="text-2xl font-btn font-bold mb-2">Админка</h1>
       <p className="text-xs text-muted mb-5 font-btn">Пополнение и подчистка</p>
 
-      <div className="grid grid-cols-2 gap-2 mb-6">
+     <div className="grid grid-cols-2 gap-2 mb-6">
   <button onClick={() => setTab('refresh')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'refresh' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🔄 Пополнение</button>
   <button onClick={() => setTab('cleanup')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'cleanup' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🧹 Подчистка</button>
   <button onClick={() => setTab('streak')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'streak' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🔥 Серия</button>
   <button onClick={() => setTab('banner')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'banner' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>📢 Баннер</button>
+  <button onClick={() => setTab('subs')} className={`col-span-2 py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'subs' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>💎 Подписки</button>
 </div>
 
       {tab === 'refresh' && (
@@ -1215,6 +1216,7 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
       {tab === 'cleanup' && <AdminCleanup onToast={onToast} onCatalogRefreshed={onCatalogRefreshed} />}
 {tab === 'streak' && <AdminStreak onToast={onToast} />}
 {tab === 'banner' && <AdminBanner onToast={onToast} />}
+{tab === 'subs' && <AdminSubscriptions onToast={onToast} />}
 </main>
   );
 }
@@ -1301,6 +1303,284 @@ function AdminStreak({ onToast }) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ============ ADMIN SUBSCRIPTIONS ============
+function AdminSubscriptions({ onToast }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null); // объект подписки или null
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/subscriptions/list`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
+      });
+      const d = await r.json();
+      if (d.success) setItems(d.items || []);
+      else onToast(d.error || 'Ошибка загрузки');
+    } catch { onToast('Ошибка сети'); }
+    finally { setLoading(false); }
+  }, [onToast]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const save = async () => {
+    if (!editing) return;
+    if (!editing.id || !editing.name) return onToast('Заполни ID и название');
+    if (!Number.isFinite(editing.price)) return onToast('Некорректная цена');
+
+    setSaving(true);
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/subscriptions/update`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', sub: editing }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        onToast('✅ Сохранено');
+        setEditing(null);
+        load();
+      } else onToast(d.error || 'Ошибка');
+    } catch { onToast('Ошибка сети'); }
+    finally { setSaving(false); }
+  };
+
+  const del = async (id) => {
+    if (!confirm(`Удалить подписку «${id}»?\nЭто необратимо.`)) return;
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/subscriptions/delete`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', id }),
+      });
+      const d = await r.json();
+      if (d.success) { onToast('🗑 Удалено'); load(); }
+      else onToast(d.error || 'Ошибка');
+    } catch { onToast('Ошибка сети'); }
+  };
+
+  const move = async (id, dir) => {
+    const idx = items.findIndex(x => x.id === id);
+    if (idx < 0) return;
+    const target = dir === 'up' ? idx - 1 : idx + 1;
+    if (target < 0 || target >= items.length) return;
+    const newItems = [...items];
+    [newItems[idx], newItems[target]] = [newItems[target], newItems[idx]];
+    const orders = newItems.map((x, i) => ({ id: x.id, sort_order: i }));
+    setItems(newItems.map((x, i) => ({ ...x, sort_order: i })));
+    try {
+      await fetch(`${BACKEND}/api/admin/subscriptions/reorder`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', orders }),
+      });
+    } catch {}
+  };
+
+  const createNew = () => {
+    setEditing({
+      id: 'new_' + Date.now().toString(36),
+      name: 'Новая подписка',
+      subtitle: '',
+      emoji: '⭐',
+      price: 100,
+      price_old: 0,
+      tries: 10,
+      own_tries: 0,
+      duration_days: 30,
+      features: [],
+      accent: '#D4B595',
+      image_url: '',
+      bg_from: '#1A1412',
+      bg_to: '#2A1F1A',
+      sort_order: items.length,
+      enabled: true,
+    });
+  };
+
+  // ============ РЕДАКТОР ============
+  if (editing) {
+    return (
+      <div>
+        <button onClick={() => setEditing(null)} className="text-xs text-muted mb-4 font-btn">← Назад к списку</button>
+
+        <div className="bg-card border border-border1 rounded-2xl p-4 mb-4">
+          <div className="text-sm font-btn font-bold mb-4">Редактировать тариф</div>
+
+          <label className="block mb-3">
+            <div className="text-[10px] uppercase text-muted mb-1 font-btn">ID (латиница, без пробелов)</div>
+            <input value={editing.id} onChange={(e) => setEditing({ ...editing, id: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+              className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn" />
+          </label>
+
+          <label className="block mb-3">
+            <div className="text-[10px] uppercase text-muted mb-1 font-btn">Название (видит юзер)</div>
+            <input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+              className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn" />
+          </label>
+
+          <label className="block mb-3">
+            <div className="text-[10px] uppercase text-muted mb-1 font-btn">Подзаголовок</div>
+            <input value={editing.subtitle} onChange={(e) => setEditing({ ...editing, subtitle: e.target.value })}
+              className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn" />
+          </label>
+
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <label className="block">
+              <div className="text-[10px] uppercase text-muted mb-1 font-btn">Эмодзи</div>
+              <input value={editing.emoji} onChange={(e) => setEditing({ ...editing, emoji: e.target.value })}
+                className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn text-center" />
+            </label>
+            <label className="block">
+              <div className="text-[10px] uppercase text-muted mb-1 font-btn">Цена ⭐️</div>
+              <input type="number" min="0" value={editing.price} onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) || 0 })}
+                className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn" />
+            </label>
+            <label className="block">
+              <div className="text-[10px] uppercase text-muted mb-1 font-btn">Старая ⭐️</div>
+              <input type="number" min="0" value={editing.price_old} onChange={(e) => setEditing({ ...editing, price_old: Number(e.target.value) || 0 })}
+                className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn" />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <label className="block">
+              <div className="text-[10px] uppercase text-muted mb-1 font-btn">Примерок</div>
+              <input type="number" min="0" value={editing.tries} onChange={(e) => setEditing({ ...editing, tries: Number(e.target.value) || 0 })}
+                className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn" />
+            </label>
+            <label className="block">
+              <div className="text-[10px] uppercase text-muted mb-1 font-btn">Своих</div>
+              <input type="number" min="0" value={editing.own_tries} onChange={(e) => setEditing({ ...editing, own_tries: Number(e.target.value) || 0 })}
+                className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn" />
+            </label>
+            <label className="block">
+              <div className="text-[10px] uppercase text-muted mb-1 font-btn">Дней</div>
+              <input type="number" min="0" value={editing.duration_days} onChange={(e) => setEditing({ ...editing, duration_days: Number(e.target.value) || 0 })}
+                className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn" />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <label className="block">
+              <div className="text-[10px] uppercase text-muted mb-1 font-btn">Цвет акцента</div>
+              <input type="color" value={editing.accent} onChange={(e) => setEditing({ ...editing, accent: e.target.value })}
+                className="w-full h-10 bg-bg border border-border1 rounded-xl outline-none" />
+            </label>
+            <label className="block">
+              <div className="text-[10px] uppercase text-muted mb-1 font-btn">Фон 1</div>
+              <input type="color" value={editing.bg_from} onChange={(e) => setEditing({ ...editing, bg_from: e.target.value })}
+                className="w-full h-10 bg-bg border border-border1 rounded-xl outline-none" />
+            </label>
+            <label className="block">
+              <div className="text-[10px] uppercase text-muted mb-1 font-btn">Фон 2</div>
+              <input type="color" value={editing.bg_to} onChange={(e) => setEditing({ ...editing, bg_to: e.target.value })}
+                className="w-full h-10 bg-bg border border-border1 rounded-xl outline-none" />
+            </label>
+          </div>
+
+          <label className="block mb-4">
+            <div className="text-[10px] uppercase text-muted mb-1 font-btn">Картинка (URL, необязательно)</div>
+            <input value={editing.image_url} onChange={(e) => setEditing({ ...editing, image_url: e.target.value })}
+              placeholder="https://..."
+              className="w-full bg-bg border border-border1 rounded-xl px-3 py-2.5 text-sm outline-none font-btn" />
+          </label>
+
+          {/* ФИЧИ */}
+          <div className="mb-4">
+            <div className="text-[10px] uppercase text-muted mb-2 font-btn">Фичи (что входит)</div>
+            <div className="space-y-2 mb-2">
+              {(editing.features || []).map((f, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <input value={f.icon} onChange={(e) => {
+                    const nf = [...editing.features]; nf[i] = { ...nf[i], icon: e.target.value };
+                    setEditing({ ...editing, features: nf });
+                  }} className="w-12 bg-bg border border-border1 rounded-xl px-2 py-2 text-sm text-center font-btn" />
+                  <input value={f.text} onChange={(e) => {
+                    const nf = [...editing.features]; nf[i] = { ...nf[i], text: e.target.value };
+                    setEditing({ ...editing, features: nf });
+                  }} className="flex-1 bg-bg border border-border1 rounded-xl px-3 py-2 text-sm font-btn" />
+                  <button onClick={() => setEditing({ ...editing, features: editing.features.filter((_, j) => j !== i) })}
+                    className="w-8 h-8 rounded-xl bg-red-500/20 border border-red-500/40 text-red-400 text-xs font-btn">✕</button>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setEditing({ ...editing, features: [...(editing.features || []), { icon: '✨', text: '' }] })}
+              className="w-full py-2 rounded-xl border border-dashed border-border2 text-xs text-muted font-btn">
+              + Добавить фичу
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between mb-4 bg-bgSoft border border-border1 rounded-xl p-3">
+            <span className="text-xs font-btn">Показывать юзерам</span>
+            <button onClick={() => setEditing({ ...editing, enabled: !editing.enabled })}
+              className={`px-3 py-1.5 rounded-full text-[10px] font-bold font-btn ${editing.enabled ? 'bg-accent text-bg' : 'bg-bg border border-border2 text-muted'}`}>
+              {editing.enabled ? '✓ ВКЛ' : 'ВЫКЛ'}
+            </button>
+          </div>
+
+          <button onClick={save} disabled={saving}
+            className="w-full bg-accent text-bg py-3.5 rounded-2xl text-xs font-bold uppercase font-btn mb-2 disabled:opacity-50">
+            {saving ? '⏳ Сохраняю…' : '💾 Сохранить'}
+          </button>
+
+          {/* Кнопка удаления — только для существующих (не new_) */}
+          {!editing.id.startsWith('new_') && (
+            <button onClick={() => del(editing.id)}
+              className="w-full bg-red-500/10 border border-red-500/40 text-red-400 py-3 rounded-2xl text-xs font-bold uppercase font-btn">
+              🗑 Удалить тариф
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ============ СПИСОК ============
+  if (loading) return <div className="text-center py-12 text-muted text-sm font-btn">Загрузка…</div>;
+
+  return (
+    <div>
+      <p className="text-xs text-muted mb-4 font-btn">Тарифы подписок. Тапни — редактировать.</p>
+
+      <button onClick={createNew}
+        className="w-full mb-4 py-3 rounded-2xl border border-dashed border-accent/60 text-accent text-xs font-bold uppercase font-btn">
+        + Создать новый тариф
+      </button>
+
+      <div className="space-y-3">
+        {items.map((sub, idx) => (
+          <div key={sub.id} className={`bg-card border rounded-2xl p-4 ${sub.enabled ? 'border-border1' : 'border-red-500/30 opacity-60'}`}
+            style={{ background: `linear-gradient(135deg, ${sub.bg_from || '#1A1412'} 0%, ${sub.bg_to || '#2A1F1A'} 100%)` }}>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="text-2xl">{sub.emoji}</div>
+              <div className="flex-1">
+                <div className="text-sm font-btn font-bold" style={{ color: sub.accent }}>{sub.name}</div>
+                <div className="text-[10px] text-muted font-btn">{sub.subtitle}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-base font-btn font-bold">{sub.price}⭐️</div>
+                {sub.price_old > 0 && <div className="text-[10px] text-muted line-through font-btn">{sub.price_old}⭐️</div>}
+              </div>
+            </div>
+            <div className="text-[10px] text-muted mb-2 font-btn">
+              {sub.tries} примерок · {sub.duration_days > 0 ? `${sub.duration_days} дней` : 'бессрочно'}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setEditing({ ...sub, features: sub.features || [] })}
+                className="flex-1 bg-accent/20 border border-accent/40 text-accent py-2 rounded-xl text-[10px] font-btn uppercase">✏️ Изменить</button>
+              <button onClick={() => move(sub.id, 'up')} disabled={idx === 0}
+                className="w-9 py-2 rounded-xl border border-border2 text-muted text-xs disabled:opacity-30 font-btn">↑</button>
+              <button onClick={() => move(sub.id, 'down')} disabled={idx === items.length - 1}
+                className="w-9 py-2 rounded-xl border border-border2 text-muted text-xs disabled:opacity-30 font-btn">↓</button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
