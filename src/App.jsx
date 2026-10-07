@@ -634,12 +634,11 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, 
 
   // Считаем выгоду: сколько было бы поштучно vs цена подписки
   const calcSaving = (sub) => {
-    if (!sub.tries || sub.tries === 0) return null;
-    const byPiece = sub.tries * triesPrice;
-    const saving = byPiece - sub.price;
-    const percent = Math.round((saving / byPiece) * 100);
-    return { byPiece, saving, percent };
-  };
+  if (!sub.tries || sub.tries === 0) return null;
+  const byPiece = sub.tries * triesPrice;
+  const saving = byPiece - sub.price;
+  return { byPiece, saving };
+};
 
   // Клик по подписке
   const handleBuy = (sub) => {
