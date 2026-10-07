@@ -2230,7 +2230,8 @@ const [previousTab, setPreviousTab] = useState('catalog');
   const [showStreak, setShowStreak] = useState(false);
   const [myRank, setMyRank] = useState(null); 
   const [banner, setBanner] = useState(null);
-  const fileRef = useRef(null);
+const [subs, setSubs] = useState([]);
+const fileRef = useRef(null);
 
   const seed = useMemo(() => Math.random().toString(36).slice(2, 10), []);
 
