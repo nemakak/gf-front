@@ -2244,11 +2244,6 @@ const closeScreen = () => {
   setScreen(null);
   setTab(previousTab);
 };
-  
-const closeScreen = () => {
-  setScreen(null);
-  setTab(previousTab);
-};
   useEffect(() => {
     fetch(`${BACKEND}/api/settings`).then(r => r.json()).then(d => { if (d.maintenance) setMaintenance({ on: true, text: d.maintenance_text || '' }); }).catch(() => {});
     const t = setInterval(() => { fetch(`${BACKEND}/api/settings`).then(r => r.json()).then(d => setMaintenance({ on: d.maintenance, text: d.maintenance_text || '' })).catch(() => {}); }, 60000);
