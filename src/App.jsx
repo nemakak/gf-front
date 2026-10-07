@@ -1406,85 +1406,135 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
 function AdminStreak({ onToast }) {
   const [rewards, setRewards] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(null);
+  const [dirty, setDirty] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const r = await fetch(`${BACKEND}/api/streak-rewards`);
       const d = await r.json();
-      if (d.success) setRewards(d.rewards || []);
+      if (d.success) {
+        setRewards(d.rewards || []);
+        setDirty({});
+      }
     } catch { onToast('Ошибка загрузки'); }
     finally { setLoading(false); }
   }, [onToast]);
 
   useEffect(() => { load(); }, [load]);
 
-  const update = async (day, patch) => {
-    setSaving(day);
-    const current = rewards.find(x => x.day === day) || {};
-    const next = { ...current, ...patch };
+  const setField = (day, field, value) => {
+    const current = rewards.find(x => x.day === day) || { day, enabled: true, tries: 0, text: '' };
+    setDirty(prev => ({
+      ...prev,
+      [day]: { ...(prev[day] || current), [field]: value },
+    }));
+  };
+
+  const getVal = (day, field, fallback) => {
+    if (dirty[day] && dirty[day][field] !== undefined) return dirty[day][field];
+    const r = rewards.find(x => x.day === day);
+    return r ? r[field] : fallback;
+  };
+
+  const hasChanges = Object.keys(dirty).length > 0;
+
+  const saveAll = async () => {
+    if (!hasChanges) return;
+    setSaving(true);
     try {
-      const r = await fetch(`${BACKEND}/api/admin/streak-rewards/update`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          initData: window.Telegram?.WebApp?.initData || '',
-          day, enabled: next.enabled, tries: next.tries, own_tries: next.own_tries, text: next.text,
-        }),
+      const promises = Object.entries(dirty).map(([day, patch]) => {
+        const current = rewards.find(x => x.day === Number(day)) || { day: Number(day), enabled: true, tries: 0, text: '' };
+        const merged = { ...current, ...patch };
+        return fetch(`${BACKEND}/api/admin/streak-rewards/update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            initData: window.Telegram?.WebApp?.initData || '',
+            day: Number(day),
+            enabled: merged.enabled,
+            tries: merged.tries,
+            own_tries: 0,
+            text: merged.text,
+          }),
+        }).then(r => r.json());
       });
-      const d = await r.json();
-      if (d.success) {
-        setRewards(prev => prev.map(x => x.day === day ? next : x));
-        onToast('✅ Сохранено');
-      } else onToast(d.error || 'Ошибка');
+      const results = await Promise.all(promises);
+      if (results.every(r => r.success)) {
+        await load();
+        onToast('✅ Все изменения сохранены');
+      } else {
+        onToast('❌ Ошибка сохранения');
+      }
     } catch { onToast('Ошибка сети'); }
-    finally { setSaving(null); }
+    finally { setSaving(false); }
   };
 
   if (loading) return <div className="text-center py-12 text-muted text-sm font-btn">Загрузка…</div>;
 
   return (
     <div>
-      <p className="text-xs text-muted mb-4 font-btn">Настрой награды за серию. Отключи день — награда не выдаётся.</p>
-      <div className="space-y-3">
+      <p className="text-xs text-muted mb-4 font-btn">
+        Настрой награды за серию. Отключи день — награда не выдаётся.
+      </p>
+
+      <div className="space-y-3 mb-4">
         {[1,2,3,4,5].map(day => {
-          const r = rewards.find(x => x.day === day) || { day, enabled: true, tries: 0, own_tries: 0, text: '' };
+          const enabled = getVal(day, 'enabled', true);
+          const tries = getVal(day, 'tries', 0);
+          const text = getVal(day, 'text', '');
+          const isDirty = !!dirty[day];
           return (
-            <div key={day} className={`bg-card border rounded-2xl p-4 ${r.enabled ? 'border-accentSoft' : 'border-border1 opacity-60'}`}>
+            <div key={day}
+              className={`bg-card border rounded-2xl p-4 transition-all ${enabled ? 'border-accentSoft' : 'border-border1 opacity-60'} ${isDirty ? 'ring-1 ring-accent/40' : ''}`}>
               <div className="flex items-center justify-between mb-3">
                 <div className="text-sm font-btn font-bold">День {day}</div>
-                <button onClick={() => update(day, { enabled: !r.enabled })}
-                  className={`px-3 py-1.5 rounded-full text-[10px] font-bold font-btn ${r.enabled ? 'bg-accent text-bg' : 'bg-bgSoft border border-border2 text-muted'}`}>
-                  {r.enabled ? '✓ ВКЛ' : 'ВЫКЛ'}
+                <button
+                  onClick={() => setField(day, 'enabled', !enabled)}
+                  className={`px-3 py-1.5 rounded-full text-[10px] font-bold font-btn ${enabled ? 'bg-accent text-bg' : 'bg-bgSoft border border-border2 text-muted'}`}
+                >
+                  {enabled ? '✓ ВКЛ' : 'ВЫКЛ'}
                 </button>
               </div>
+
               <div className="grid grid-cols-2 gap-2 mb-3">
                 <label className="block">
-                  <div className="text-[10px] uppercase text-muted mb-1 font-btn">Обычных</div>
-                  <input type="number" min="0" value={r.tries} onChange={(e) => setRewards(prev => prev.map(x => x.day === day ? { ...x, tries: Number(e.target.value) } : x))}
-                    className="w-full bg-bg border border-border1 rounded-xl px-3 py-2 text-sm outline-none font-btn" />
+                  <div className="text-[10px] uppercase text-muted mb-1 font-btn">Примерок</div>
+                  <input
+                    type="number" min="0" inputMode="numeric"
+                    value={tries}
+                    onChange={(e) => setField(day, 'tries', Number(e.target.value) || 0)}
+                    className="w-full bg-bg border border-border1 rounded-xl px-3 py-2 text-sm outline-none font-btn"
+                  />
                 </label>
                 <label className="block">
-                  <div className="text-[10px] uppercase text-muted mb-1 font-btn">Своих</div>
-                  <input type="number" min="0" value={r.own_tries} onChange={(e) => setRewards(prev => prev.map(x => x.day === day ? { ...x, own_tries: Number(e.target.value) } : x))}
-                    className="w-full bg-bg border border-border1 rounded-xl px-3 py-2 text-sm outline-none font-btn" />
+                  <div className="text-[10px] uppercase text-muted mb-1 font-btn">Текст награды</div>
+                  <input
+                    type="text" maxLength={100}
+                    value={text}
+                    placeholder={`День ${day} · +${tries} примерок`}
+                    onChange={(e) => setField(day, 'text', e.target.value)}
+                    className="w-full bg-bg border border-border1 rounded-xl px-3 py-2 text-sm outline-none font-btn"
+                  />
                 </label>
               </div>
-              <label className="block mb-3">
-                <div className="text-[10px] uppercase text-muted mb-1 font-btn">Текст награды</div>
-                <input type="text" value={r.text} maxLength={100} placeholder="День 5 · +3 примерки"
-                  onChange={(e) => setRewards(prev => prev.map(x => x.day === day ? { ...x, text: e.target.value } : x))}
-                  className="w-full bg-bg border border-border1 rounded-xl px-3 py-2 text-sm outline-none font-btn" />
-              </label>
-              <button onClick={() => update(day, { tries: r.tries, own_tries: r.own_tries, text: r.text, enabled: r.enabled })}
-                disabled={saving === day}
-                className="w-full bg-accent text-bg py-2.5 rounded-xl text-[10px] font-bold uppercase font-btn disabled:opacity-50">
-                {saving === day ? '⏳ Сохраняю…' : 'Сохранить'}
-              </button>
+
+              {isDirty && (
+                <div className="text-[9px] uppercase text-accent font-btn">● не сохранено</div>
+              )}
             </div>
           );
         })}
       </div>
+
+      <button
+        onClick={saveAll}
+        disabled={!hasChanges || saving}
+        className="w-full bg-accent text-bg py-4 rounded-2xl text-xs font-bold uppercase font-btn disabled:opacity-40 sticky bottom-4"
+      >
+        {saving ? '⏳ Сохраняю…' : hasChanges ? `💾 Сохранить всё (${Object.keys(dirty).length})` : '💾 Сохранить всё'}
+      </button>
     </div>
   );
 }
