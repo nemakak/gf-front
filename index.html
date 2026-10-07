@@ -1,16 +1,15 @@
 <!doctype html>
 <html lang="ru">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@500;600;700&display=swap" rel="stylesheet">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#0C0A08" />
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@500;600;700&display=swap" rel="stylesheet">
     <title>Style Room</title>
+
+    <!-- Google Fonts: Onest (для карточек) + Unbounded (для кнопок) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@500;600;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
 
     <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -30,98 +29,20 @@
               border2:    '#332822',
               borderGlow: '#4A3A30',
               accent:     '#D4B595',
-              accentH:    '#E6CFB3',
               accentSoft: '#B89876',
-              accentDeep: '#8A6E52',
-              title:      '#F5EDE3',
-              body:       '#D8CFC5',
-              muted:      '#8A807A',
-              muted2:     '#A89F98',
-              success:    '#7A8B5C',
-              warning:    '#C9A96E',
-              error:      '#A85F4B',
-              gold:       '#C9A96E',
+              title:      '#F2EAE0',
+              muted:      '#8A7F76',
+              muted2:     '#A39788'
             },
             fontFamily: {
-              serif: ['"Playfair Display"', 'Georgia', 'serif'],
-              sans:  ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-            },
-            boxShadow: {
-              soft: '0 4px 20px rgba(0,0,0,0.4)',
-              card: '0 2px 12px rgba(0,0,0,0.3)',
-              glow: '0 0 24px rgba(212,181,149,0.18)',
-            },
-            letterSpacing: {
-              wider2: '0.12em',
-              wider3: '0.18em',
-            },
-          },
-        },
-      };
+              sans:    ['Inter', 'system-ui', 'sans-serif'],
+              product: ['Onest', 'system-ui', 'sans-serif'],
+              btn:     ['Unbounded', 'Inter', 'system-ui', 'sans-serif'],
+            }
+          }
+        }
+      }
     </script>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
-      rel="stylesheet"
-    />
-
-    <!-- Базовые стили и анимации -->
-    <style>
-      html, body, #root {
-        background: #0C0A08;
-        color: #F5EDE3;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        overscroll-behavior-y: none;
-        -webkit-user-select: none;
-        user-select: none;
-      }
-      * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-      button, a { transition: all 0.2s ease; font-family: inherit; }
-      input { font-family: inherit; }
-
-      /* Скрыть скроллбар */
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-      /* Обрезка в 2 строки */
-      .line-clamp-2 {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-
-      /* Анимации */
-      @keyframes slideUp {
-        from { opacity: 0; transform: translateY(30px); }
-        to   { opacity: 1; transform: translateY(0); }
-      }
-      .animate-slide-up { animation: slideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to   { opacity: 1; }
-      }
-      .animate-fade-in { animation: fadeIn 0.3s ease forwards; }
-
-      @keyframes spinSlow { to { transform: rotate(360deg); } }
-      .spinner {
-        width: 56px; height: 56px;
-        border-radius: 50%;
-        border: 2px solid #2a1f1a;
-        border-top-color: #d4b595;
-        animation: spinSlow 1s linear infinite;
-      }
-    </style>
   </head>
   <body class="bg-bg">
     <div id="root"></div>
