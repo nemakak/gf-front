@@ -15,28 +15,6 @@ const CATEGORIES = [
   { key: 'all',       label: 'Все',            emoji: '✨' },
 ];
 
-const SUBS = [
-  { id: 'secret', emoji: '🎁', name: 'СЕКРЕТНАЯ', subtitle: 'Ограниченное предложение', priceOld: 0, priceNew: 10, accent: '#E91E63',
-    features: [] },
-  { id: 'pro',    emoji: '💎', name: 'PRО',    subtitle: 'Максимум',        priceOld: 999, priceNew: 599, accent: '#D4B595',
-    features: [
-      { icon: '👗', text: '50 обычных примерок' },
-      { icon: '📦', text: '20 примерок своих товаров' },
-      { icon: '🎨', text: '5 раз — примерка 2–3 вещей' },
-      { icon: '💬', text: '3 консультации стилиста' },
-    ]},
-  { id: 'medium', emoji: '💥', name: 'MEDIUM', subtitle: 'Оптимальный',     priceOld: 499, priceNew: 299, accent: '#B89876',
-    features: [
-      { icon: '👗', text: '30 обычных примерок' },
-      { icon: '📦', text: '10 примерок своих товаров' },
-      { icon: '💬', text: '1 консультация стилиста' },
-    ]},
-  { id: 'start',  emoji: '👌', name: 'START',  subtitle: 'Для знакомства', priceOld: 119, priceNew: 65,  accent: '#8A6E52',
-    features: [
-      { icon: '👗', text: '10 обычных примерок' },
-      { icon: '💬', text: '1 консультация стилиста' },
-    ]},
-];
 const HINTS = ['Подбираем образ…', 'Почти готово ✨', 'Примеряем на тебя…', 'Ещё чуть-чуть', 'Смотрим, как сидит'];
 
 // ============ ОНБОРДИНГ-ТЕСТ ============
@@ -1589,6 +1567,7 @@ function AdminSubscriptions({ onToast }) {
 // ============ ADMIN BANNER ============
 function AdminBanner({ onToast }) {
   const [banner, setBanner] = useState(null);
+  const [subs, setSubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
