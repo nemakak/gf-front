@@ -305,7 +305,7 @@ function ProductCard({ item, onPick, selected, onToggle, liked, onLike, onTryon 
         </div>
 
         <div className="p-3 pb-2">
-          <div className="font-sans font-medium text-[13px] leading-snug line-clamp-2 h-[36px] text-title">{title}</div>
+          <div className="font-product text-[13px] leading-snug line-clamp-2 h-[38px] text-title">{title}</div>
         </div>
       </button>
 
