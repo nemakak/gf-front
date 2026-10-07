@@ -679,11 +679,10 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [] }) {
 }
 
 // ============ BUY TRIES ============
-function BuyTriesScreen({ onBack, onBuy, user }) {
+function BuyTriesScreen({ onBack, onBuy, user, triesPrice = 10 }) {
   const [count, setCount] = useState(5);
-  const price = 5;
+  const price = triesPrice;
   const total = count * price;
-
   return (
     <main className="px-5 pt-6 pb-24 animate-fade-in">
       <button onClick={onBack} className="w-8 h-8 rounded-full border border-border2 flex items-center justify-center text-muted mb-5">←</button>
