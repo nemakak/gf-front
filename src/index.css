@@ -205,3 +205,8 @@ html, body {
   overflow-x: hidden;
   max-width: 100vw;
 }
+.font-product {
+  font-family: 'Onest', system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
