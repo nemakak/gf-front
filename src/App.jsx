@@ -2915,32 +2915,18 @@ const closeScreen = () => {
             </div>
           </button>
           <div className="flex items-center gap-1.5 shrink-0">
-    {/* Кнопка серии: показывает ТАЙМЕР пока идёт, СЕРИЮ после */}
+      {/* Кнопка серии: показывает ТАЙМЕР пока идёт, СЕРИЮ после */}
   {user.streak_days >= 0 && (
-    <button
-      onClick={() => setShowStreak(true)}
-      className={`relative flex items-center gap-1 px-2 py-1.5 rounded-full border active:scale-95 transition font-btn shrink-0 ${
-        streakSeconds >= 600
-          ? 'bg-orange-500/15 border-orange-400/40'
-          : 'bg-card border-border2 opacity-70'
-      }`}
-    >
-      {streakSeconds >= 600 ? (
-        <>
-          <span className="text-[11px]">🔥</span>
-          <span className="text-[11px] font-bold text-orange-300">{user.streak_days}</span>
-        </>
-      {user.streak_days >= 0 && (
-  <StreakTimer
-    user={user}
-    BACKEND={BACKEND}
-    onOpenSheet={() => setShowStreak(true)}
-    onComplete={(newStreak) => {
-      setStreakJustCompleted(true);
-      setUser(u => u ? { ...u, streak_days: newStreak } : u);
-    }}
-  />
-)}
+    <StreakTimer
+      user={user}
+      BACKEND={BACKEND}
+      onOpenSheet={() => setShowStreak(true)}
+      onComplete={(newStreak) => {
+        setStreakJustCompleted(true);
+        setUser(u => u ? { ...u, streak_days: newStreak } : u);
+      }}
+    />
+  )}
   <button
     onClick={() => { setScreen('buyTries'); }}
     className="flex items-center gap-1 px-2 py-1.5 rounded-full border border-border2 text-[11px] font-btn shrink-0"
