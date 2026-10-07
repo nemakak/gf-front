@@ -1253,6 +1253,117 @@ function GiftScreen({ onBack, onToast, user }) {
   );
 }
 
+// ============ STREAK TIMER (в шапке) ============
+function StreakTimer({ user, onOpenSheet, onComplete, BACKEND }) {
+  const [seconds, setSeconds] = useState(0);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!user?.tg_id) return;
+
+    let isActive = true;
+    let localSeconds = 0;
+    let unsentSeconds = 0;
+
+    // Загружаем текущий прогресс
+    const loadStatus = async () => {
+      try {
+        const r = await fetch(`${BACKEND}/api/streak/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
+        });
+        const d = await r.json();
+        if (d.success && isActive) {
+          localSeconds = d.seconds_today || 0;
+          setSeconds(localSeconds);
+          setReady(true);
+        }
+      } catch {
+        if (isActive) setReady(true);
+      }
+    };
+    loadStatus();
+
+    // Локальный тик — каждую секунду
+    const localInterval = setInterval(() => {
+      if (document.hidden) return;
+      if (!isActive) return;
+      if (localSeconds >= 600) return;
+      localSeconds = Math.min(600, localSeconds + 1);
+      unsentSeconds += 1;
+      setSeconds(localSeconds);
+
+      if (localSeconds >= 600) {
+        clearInterval(localInterval);
+      }
+    }, 1000);
+
+    // Отправка на бэк — раз в 30 сек
+    const sendInterval = setInterval(async () => {
+      if (!isActive || document.hidden) return;
+      if (unsentSeconds <= 0) return;
+      const toSend = unsentSeconds;
+      unsentSeconds = 0;
+      try {
+        const r = await fetch(`${BACKEND}/api/streak/tick`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            initData: window.Telegram?.WebApp?.initData || '',
+            seconds: toSend,
+          }),
+        });
+        const d = await r.json();
+        if (d.success && isActive && d.just_completed) {
+          onComplete?.(d.streak_days);
+        }
+      } catch {}
+    }, 30000);
+
+    return () => {
+      isActive = false;
+      clearInterval(localInterval);
+      clearInterval(sendInterval);
+    };
+  }, [user?.tg_id]);
+
+  const completed = seconds >= 600;
+  const mins = Math.floor((600 - seconds) / 60);
+  const secs = (600 - seconds) % 60;
+
+  if (!ready) return null;
+
+  return (
+    <button
+      onClick={onOpenSheet}
+      className={`relative flex items-center gap-1 px-2 py-1.5 rounded-full border active:scale-95 transition font-btn shrink-0 ${
+        completed
+          ? 'bg-orange-500/15 border-orange-400/40'
+          : 'bg-card border-border2 opacity-70'
+      }`}
+    >
+      {completed ? (
+        <>
+          <span className="text-[11px]">🔥</span>
+          <span className="text-[11px] font-bold text-orange-300">{user.streak_days || 0}</span>
+        </>
+      ) : (
+        <>
+          <span className="text-[11px] opacity-60">⏱</span>
+          <span className="text-[11px] font-bold text-muted">
+            {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+          </span>
+          <span
+            className="absolute bottom-0 left-0 h-[2px] bg-accent rounded-full transition-all duration-500"
+            style={{ width: `${(seconds / 600) * 100}%` }}
+          />
+        </>
+      )}
+    </button>
+  );
+}
+
 // ============ ADMIN SCREEN ============
 function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
   const [tab, setTab] = useState('refresh');
@@ -2819,22 +2930,17 @@ const closeScreen = () => {
           <span className="text-[11px]">🔥</span>
           <span className="text-[11px] font-bold text-orange-300">{user.streak_days}</span>
         </>
-      ) : (
-        <>
-          <span className="text-[11px] opacity-60">⏱</span>
-          <span className="text-[11px] font-bold text-muted">
-            {String(Math.floor((600 - streakSeconds) / 60)).padStart(2, '0')}:
-            {String((600 - streakSeconds) % 60).padStart(2, '0')}
-          </span>
-          {/* Прогресс-бар внизу кнопки */}
-          <span
-            className="absolute bottom-0 left-0 h-[2px] bg-accent rounded-full transition-all duration-500"
-            style={{ width: `${(streakSeconds / 600) * 100}%` }}
-          />
-        </>
-      )}
-    </button>
-  )}
+      {user.streak_days >= 0 && (
+  <StreakTimer
+    user={user}
+    BACKEND={BACKEND}
+    onOpenSheet={() => setShowStreak(true)}
+    onComplete={(newStreak) => {
+      setStreakJustCompleted(true);
+      setUser(u => u ? { ...u, streak_days: newStreak } : u);
+    }}
+  />
+)}
   <button
     onClick={() => { setScreen('buyTries'); }}
     className="flex items-center gap-1 px-2 py-1.5 rounded-full border border-border2 text-[11px] font-btn shrink-0"
