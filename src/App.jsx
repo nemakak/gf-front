@@ -2757,7 +2757,6 @@ const [previousTab, setPreviousTab] = useState('catalog');
   const [welcomeBonus, setWelcomeBonus] = useState(null);
   const [showStreak, setShowStreak] = useState(false);
   const [myRank, setMyRank] = useState(null);
-    const [streakSeconds, setStreakSeconds] = useState(0);
   const [streakJustCompleted, setStreakJustCompleted] = useState(false);
   const [banner, setBanner] = useState(null);
 const [subs, setSubs] = useState([]);
@@ -2837,124 +2836,6 @@ const closeScreen = () => {
         clearInterval(localInterval);
       }
     }, 1000);
-
-    // Отправка на бэк — раз в 30 сек
-    const sendInterval = setInterval(async () => {
-      if (!isActive || document.hidden) return;
-      if (unsentSeconds <= 0) return;
-      const toSend = unsentSeconds;
-      unsentSeconds = 0;
-      try {
-        const r = await fetch(`${BACKEND}/api/streak/tick`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            initData: window.Telegram?.WebApp?.initData || '',
-            seconds: toSend,
-          }),
-        });
-        const d = await r.json();
-        if (d.success && isActive) {
-          if (d.just_completed) {
-            setStreakJustCompleted(true);
-            setUser(u => u ? { ...u, streak_days: d.streak_days } : u);
-          }
-        }
-      } catch {}
-    }, 30000);
-
-    // Первая отправка через 2 сек
-    setTimeout(async () => {
-      if (!isActive || document.hidden) return;
-      const toSend = unsentSeconds || 1;
-      unsentSeconds = 0;
-      try {
-        const r = await fetch(`${BACKEND}/api/streak/tick`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            initData: window.Telegram?.WebApp?.initData || '',
-            seconds: toSend,
-          }),
-        });
-        const d = await r.json();
-        if (d.success && isActive) {
-          // Синхронизируем если на бэке больше
-          if (d.seconds_today > localSeconds) {
-            localSeconds = d.seconds_today;
-            setStreakSeconds(localSeconds);
-          }
-        }
-      } catch {}
-    }, 2000);
-
-    return () => {
-      isActive = false;
-      clearInterval(localInterval);
-      clearInterval(sendInterval);
-    };
-  }, [user?.tg_id]);
-
-  const toggleLike = async (productId) => {
-    setLikedIds(prev => { const n = new Set(prev); if (n.has(productId)) n.delete(productId); else n.add(productId); return n; });
-    try { await fetch(`${BACKEND}/api/favorites/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', productId }) }); } catch {}
-  };
-
-  const finishOnboarding = async () => {
-    localStorage.setItem('gf_onboarded', '1');
-    setShowOnboarding(false);
-    setShowPersonalization(true);
-    try { await fetch(`${BACKEND}/api/onboarded`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }) }); } catch {}
-  };
-
-  const finishPersonalization = () => {
-    setShowPersonalization(false);
-    setUser(u => u ? { ...u, personalized: true } : u);
-    loadCatalog('personal');
-    showToast('✨ Готово! Подбираем для тебя');
-  };
-
-  const loadCatalog = useCallback(async (cat) => {
-    setLoading(true);
-    try {
-      let url;
-      if (cat === 'personal') {
-        url = `${BACKEND}/api/catalog-personal?limit=40`;
-      } else {
-        const q = cat && cat !== 'all' ? `?category=${encodeURIComponent(cat)}&seed=${seed}` : `?seed=${seed}`;
-        url = `${BACKEND}/api/catalog${q}`;
-      }
-      const r = await fetch(url, { headers: { 'x-init-data': window.Telegram?.WebApp?.initData || '' } });
-      const d = await r.json();
-      if (d.success && d.items && d.items.length) setCatalog(d.items);
-      else setCatalog([]);
-    } catch { setCatalog([]); } finally { setLoading(false); }
-  }, [seed]);
-  useEffect(() => { loadCatalog(category); }, [category, loadCatalog]);
-
-  const handleProductPick = useCallback((item) => {
-    setSelected(item);
-    setTab('upload');
-    fetch(`${BACKEND}/api/view`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        initData: window.Telegram?.WebApp?.initData || '',
-        productId: item.id,
-        category: item.category,
-      }),
-    }).catch(() => {});
-  }, []);
-
-  const onPickFile = async (e) => {
-    const f = e.target.files?.[0]; if (!f) return;
-    try { setHumanImg(await compressImage(f, 720, 0.7)); showToast('Фото загружено ✓'); } catch { showToast('Ошибка'); }
-  };
-
-    const [successAnimation, setSuccessAnimation] = useState(null);
-
-  const buySubscription = async (subId) => {
-    haptic('medium');
-    if (!user?.tg_id) return showToast('Откройте в Telegram');
 
     // Получаем данные подписки для анимации
     const subData = subs.find(s => s.id === subId);
