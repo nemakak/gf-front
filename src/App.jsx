@@ -3160,7 +3160,16 @@ const closeScreen = () => {
 
       {toast && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-card border border-border2 text-xs px-4 py-2.5 rounded-full shadow-soft animate-slide-up font-btn">{toast}</div>}
       {welcomeBonus && <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-accent text-bg text-xs px-4 py-2.5 rounded-full font-bold shadow-soft animate-slide-up font-btn">{welcomeBonus}</div>}
-
+      {successAnimation && (
+        <SubscriptionSuccess
+          sub={successAnimation.sub}
+          subscription={successAnimation.subscription}
+          onClose={() => {
+            setSuccessAnimation(null);
+            loadCatalog(category); // обновляем каталог
+          }}
+        />
+      )}
       {showStreak && <StreakSheet streak={user.streak_days} onClose={() => setShowStreak(false)} />}
 
       {oneTimeMsg && (
