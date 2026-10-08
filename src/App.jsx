@@ -2804,14 +2804,56 @@ const closeScreen = () => {
     try { setHumanImg(await compressImage(f, 720, 0.7)); showToast('Фото загружено ✓'); } catch { showToast('Ошибка'); }
   };
 
+    const [successAnimation, setSuccessAnimation] = useState(null);
+
   const buySubscription = async (subId) => {
     haptic('medium');
     if (!user?.tg_id) return showToast('Откройте в Telegram');
+
+    // Получаем данные подписки для анимации
+    const subData = subs.find(s => s.id === subId);
+
     try {
-      const r = await fetch(`${BACKEND}/api/create-invoice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tgId: user.tg_id, productType: `sub_${subId}` }) });
+      const r = await fetch(`${BACKEND}/api/create-invoice`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tgId: user.tg_id, productType: `sub_${subId}` })
+      });
       const d = await r.json();
       if (!d.invoiceLink) throw new Error(d.error);
-      window.Telegram.WebApp.openInvoice(d.invoiceLink, (s) => { if (s === 'paid') { showToast('Активировано ✨'); setTimeout(() => window.location.reload(), 1500); } });
+
+      window.Telegram.WebApp.openInvoice(d.invoiceLink, async (s) => {
+        if (s === 'paid') {
+          haptic('medium');
+          // Ждём пока бэк обработает вебхук (2-3 сек) — делаем ретраи
+          let newSub = null;
+          for (let i = 0; i < 5; i++) {
+            await new Promise(r => setTimeout(r, 1000));
+            try {
+              const mr = await fetch(`${BACKEND}/api/my-subscription`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
+              });
+              const md = await mr.json();
+              if (md.success && md.subscription && md.subscription.id === subId) {
+                newSub = md.subscription;
+                break;
+              }
+            } catch {}
+          }
+
+          // Показываем анимацию
+          setSuccessAnimation({
+            sub: subData || { name: subId, emoji: '💎', accent: '#D4B595' },
+            subscription: newSub,
+            isRenew: newSub && user?.streak_days >= 0,
+          });
+
+          // Обновляем user если нужно
+          if (newSub) {
+            setUser(u => u ? { ...u, sub_active: true } : u);
+          }
+        }
+      });
     } catch { showToast('Ошибка оплаты'); }
   };
   const buyTries = async (count) => {
