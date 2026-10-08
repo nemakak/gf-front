@@ -413,6 +413,152 @@ function EmptyState({ emoji, title, text, cta, onCta }) {
   );
 }
 
+// ============ SUBSCRIPTION SUCCESS ANIMATION ============
+function SubscriptionSuccess({ sub, subscription, onClose }) {
+  const [stage, setStage] = useState(0);
+
+  useEffect(() => {
+    // Анимация появления — 3 стадии
+    const t1 = setTimeout(() => setStage(1), 100);
+    const t2 = setTimeout(() => setStage(2), 600);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  const formatDate = (isoStr) => {
+    if (!isoStr) return '';
+    const d = new Date(isoStr);
+    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  };
+
+  const accent = sub?.accent || '#D4B595';
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-5"
+      style={{ background: 'rgba(12, 10, 8, 0.95)', backdropFilter: 'blur(20px)' }}>
+
+      {/* Конфетти/частицы */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(20)].map((_, i) => (
+          <div key={i}
+            className="absolute text-2xl"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: '-50px',
+              animation: `fall ${2 + Math.random() * 2}s linear ${Math.random() * 0.5}s forwards`,
+              opacity: 0,
+            }}>
+            {['✨', '💎', '⭐️', '🎉', '🔥'][i % 5]}
+          </div>
+        ))}
+      </div>
+
+      <div className="relative w-full max-w-sm text-center"
+        style={{
+          transform: stage >= 1 ? 'scale(1)' : 'scale(0.8)',
+          opacity: stage >= 1 ? 1 : 0,
+          transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}>
+
+        {/* Верхний огонёк / галочка */}
+        <div className="mb-6 flex justify-center">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full animate-ping" style={{ background: `${accent}40` }} />
+            <div className="relative w-24 h-24 rounded-full flex items-center justify-center text-5xl font-bold"
+              style={{
+                background: `linear-gradient(135deg, ${accent} 0%, ${accent}CC 100%)`,
+                boxShadow: `0 0 60px ${accent}80, 0 0 100px ${accent}40`,
+              }}>
+              <span style={{ animation: 'pop 0.6s ease-out 0.3s both' }}>✓</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Заголовок */}
+        <div
+          className="text-3xl font-btn font-bold mb-3"
+          style={{
+            color: accent,
+            transform: stage >= 2 ? 'translateY(0)' : 'translateY(10px)',
+            opacity: stage >= 2 ? 1 : 0,
+            transition: 'all 0.5s ease-out 0.2s',
+          }}>
+          Подписка активирована!
+        </div>
+
+        {/* Подписка */}
+        <div
+          className="mb-6 rounded-2xl p-5 border"
+          style={{
+            background: `linear-gradient(135deg, ${accent}15 0%, transparent 100%)`,
+            borderColor: `${accent}40`,
+            transform: stage >= 2 ? 'translateY(0)' : 'translateY(10px)',
+            opacity: stage >= 2 ? 1 : 0,
+            transition: 'all 0.5s ease-out 0.3s',
+          }}>
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <div className="text-4xl">{sub.emoji || '💎'}</div>
+            <div className="text-2xl font-btn font-bold" style={{ color: accent }}>
+              {sub.name}
+            </div>
+          </div>
+
+          {subscription ? (
+            <div className="space-y-2 text-sm font-btn">
+              <div className="flex justify-between items-center">
+                <span className="text-muted">Примерок начислено</span>
+                <span className="font-bold text-title">{subscription.tries_left}</span>
+              </div>
+              {subscription.tries_total > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted">Всего доступно</span>
+                  <span className="font-bold text-title">{subscription.tries_total}</span>
+                </div>
+              )}
+              {subscription.expires_at && (
+                <div className="flex justify-between items-center pt-2 border-t border-border1">
+                  <span className="text-muted">Действует до</span>
+                  <span className="font-bold text-title">{formatDate(subscription.expires_at)}</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-xs text-muted font-btn py-2">
+              Подписка успешно оформлена
+            </div>
+          )}
+        </div>
+
+        {/* Кнопка */}
+        <button
+          onClick={onClose}
+          className="w-full py-4 rounded-2xl text-sm font-bold uppercase font-btn active:scale-[0.98] transition"
+          style={{
+            background: `linear-gradient(135deg, ${accent} 0%, ${accent}CC 100%)`,
+            color: '#0C0A08',
+            opacity: stage >= 2 ? 1 : 0,
+            transition: 'all 0.5s ease-out 0.5s',
+          }}>
+          Продолжить
+        </button>
+      </div>
+
+      <style>{`
+        @keyframes fall {
+          0% { top: -50px; opacity: 0; transform: rotate(0deg); }
+          10% { opacity: 1; }
+          100% { top: 110vh; opacity: 1; transform: rotate(360deg); }
+        }
+        @keyframes pop {
+          0% { transform: scale(0); }
+          50% { transform: scale(1.3); }
+          100% { transform: scale(1); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 // ============ СТРИК ============
 function StreakSheet({ streak, onClose }) {
   const [rewards, setRewards] = useState([]);
