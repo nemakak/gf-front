@@ -2814,28 +2814,6 @@ const closeScreen = () => {
     fetch(`${BACKEND}/api/my-rank`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }) })
       .then(r => r.json()).then(d => { if (d.success) setMyRank(d); }).catch(() => {});
   }, [user?.tg_id]);
-        // Тик таймера серии — каждые 30 сек, пока приложение открыто
-  useEffect(() => {
-    if (!user?.tg_id) return;
-    if (streakSeconds >= 600) return;
-
-    let isActive = true;
-    let localSeconds = streakSeconds;
-    let unsentSeconds = 0;
-
-    // Локальный тик — каждую секунду
-    const localInterval = setInterval(() => {
-      if (document.hidden) return; // пауза если свёрнуто
-      if (!isActive) return;
-      localSeconds = Math.min(600, localSeconds + 1);
-      unsentSeconds += 1;
-      setStreakSeconds(localSeconds);
-
-      // Дошли до 600 — сразу отправляем и останавливаем
-      if (localSeconds >= 600) {
-        clearInterval(localInterval);
-      }
-    }, 1000);
 
     // Получаем данные подписки для анимации
     const subData = subs.find(s => s.id === subId);
