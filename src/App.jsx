@@ -2814,8 +2814,7 @@ const closeScreen = () => {
     fetch(`${BACKEND}/api/my-rank`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }) })
       .then(r => r.json()).then(d => { if (d.success) setMyRank(d); }).catch(() => {});
   }, [user?.tg_id]);
-    // Тик таймера серии — каждые 30 сек, пока приложение открыто
-   // Тик таймера серии — плавно каждую секунду, отправка на бэк раз в 30 сек
+        // Тик таймера серии — каждые 30 сек, пока приложение открыто
   useEffect(() => {
     if (!user?.tg_id) return;
     if (streakSeconds >= 600) return;
