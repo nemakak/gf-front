@@ -782,16 +782,22 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, 
   const [confirmModal, setConfirmModal] = useState(null);
 
   // Загружаем текущую подписку юзера
-    useEffect(() => {
+      useEffect(() => {
     if (!user?.tg_id) return;
-    fetch(`${BACKEND}/api/my-subscription`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
-    })
-      .then(r => r.json())
-      .then(d => { if (d.success) setMySub(d.subscription); })
-      .catch(() => {})
-      .finally(() => setLoadingMy(false));
+    setMySubLoaded(false);
+    const loadSub = () => {
+      fetch(`${BACKEND}/api/my-subscription`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
+      })
+        .then(r => r.json())
+        .then(d => { if (d.success) setMySub(d.subscription); })
+        .catch(() => {})
+        .finally(() => setMySubLoaded(true));
+    };
+    loadSub();
+    const t = setInterval(loadSub, 60000); // каждую минуту
+    return () => clearInterval(t);
   }, [user?.tg_id]);
 
   // Форматирование даты: "6 ноября 2025"
@@ -3147,9 +3153,14 @@ const closeScreen = () => {
       showToast('⏳ Генерация дольше обычного, пробую ещё раз…');
       d = await attempt(2);
     }
-    if (d.success && d.resultUrl) {
+        if (d.success && d.resultUrl) {
       setResultImage(d.resultUrl);
-      setUser(u => u ? { ...u, balance: Math.max(0, (u.balance || 0) - 1) } : u);
+      // Обновляем баланс и подписку из бэка
+      if (mySub && mySub.tries_left > 0) {
+        setMySub(s => s ? { ...s, tries_left: Math.max(0, s.tries_left - 1) } : s);
+      } else {
+        setUser(u => u ? { ...u, balance: Math.max(0, (u.balance || 0) - 1) } : u);
+      }
       setTab('result');
       playReadySound();
       haptic('medium');
