@@ -781,8 +781,8 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, 
   const [loadingMy, setLoadingMy] = useState(true);
   const [confirmModal, setConfirmModal] = useState(null);
 
-  // Загружаем текущую подписку юзера
-        useEffect(() => {
+    // Загружаем текущую подписку юзера
+  useEffect(() => {
     if (!user?.tg_id) return;
     setLoadingMy(true);
     fetch(`${BACKEND}/api/my-subscription`, {
