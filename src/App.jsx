@@ -2761,6 +2761,7 @@ const [previousTab, setPreviousTab] = useState('catalog');
 const [streakJustCompleted, setStreakJustCompleted] = useState(false);
   const [successAnimation, setSuccessAnimation] = useState(null);
   const [banner, setBanner] = useState(null);
+  const [mySub, setMySub] = useState(null);
 const [subs, setSubs] = useState([]);
 const [triesPrice, setTriesPrice] = useState(10);
 const fileRef = useRef(null);
@@ -2809,6 +2810,17 @@ const closeScreen = () => {
     if (!user?.tg_id) return;
     fetch(`${BACKEND}/api/favorites/list`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }) })
       .then(r => r.json()).then(d => { if (d.success && d.items) setLikedIds(new Set(d.items.map(x => x.id))); }).catch(() => {});
+  }, [user?.tg_id]);
+
+  useEffect(() => {
+    if (!user?.tg_id) return;
+    fetch(`${BACKEND}/api/my-subscription`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d.success) setMySub(d.subscription); })
+      .catch(() => {});
   }, [user?.tg_id]);
   
     useEffect(() => {
@@ -2862,6 +2874,7 @@ const closeScreen = () => {
           // Обновляем user если нужно
           if (newSub) {
             setUser(u => u ? { ...u, sub_active: true } : u);
+            setMySub(newSub);
           }
         }
       });
@@ -3095,7 +3108,14 @@ const closeScreen = () => {
           subscription={successAnimation.subscription}
           onClose={() => {
             setSuccessAnimation(null);
-            loadCatalog(category); // обновляем каталог
+            loadCatalog(category);
+            fetch(`${BACKEND}/api/my-subscription`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
+            })
+              .then(r => r.json())
+              .then(d => { if (d.success) setMySub(d.subscription); })
+              .catch(() => {});
           }}
         />
       )}
