@@ -3090,10 +3090,15 @@ const closeScreen = () => {
     <span>{user.balance ?? 0}</span>
     <span className="text-accent font-bold">+</span>
   </button>
-    <button
+      <button
   onClick={() => { setPreviousTab(tab); setScreen('subs'); setTab('subs'); }}
-  className={`px-2 py-1.5 rounded-full text-[11px] font-bold active:scale-95 transition font-btn shrink-0 flex items-center gap-1 ${mySub ? 'text-bg shadow-soft animate-pulse-glow' : 'text-bg'}`}
-  style={{ background: 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)' }}
+  className={`px-2.5 py-1.5 rounded-full text-[11px] font-bold active:scale-95 transition font-btn shrink-0 flex items-center gap-1 text-bg`}
+  style={{
+    background: mySub
+      ? `linear-gradient(135deg, ${mySub.accent || '#D4B595'} 0%, ${mySub.accent || '#D4B595'}CC 100%)`
+      : 'linear-gradient(135deg, #E5CBAA 0%, #D4B595 50%, #B89876 100%)',
+    boxShadow: mySub ? `0 0 12px ${mySub.accent}80` : '0 2px 8px rgba(0,0,0,0.2)',
+  }}
 >
   💎 {mySub && <span>{mySub.tries_left}</span>}
 </button>
