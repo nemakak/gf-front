@@ -777,22 +777,22 @@ function ComingSoonScreen({ onBack, title = 'В разработке', descripti
 // ============ SUBSCRIPTIONS ============
 function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, onSubscriptionChange }) {
   const [expanded, setExpanded] = useState('secret');
-  const [mySub, setMySub] = useState(null);
   const [loadingMy, setLoadingMy] = useState(true);
   const [confirmModal, setConfirmModal] = useState(null); // { sub, warning }
 
   // Загружаем текущую подписку юзера
   useEffect(() => {
+    if (!user?.tg_id) return;
+    setMySubLoaded(false);
     fetch(`${BACKEND}/api/my-subscription`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
     })
       .then(r => r.json())
       .then(d => { if (d.success) setMySub(d.subscription); })
       .catch(() => {})
-      .finally(() => setLoadingMy(false));
-  }, []);
+      .finally(() => setMySubLoaded(true));
+  }, [user?.tg_id]);
 
   // Форматирование даты: "6 ноября 2025"
   const formatDate = (isoStr) => {
@@ -2762,6 +2762,7 @@ const [streakJustCompleted, setStreakJustCompleted] = useState(false);
   const [successAnimation, setSuccessAnimation] = useState(null);
   const [banner, setBanner] = useState(null);
   const [mySub, setMySub] = useState(null);
+  const [mySubLoaded, setMySubLoaded] = useState(false);
 const [subs, setSubs] = useState([]);
 const [triesPrice, setTriesPrice] = useState(10);
 const fileRef = useRef(null);
