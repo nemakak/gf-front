@@ -3138,7 +3138,8 @@ const closeScreen = () => {
     onOpenSearch={() => setTab('search')}
     onOpenSubs={() => { setPreviousTab('catalog'); setScreen('subs'); setTab('subs'); }}
     banner={banner}
-    shareRef={shareRef} />
+    shareRef={shareRef}
+    hasActiveSub={!!mySub} />
 )}
 
       {tab === 'search' && <SearchScreen onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike} />}
