@@ -3093,28 +3093,18 @@ const closeScreen = () => {
             isRenew: newSub && user?.streak_days >= 0,
           });
 
-                  // Обновляем user если нужно
-        if (newSub) {
-          setUser(u => u ? { ...u, sub_active: true } : u);
-          setMySub(newSub);
-        }
+          // Обновляем user если нужно
+          if (newSub) {
+            setUser(u => u ? { ...u, sub_active: true } : u);
+            setMySub(newSub);
+          }
 
-                // Если купили secret — помечаем как купленный
-        if (subId === 'secret') {
-          setUser(u => u ? { ...u, secret_bought: true } : u);
-        }
-      });
+          // Если купили secret — помечаем как купленный
+          if (subId === 'secret') {
+            setUser(u => u ? { ...u, secret_bought: true } : u);
+          }
+      });         
     } catch { showToast('Ошибка оплаты'); }
-  };
-  const buyTries = async (count) => {
-    haptic('medium');
-    if (!user?.tg_id) return showToast('Откройте в Telegram');
-    try {
-      const r = await fetch(`${BACKEND}/api/create-invoice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tgId: user.tg_id, productType: 'custom_tries', tries: count }) });
-      const d = await r.json();
-      if (!d.invoiceLink) throw new Error(d.error);
-      window.Telegram.WebApp.openInvoice(d.invoiceLink, (s) => { if (s === 'paid') { showToast('Зачислено ✨'); setTimeout(() => window.location.reload(), 1500); } });
-    } catch { showToast('Ошибка'); }
   };
   const buyOwnTries = async (count) => {
     haptic('medium');
