@@ -794,12 +794,7 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, 
       .catch(() => {})
       .finally(() => setLoadingMy(false));
   }, [user?.tg_id]);
-    };
-    loadSub();
-    const t = setInterval(loadSub, 60000); // каждую минуту
-    return () => clearInterval(t);
-  }, [user?.tg_id]);
-
+    
   // Форматирование даты: "6 ноября 2025"
   const formatDate = (isoStr) => {
     if (!isoStr) return '';
