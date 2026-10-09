@@ -3099,11 +3099,12 @@ const closeScreen = () => {
             setMySub(newSub);
           }
 
-                    // Если купили secret — помечаем как купленный
+                              // Если купили secret — помечаем как купленный
           if (subId === 'secret') {
             setUser(u => u ? { ...u, secret_bought: true } : u);
           }
-        });                  
+        }   // ← закрываем if (s === 'paid')
+      });   // ← закрываем колбэк openInvoice
     } catch { showToast('Ошибка оплаты'); }
   };
   const buyOwnTries = async (count) => {
