@@ -2665,11 +2665,11 @@ function StyleTestScreen({ onBack, onPick }) {
 }
 
 // ============ КАТАЛОГ ============
-function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenMulti, onOpenSearch, shareRef, onOpenSubs, banner, hasActiveSub }) {
+function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenMulti, onOpenSearch, shareRef, onOpenSubs, banner, hasActiveSub, mySubLoaded }) {
   return (
         <main className="px-5 pt-6 animate-fade-in overflow-x-hidden">
       {/* БАННЕР ПОДПИСКИ */}
-            {banner && banner.enabled && !hasActiveSub && (
+            {banner && banner.enabled && mySubLoaded && !hasActiveSub && (
         <button
           onClick={() => { haptic('medium'); onOpenSubs(); }}
           className="w-full mb-5 rounded-2xl overflow-hidden relative animate-slide-up active:scale-[0.99] transition-transform"
@@ -3140,7 +3140,8 @@ const closeScreen = () => {
     onOpenSubs={() => { setPreviousTab('catalog'); setScreen('subs'); setTab('subs'); }}
     banner={banner}
     shareRef={shareRef}
-    hasActiveSub={!!mySub} />
+    hasActiveSub={!!mySub}     
+    mySubLoaded={mySubLoaded} />
 )}
 
       {tab === 'search' && <SearchScreen onPick={handleProductPick} likedIds={likedIds} onLike={toggleLike} />}
