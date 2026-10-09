@@ -782,18 +782,18 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, 
   const [confirmModal, setConfirmModal] = useState(null);
 
   // Загружаем текущую подписку юзера
-      useEffect(() => {
+        useEffect(() => {
     if (!user?.tg_id) return;
-    setMySubLoaded(false);
-    const loadSub = () => {
-      fetch(`${BACKEND}/api/my-subscription`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
-      })
-        .then(r => r.json())
-        .then(d => { if (d.success) setMySub(d.subscription); })
-        .catch(() => {})
-        .finally(() => setMySubLoaded(true));
+    setLoadingMy(true);
+    fetch(`${BACKEND}/api/my-subscription`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d.success) setMySub(d.subscription); })
+      .catch(() => {})
+      .finally(() => setLoadingMy(false));
+  }, [user?.tg_id]);
     };
     loadSub();
     const t = setInterval(loadSub, 60000); // каждую минуту
