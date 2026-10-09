@@ -2759,6 +2759,7 @@ const [previousTab, setPreviousTab] = useState('catalog');
   const [myRank, setMyRank] = useState(null);
   const [streakSeconds, setStreakSeconds] = useState(0);
 const [streakJustCompleted, setStreakJustCompleted] = useState(false);
+  const [successAnimation, setSuccessAnimation] = useState(null);
   const [banner, setBanner] = useState(null);
 const [subs, setSubs] = useState([]);
 const [triesPrice, setTriesPrice] = useState(10);
@@ -2949,6 +2950,70 @@ const closeScreen = () => {
     window.Telegram?.WebApp?.openTelegramLink?.(url) || window.open(url, '_blank');
   };
 
+  const finishOnboarding = () => {
+    localStorage.setItem('gf_onboarded', '1');
+    setShowOnboarding(false);
+    fetch(`${BACKEND}/api/onboarded`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }) }).catch(() => {});
+  };
+
+  const finishPersonalization = () => {
+    setShowPersonalization(false);
+    setUser(u => u ? { ...u, personalized: true } : u);
+  };
+
+  const loadCatalog = useCallback(async (cat) => {
+    setLoading(true);
+    try {
+      const initData = window.Telegram?.WebApp?.initData || '';
+      let url = `${BACKEND}/api/catalog?category=${encodeURIComponent(cat)}&limit=100&seed=${seed}`;
+      let headers = {};
+      if (cat === 'personal') {
+        url = `${BACKEND}/api/catalog-personal?limit=100`;
+        headers = { 'x-init-data': initData };
+      }
+      const r = await fetch(url, { headers });
+      const d = await r.json();
+      setCatalog(d.items || []);
+    } catch { setCatalog([]); }
+    finally { setLoading(false); }
+  }, [seed]);
+
+  useEffect(() => {
+    if (!user?.tg_id) return;
+    loadCatalog(category);
+  }, [category, user?.tg_id, loadCatalog]);
+
+  const handleProductPick = (item) => {
+    haptic('light');
+    setSelected(item);
+    setResultImage(null);
+    setHumanImg('');
+    setTab('upload');
+    fetch(`${BACKEND}/api/view`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', productId: item.id, category: item.category }) }).catch(() => {});
+  };
+
+  const toggleLike = async (productId) => {
+    const wasLiked = likedIds.has(productId);
+    setLikedIds(prev => {
+      const s = new Set(prev);
+      if (wasLiked) s.delete(productId); else s.add(productId);
+      return s;
+    });
+    try {
+      await fetch(`${BACKEND}/api/favorites/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', productId }) });
+    } catch {}
+  };
+
+  const onPickFile = async (e) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    try {
+      showToast('Обрабатываю фото…');
+      const compressed = await compressImage(f, 720, 0.7);
+      setHumanImg(compressed);
+      showToast('Фото загружено ✓');
+    } catch { showToast('Ошибка'); }
+  };
+  
   if (!user) return <div className="min-h-screen flex items-center justify-center bg-bg"><div className="spinner" /></div>;
   if (maintenance.on && !user.is_admin) return <MaintenanceScreen text={maintenance.text} />;
   if (showOnboarding) return <Onboarding onDone={finishOnboarding} />;
