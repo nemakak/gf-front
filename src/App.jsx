@@ -1616,7 +1616,7 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
   <button onClick={() => setTab('cleanup')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'cleanup' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🧹 Подчистка</button>
   <button onClick={() => setTab('streak')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'streak' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>🔥 Серия</button>
   <button onClick={() => setTab('banner')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'banner' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>📢 Баннер</button>
-  <button onClick={() => setTab('subs')} className={`col-span-2 py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'subs' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>💎 Подписки</button>
+  <button onClick={() => setTab('subs')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'subs' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>💎 Тарифы</button>               <button onClick={() => setTab('usersubs')} className={`py-3 rounded-2xl border text-xs font-bold uppercase tracking-wider2 font-btn ${tab === 'usersubs' ? 'bg-accent text-bg border-accent' : 'border-border2 text-muted'}`}>👥 Юзеры</button>
 </div>
 
       {tab === 'refresh' && (
@@ -1679,6 +1679,7 @@ function AdminScreen({ user, onBack, onToast, onCatalogRefreshed }) {
 {tab === 'streak' && <AdminStreak onToast={onToast} />}
 {tab === 'banner' && <AdminBanner onToast={onToast} />}
 {tab === 'subs' && <AdminSubscriptions onToast={onToast} />}
+      {tab === 'usersubs' && <AdminUserSubs onToast={onToast} />}
 </main>
   );
 }
@@ -1816,6 +1817,218 @@ function AdminStreak({ onToast }) {
       >
         {saving ? '⏳ Сохраняю…' : hasChanges ? `💾 Сохранить всё (${Object.keys(dirty).length})` : '💾 Сохранить всё'}
       </button>
+    </div>
+  );
+}
+
+// ============ ADMIN USER SUBS ============
+function AdminUserSubs({ onToast }) {
+  const [users, setUsers] = useState([]);
+  const [subs, setSubs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userSub, setUserSub] = useState(null);
+  const [loadingSub, setLoadingSub] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [uRes, sRes] = await Promise.all([
+        fetch(`${BACKEND}/api/admin/users-list`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', query: q, limit: 50 }),
+        }).then(r => r.json()),
+        fetch(`${BACKEND}/api/admin/subscriptions/list`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
+        }).then(r => r.json()),
+      ]);
+      if (uRes.success) setUsers(uRes.users || []);
+      if (sRes.success) setSubs(sRes.items || []);
+    } catch { onToast('Ошибка загрузки'); }
+    finally { setLoading(false); }
+  }, [q, onToast]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openUser = async (u) => {
+    setSelectedUser(u);
+    setLoadingSub(true);
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/user-sub/get`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', tgId: u.tg_id }),
+      });
+      const d = await r.json();
+      if (d.success) setUserSub(d.sub);
+    } catch {}
+    finally { setLoadingSub(false); }
+  };
+
+  const refreshSub = () => { if (selectedUser) openUser(selectedUser); };
+
+  const grant = async (subId) => {
+    if (!selectedUser) return;
+    if (!confirm(`Выдать «${subId}» юзеру ${selectedUser.first_name || selectedUser.tg_id}?`)) return;
+    setBusy(true);
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/user-sub/grant`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', tgId: selectedUser.tg_id, subId }),
+      });
+      const d = await r.json();
+      if (d.success) { onToast('✅ Выдано'); refreshSub(); }
+      else onToast(d.error || 'Ошибка');
+    } catch { onToast('Ошибка сети'); }
+    finally { setBusy(false); }
+  };
+
+  const revoke = async () => {
+    if (!selectedUser) return;
+    if (!confirm(`Забрать подписку у ${selectedUser.first_name || selectedUser.tg_id}?`)) return;
+    setBusy(true);
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/user-sub/revoke`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', tgId: selectedUser.tg_id }),
+      });
+      const d = await r.json();
+      if (d.success) { onToast('🗑 Забрано'); refreshSub(); }
+      else onToast(d.error || 'Ошибка');
+    } catch { onToast('Ошибка сети'); }
+    finally { setBusy(false); }
+  };
+
+  const addTries = async (count) => {
+    if (!selectedUser) return;
+    setBusy(true);
+    try {
+      const r = await fetch(`${BACKEND}/api/admin/user-sub/add-tries`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', tgId: selectedUser.tg_id, count }),
+      });
+      const d = await r.json();
+      if (d.success) { onToast(count > 0 ? `+${count}` : `${count}`); refreshSub(); }
+      else onToast(d.error || 'Ошибка');
+    } catch { onToast('Ошибка сети'); }
+    finally { setBusy(false); }
+  };
+
+  // ============ КАРТОЧКА ЮЗЕРА ============
+  if (selectedUser) {
+    const activeSub = userSub?.sub_id;
+    return (
+      <div>
+        <button onClick={() => { setSelectedUser(null); setUserSub(null); }} className="text-xs text-muted mb-4 font-btn">← К списку</button>
+
+        <div className="bg-card border border-border1 rounded-2xl p-4 mb-4">
+          <div className="flex items-center gap-3">
+            <img src={selectedUser.photo_url || 'https://placehold.co/60x60/1A1412/D4B595?text=U'} alt="" className="w-12 h-12 rounded-full object-cover border border-border2" />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-btn font-bold truncate">{selectedUser.first_name || '—'}</div>
+              <div className="text-[10px] text-muted font-btn truncate">@{selectedUser.username || '—'} · <code>{selectedUser.tg_id}</code></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Текущая подписка */}
+        <div className="bg-card border border-border1 rounded-2xl p-4 mb-4">
+          <div className="text-[10px] uppercase text-muted mb-2 font-btn">Текущая подписка</div>
+          {loadingSub ? (
+            <div className="text-center py-4 text-muted text-xs font-btn">Загрузка…</div>
+          ) : userSub && userSub.sub_id ? (
+            <div>
+              <div className="text-lg font-btn font-bold text-accent mb-1">{userSub.sub_id}</div>
+              <div className="text-[10px] text-muted font-btn mb-2">
+                До {new Date(userSub.sub_expires_at).toLocaleDateString('ru-RU')}
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="bg-bgSoft rounded-xl p-2 text-center">
+                  <div className="text-[9px] text-muted font-btn">Осталось</div>
+                  <div className="text-lg font-btn font-bold text-accent">{userSub.sub_tries_left}</div>
+                </div>
+                <div className="bg-bgSoft rounded-xl p-2 text-center">
+                  <div className="text-[9px] text-muted font-btn">Всего</div>
+                  <div className="text-lg font-btn font-bold">{userSub.sub_tries_total}</div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4 text-muted text-xs font-btn">Подписки нет</div>
+          )}
+        </div>
+
+        {/* Управление примерками */}
+        {userSub && userSub.sub_id && (
+          <div className="bg-card border border-border1 rounded-2xl p-4 mb-4">
+            <div className="text-[10px] uppercase text-muted mb-2 font-btn">Изменить примерки в подписке</div>
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              <button onClick={() => addTries(5)} disabled={busy} className="bg-accent/15 border border-accent/40 text-accent py-2 rounded-xl text-xs font-btn">+5</button>
+              <button onClick={() => addTries(10)} disabled={busy} className="bg-accent/15 border border-accent/40 text-accent py-2 rounded-xl text-xs font-btn">+10</button>
+              <button onClick={() => addTries(25)} disabled={busy} className="bg-accent/15 border border-accent/40 text-accent py-2 rounded-xl text-xs font-btn">+25</button>
+              <button onClick={() => addTries(-5)} disabled={busy} className="bg-red-500/15 border border-red-500/40 text-red-300 py-2 rounded-xl text-xs font-btn">−5</button>
+              <button onClick={() => addTries(-10)} disabled={busy} className="bg-red-500/15 border border-red-500/40 text-red-300 py-2 rounded-xl text-xs font-btn">−10</button>
+              <button onClick={() => {
+                const n = prompt('Своё число (можно −):');
+                if (n && !isNaN(Number(n))) addTries(Number(n));
+              }} disabled={busy} className="bg-bgSoft border border-border2 py-2 rounded-xl text-xs font-btn">Своё</button>
+            </div>
+          </div>
+        )}
+
+        {/* Выдать новую подписку */}
+        <div className="bg-card border border-border1 rounded-2xl p-4 mb-4">
+          <div className="text-[10px] uppercase text-muted mb-2 font-btn">{userSub && userSub.sub_id ? 'Заменить подписку на:' : 'Выдать подписку:'}</div>
+          <div className="space-y-2">
+            {subs.map(s => (
+              <button key={s.id} onClick={() => grant(s.id)} disabled={busy}
+                className={`w-full py-3 rounded-xl text-xs font-btn font-bold active:scale-[0.98] disabled:opacity-50`}
+                style={{ background: `${s.accent}20`, border: `1px solid ${s.accent}60`, color: s.accent }}>
+                {s.emoji} {s.name} · {s.tries} примерок
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Забрать */}
+        {userSub && userSub.sub_id && (
+          <button onClick={revoke} disabled={busy} className="w-full bg-red-500/10 border border-red-500/40 text-red-400 py-3 rounded-2xl text-xs font-bold uppercase font-btn">
+            🗑 Забрать подписку
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // ============ СПИСОК ЮЗЕРОВ ============
+  return (
+    <div>
+      <div className="bg-card border border-border2 rounded-2xl p-3 mb-3 flex items-center gap-2">
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск по имени, @username или ID…"
+          className="flex-1 bg-bg border border-border1 rounded-xl px-3 py-2.5 text-xs outline-none font-btn" />
+        <button onClick={load} className="px-3 py-2.5 rounded-xl border border-border2 text-xs font-btn">🔄</button>
+      </div>
+
+      {loading && <div className="text-center py-8 text-muted text-xs font-btn">Загрузка…</div>}
+      {!loading && users.length === 0 && <div className="text-center py-8 text-muted text-xs font-btn">Никого не найдено</div>}
+
+      <div className="space-y-2">
+        {users.map(u => (
+          <button key={u.tg_id} onClick={() => openUser(u)}
+            className="w-full bg-card border border-border1 rounded-2xl p-3 flex items-center gap-3 text-left active:scale-[0.99]">
+            <img src={u.photo_url || 'https://placehold.co/40x40/1A1412/D4B595?text=U'} alt="" className="w-10 h-10 rounded-full object-cover border border-border2" />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-btn font-bold truncate">{u.first_name || '—'}</div>
+              <div className="text-[10px] text-muted font-btn truncate">@{u.username || '—'} · <code>{u.tg_id}</code></div>
+            </div>
+            <div className="text-right">
+              <div className="text-[10px] text-muted font-btn">✨ {u.balance}</div>
+            </div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
