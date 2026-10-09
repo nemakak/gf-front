@@ -2665,11 +2665,11 @@ function StyleTestScreen({ onBack, onPick }) {
 }
 
 // ============ КАТАЛОГ ============
-function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenMulti, onOpenSearch, shareRef, onOpenSubs, banner }) {
+function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedIds, onLike, onOpenMulti, onOpenSearch, shareRef, onOpenSubs, banner, hasActiveSub }) {
   return (
         <main className="px-5 pt-6 animate-fade-in overflow-x-hidden">
       {/* БАННЕР ПОДПИСКИ */}
-            {banner && banner.enabled && (
+            {banner && banner.enabled && !hasActiveSub && (
         <button
           onClick={() => { haptic('medium'); onOpenSubs(); }}
           className="w-full mb-5 rounded-2xl overflow-hidden relative animate-slide-up active:scale-[0.99] transition-transform"
