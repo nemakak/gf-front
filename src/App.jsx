@@ -2888,7 +2888,7 @@ function CatalogScreen({ catalog, loading, category, setCategory, onPick, likedI
   return (
         <main className="px-5 pt-6 animate-fade-in overflow-x-hidden">
       {/* БАННЕР ПОДПИСКИ */}
-            {banner && banner.enabled && mySubLoaded && !hasActiveSub && (
+            {banner && banner.enabled && !hasActiveSub && (
         <button
           onClick={() => { haptic('medium'); onOpenSubs(); }}
           className="w-full mb-5 rounded-2xl overflow-hidden relative animate-slide-up active:scale-[0.99] transition-transform"
@@ -3032,15 +3032,22 @@ const closeScreen = () => {
       .then(r => r.json()).then(d => { if (d.success && d.items) setLikedIds(new Set(d.items.map(x => x.id))); }).catch(() => {});
   }, [user?.tg_id]);
 
-  useEffect(() => {
+    useEffect(() => {
     if (!user?.tg_id) return;
-    fetch(`${BACKEND}/api/my-subscription`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
-    })
-      .then(r => r.json())
-      .then(d => { if (d.success) setMySub(d.subscription); })
-      .catch(() => {});
+    setMySubLoaded(false);
+    const loadSub = () => {
+      fetch(`${BACKEND}/api/my-subscription`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
+      })
+        .then(r => r.json())
+        .then(d => { if (d.success) setMySub(d.subscription); })
+        .catch(() => {})
+        .finally(() => setMySubLoaded(true));
+    };
+    loadSub();
+    const t = setInterval(loadSub, 60000);
+    return () => clearInterval(t);
   }, [user?.tg_id]);
   
     useEffect(() => {
