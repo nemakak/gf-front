@@ -913,8 +913,8 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, 
       )}
 
       {/* ============ СПИСОК ПОДПИСОК ============ */}
-      <div className="space-y-4">
-        {subs.map(sub => {
+            <div className="space-y-4">
+        {subs.filter(sub => !(sub.id === 'secret' && user?.secret_bought)).map(sub => {
           const isOpen = expanded === sub.id;
           const isSecret = sub.id === 'secret';
           const isActive = mySub && mySub.id === sub.id;
@@ -3093,12 +3093,17 @@ const closeScreen = () => {
             isRenew: newSub && user?.streak_days >= 0,
           });
 
-          // Обновляем user если нужно
-          if (newSub) {
-            setUser(u => u ? { ...u, sub_active: true } : u);
-            setMySub(newSub);
-          }
+                  // Обновляем user если нужно
+        if (newSub) {
+          setUser(u => u ? { ...u, sub_active: true } : u);
+          setMySub(newSub);
         }
+
+        // Если купили secret — помечаем как купленный
+        if (subId === 'secret') {
+          setUser(u => u ? { ...u, secret_bought: true } : u);
+        }
+      }
       });
     } catch { showToast('Ошибка оплаты'); }
   };
