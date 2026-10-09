@@ -2776,6 +2776,40 @@ const closeScreen = () => {
   setScreen(null);
   setTab(previousTab);
 };
+
+  useEffect(() => {
+    fetch(`${BACKEND}/api/settings`).then(r => r.json()).then(d => { if (d.maintenance) setMaintenance({ on: true, text: d.maintenance_text || '' }); }).catch(() => {});
+    const t = setInterval(() => { fetch(`${BACKEND}/api/settings`).then(r => r.json()).then(d => setMaintenance({ on: d.maintenance, text: d.maintenance_text || '' })).catch(() => {}); }, 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor?.('#14100e'); tg.setBackgroundColor?.('#14100e'); tg.disableVerticalSwipes?.(); }
+    const initData = tg?.initData || '';
+    fetch(`${BACKEND}/api/auth`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData, refCode: tg?.initDataUnsafe?.start_param }),
+    }).then(r => r.json()).then(d => {
+      if (d.success) {
+        setUser(d.user);
+        fetch(`${BACKEND}/api/banner`).then(r => r.json()).then(b => { if (b.success && b.banner) setBanner(b.banner); }).catch(() => {});
+        fetch(`${BACKEND}/api/subscriptions`).then(r => r.json()).then(s => { if (s.success && s.items) setSubs(s.items); }).catch(() => {});
+        if (d.one_time_message) setOneTimeMsg(d.one_time_message);
+        if (!d.user.onboarded && localStorage.getItem('gf_onboarded') !== '1') setShowOnboarding(true);
+        else if (!d.user.personalized) setShowPersonalization(true);
+        if (d.daily_bonus > 0) { setWelcomeBonus(`🎁 +${d.daily_bonus} попытка за вход!`); setTimeout(() => setWelcomeBonus(null), 4000); }
+        if (d.streak_bonus > 0) { setTimeout(() => { setWelcomeBonus(`🔥 Серия 5 дней! +${d.streak_bonus}`); setTimeout(() => setWelcomeBonus(null), 5000); }, 5000); }
+      } else setUser({ tg_id: 0, first_name: 'Гость', username: '—', photo_url: '', balance: 0, own_tries: 0, onboarded: true, personalized: true, streak_days: 0, is_admin: false });
+    }).catch(() => setUser({ tg_id: 0, first_name: 'Гость', username: '—', photo_url: '', balance: 0, own_tries: 0, onboarded: true, personalized: true, streak_days: 0, is_admin: false }));
+  }, []);
+
+  useEffect(() => {
+    if (!user?.tg_id) return;
+    fetch(`${BACKEND}/api/favorites/list`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }) })
+      .then(r => r.json()).then(d => { if (d.success && d.items) setLikedIds(new Set(d.items.map(x => x.id))); }).catch(() => {});
+  }, [user?.tg_id]);
+  
     useEffect(() => {
     if (!user?.tg_id) return;
     fetch(`${BACKEND}/api/my-rank`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }) })
