@@ -777,13 +777,13 @@ function ComingSoonScreen({ onBack, title = 'В разработке', descripti
 // ============ SUBSCRIPTIONS ============
 function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, onSubscriptionChange }) {
   const [expanded, setExpanded] = useState('secret');
+  const [mySub, setMySub] = useState(null);
   const [loadingMy, setLoadingMy] = useState(true);
-  const [confirmModal, setConfirmModal] = useState(null); // { sub, warning }
+  const [confirmModal, setConfirmModal] = useState(null);
 
   // Загружаем текущую подписку юзера
-  useEffect(() => {
+    useEffect(() => {
     if (!user?.tg_id) return;
-    setMySubLoaded(false);
     fetch(`${BACKEND}/api/my-subscription`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '' }),
@@ -791,7 +791,7 @@ function SubscriptionsScreen({ onBack, onBuy, subs = [], user, triesPrice = 10, 
       .then(r => r.json())
       .then(d => { if (d.success) setMySub(d.subscription); })
       .catch(() => {})
-      .finally(() => setMySubLoaded(true));
+      .finally(() => setLoadingMy(false));
   }, [user?.tg_id]);
 
   // Форматирование даты: "6 ноября 2025"
