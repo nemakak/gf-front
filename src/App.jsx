@@ -1364,7 +1364,7 @@ function GiftScreen({ onBack, onToast, user }) {
   const [count, setCount] = useState(5);
   const [loading, setLoading] = useState(false);
   const [giftUrl, setGiftUrl] = useState('');
-  const total = count * 5;
+  const total = count * 10;
   const create = async () => {
     setLoading(true);
     try {
