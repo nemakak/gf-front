@@ -3107,6 +3107,27 @@ const closeScreen = () => {
       });   // ← закрываем колбэк openInvoice
     } catch { showToast('Ошибка оплаты'); }
   };
+
+  const buyTries = async (count) => {
+    haptic('medium');
+    if (!user?.tg_id) return showToast('Откройте в Telegram');
+    try {
+      const r = await fetch(`${BACKEND}/api/create-invoice`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tgId: user.tg_id, productType: 'custom_tries', tries: count }),
+      });
+      const d = await r.json();
+      if (!d.invoiceLink) throw new Error(d.error || 'Ошибка');
+      window.Telegram.WebApp.openInvoice(d.invoiceLink, (s) => {
+        if (s === 'paid') {
+          showToast('Зачислено ✨');
+          setTimeout(() => window.location.reload(), 1500);
+        }
+      });
+    } catch (e) { showToast('Ошибка: ' + (e.message || '')); }
+  };
+  
   const buyOwnTries = async (count) => {
     haptic('medium');
     if (!user?.tg_id) return showToast('Откройте в Telegram');
