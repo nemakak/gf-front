@@ -3010,6 +3010,27 @@ const closeScreen = () => {
     }).then(r => r.json()).then(d => {
       if (d.success) {
         setUser(d.user);
+                // 🎁 Обработка подарочной ссылки
+        const sp = tg?.initDataUnsafe?.start_param || '';
+        if (sp.startsWith('gift_')) {
+          fetch(`${BACKEND}/api/gift/claim`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData, giftCode: sp.replace('gift_', '') }),
+          })
+            .then(r => r.json())
+            .then(gd => {
+              if (gd.success) {
+                setUser(u => u ? { ...u, balance: (u.balance || 0) + gd.tries } : u);
+                setToast(`🎁 +${gd.tries} примерок!`);
+                setTimeout(() => setToast(''), 3000);
+              } else {
+                setToast(gd.error || 'Подарок не активирован');
+                setTimeout(() => setToast(''), 3000);
+              }
+            })
+            .catch(() => {});
+        }
         fetch(`${BACKEND}/api/banner`).then(r => r.json()).then(b => { if (b.success && b.banner) setBanner(b.banner); }).catch(() => {});
         fetch(`${BACKEND}/api/subscriptions`).then(r => r.json()).then(s => { if (s.success && s.items) setSubs(s.items); }).catch(() => {});
         if (d.one_time_message) setOneTimeMsg(d.one_time_message);
